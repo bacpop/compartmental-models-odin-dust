@@ -20,7 +20,7 @@ p_RC <- 1 - exp(-r_R / K1 * alpha_RC * C * dt) # competition between species R a
 
 p_C <- 1 - exp(-r_C * dt) # growth part of logistic growth
 p_CC <- 1 - exp(-r_C / K2 * C * dt) # decrease of growth rate when population size approaches capacity
-p_CR <- 1 - exp(-r_R / K2 * alpha_CR * R * dt) # competition between species R and C
+p_CR <- 1 - exp(-r_C / K2 * alpha_CR * R * dt) # competition between species R and C
 
 ### should I divide C and R in p_RC and p_CR, respectively, by (R+C)? I am not sure.
 ### because for SI term that made sense, did it not?
