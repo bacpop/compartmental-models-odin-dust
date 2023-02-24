@@ -16,7 +16,7 @@ update(C[]) <- C[i] + n_Ci[i] - sum(n_CjCi[i,]) ### something prob not right wit
 
 ## Individual probabilities of transition:
 p_Ci[] <- 1 - exp(-r_C[i] * dt) # growth part of logistic growth
-p_CjCi[,]<- 1 - exp(-r_C[i] / K[i] * alpha[j,i] * C[j] * dt) # S to I
+p_CjCi[,]<- 1 - exp(-r_C[i] / K[i] * alpha[j,i] * C[j] * dt) 
 #### BE CAREFUL! THIS SHOULD BE J in alpha and C but did not work!
 
 
