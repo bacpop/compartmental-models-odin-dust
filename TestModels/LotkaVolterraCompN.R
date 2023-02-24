@@ -7,42 +7,44 @@ initial(time) <- 0
 update(time) <- (step + 1) * dt
 
 ## Core equations for transitions between compartments:
-update(R) <- R + n_R - n_RR - n_RC
-update(C) <- C + n_C - n_CC - n_CR
+update(C[]) <- C[i] + n_Ci[i] - sum(n_CjCi[i,]) ### something prob not right with the indexes yet
 
 ## Total population size
 #N <- S + I + R
 
 ## Individual probabilities of transition:
-p_R <- 1 - exp(-r_R) # growth part of logistic growth
-p_RR <- 1 - exp(-r_R / K1 * R ) # decrease of growth rate when population size approaches capacity
-p_RC <- 1 - exp(-r_R / K1 * alpha_RC * C/(R+C)) #* dt) # competition between species R and C
+p_Ci[] <- 1 - exp(-r_C[i] * dt) # growth part of logistic growth
+p_CjCi[,]<- 1 - exp(-r_C[i] / K[i] * sum(alpha_int[i,]) * dt) 
 
-p_C <- 1 - exp(-r_C) # growth part of logistic growth
-p_CC <- 1 - exp(-r_C / K2 * C ) # decrease of growth rate when population size approaches capacity
-p_CR <- 1 - exp(-r_R / K2 * alpha_CR * R/(R+C)) #* dt) # competition between species R and C
+
+alpha_int[,] <- alpha[i, j] * C[j]
 
 ## Draws from binomial distributions for numbers changing between
 ## compartments:
-n_R <- rbinom(R, p_R) 
-n_RR <- rbinom(R, p_RR)
-n_RC <- rbinom(R, p_RC) 
-
-n_C <- rbinom(C, p_C) 
-n_CC <- rbinom(C, p_CC)
-n_CR <- rbinom(C, p_CR)
+n_Ci[] <- rbinom(C[i], p_Ci[i])
+n_CjCi[,] <- rbinom(C[i], sum(p_CjCi[,i])) ### something prob not right with the indexes yet
 
 
 ## Initial states:
-initial(R) <- R_ini
-initial(C) <- C_ini
+initial(C[]) <- C_ini[i]
 
 ## User defined parameters - default in parentheses:
-R_ini <- user(200)
-C_ini <- user(50)
-r_R <- user(0.2)
-K1 <- user(500)
-r_C <- user(0.15)
-K2 <- user(500)
-alpha_RC <- user(.2)
-alpha_CR <- user(.3)
+
+C_ini[] <- user()
+K[] <- user()
+r_C[] <- user()
+alpha[,] <- user()
+
+
+#dimensions:
+species_no <- user()
+dim(C) <- species_no
+dim(C_ini) <- species_no
+dim(r_C) <- species_no
+dim(K) <- species_no
+dim(alpha) <- c(species_no,species_no)
+dim(alpha_int) <- c(species_no,species_no)
+dim(p_Ci) <- species_no
+dim(p_CjCi) <- c(species_no,species_no)
+dim(n_Ci) <- species_no
+dim(n_CjCi) <- c(species_no,species_no)

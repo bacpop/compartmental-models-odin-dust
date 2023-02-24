@@ -49,28 +49,25 @@ n_{C} &\sim B(C, 1 - e^{-\gamma \cdot dt})
 The above equations can straightforwardly be written out using the odin DSL:
 
 ```{r odin_sir, echo = FALSE, results = "asis"}
-r_output(readLines(file.path("LotkaVolterraComp2.R")))
+r_output(readLines(file.path("LotkaVolterraCompN.R")))
 ```
 
 This is converted to a C++ dust model, and compiled into a library in a single step, using [`odin.dust`](https://mrc-ide.github.io/odin.dust/). Save the above code as a file named `sir.R`. File names must not contain special characters.
 
 ```{r}
 library(odin.dust)
-LotVolComp <- odin.dust::odin_dust("LotkaVolterraComp2.R")
+LotVolCompN <- odin.dust::odin_dust("LotkaVolterraCompN.R")
 ```
 
 ### Running the model:
 
 ```{r}
-LVC_model <- LotVolComp$new(pars = list(dt = 1,
-                                     R_ini = 200,
-                                     C_ini = 200,
-                                     r_R = 0.2,
-                                     K1 = 200,
-                                     r_C = 0.2,
-                                     K2 = 200,
-                                     alpha_RC = 0.15,
-                                     alpha_CR = 0.1),
+LVC_modelN <- LotVolCompN$new(pars = list(dt = 1,
+                                     species_no = 2,
+                                     C_ini = c(200,200),
+                                     r_C = c(0.2,0.2),
+                                     K = c(500,500),
+                                     alpha = matrix(data = c(1,.15,.1,1),nrow = 2, ncol = 2, byrow = TRUE, dimnames = list(c("R","C"),c("R","C")) )),
                          time = 1,
                          n_particles = 10L,
                          n_threads = 4L,
@@ -80,7 +77,7 @@ LVC_model <- LotVolComp$new(pars = list(dt = 1,
 # initial state: (time, prey, predator)
 
 ```{r}
-LVC_model$state()
+LVC_modelN$state()
 ```
 
 
@@ -88,36 +85,32 @@ LVC_model$state()
 # running the model for 10, 20, 30 time steps:
 
 ```{r}
-LVC_model$run(1)
-LVC_model$run(2)
-LVC_model$run(3)
+LVC_modelN$run(1)
+LVC_modelN$run(2)
+LVC_modelN$run(3)
 ```
-# okay, all numbers are integers
-# but now I simulate twice how the prey and pred interact, i.e. the number of deaths of prey due to it being killed by pred is independent of the increase we see in the pred due to it eating the prey
-# that does not make any sense
-# instead, I would want the pred grow at a constant * the rate that the prey decreases, I think.
 
 ```{r}
 dt <- 1
 n_particles <- 10L
-p_new <- list(dt = 1, R_ini = 200, C_ini = 200, r_R = 0.2, K1 = 200, r_C = 0.2, K2 = 200, alpha_RC = 0.15, alpha_CR = 0.1)
-LVC_model$update_state(pars = p_new, time = 0)
-LVC_model$state()
+p_new <- list(dt = 1, species_no = 2, C_ini = c(200,200), r_C = c(0.2,0.2), K = c(200,200), alpha = matrix(data = c(1,.15,.1,1),nrow = 2, ncol = 2, byrow = TRUE, dimnames = list(c("R","C"),c("R","C"))))
+LVC_modelN$update_state(pars = p_new, time = 0)
+LVC_modelN$state()
 ```
 
 
 ```{r fig.height=5, fig.width=7}
 n_times <- 500
-x <- array(NA, dim = c(LVC_model$info()$len, n_particles, n_times))
+x <- array(NA, dim = c(LVC_modelN$info()$len, n_particles, n_times))
 
 for (t in seq_len(n_times)) {
-  x[ , , t] <- LVC_model$run(t)
+  x[ , , t] <- LVC_modelN$run(t)
 }
 time <- x[1, 1, ]
 x <- x[-1, , ]
 
 par(mar = c(4.1, 5.1, 0.5, 0.5), las = 1)
-cols <- c(R = "#8c8cd9", C = "#cc0044")
+cols <- c(R = "#8c8cd9", C = "#cc0044", C2 = "#FFA500")
 matplot(time, (x[1,1 , ]), type = "l",
          xlab = "Time", ylab = "Number of individuals",
          col = cols[["R"]], lty = 1, ylim = range(x))
@@ -125,16 +118,21 @@ matlines(time, (x[2,1 , ]), col = cols[["C"]], lty = 1)
 legend("left", lwd = 1, col = cols, legend = names(cols), bty = "n")
 ```
 
+#### it's running, but I don't think the values are correct.
+### at the moment, the values definitively seem to be different from the one in the "hand made" two species model!
+
+
+
 ```{r fig.height=5, fig.width=7}
 dt <- 1
 n_particles <- 10L
-p_new <- list(dt = 1, R_ini = 400, C_ini = 400, r_R = 0.2, K1 <- 400, r_C = 0.2, K2 <- 400, alpha_RC = 0.2, alpha_CR = 0.2)
-LVC_model$update_state(pars = p_new, time = 0)
-LVC_model$state()
+p_new <- list(dt = 1, C_ini = c(200,200,200), r_C = c(0.2,0.2,0.2), K = c(500,500,500), alpha = matrix(data = c(1,.15,.1,.1,1,.12,.1,.11,1),nrow = 3, ncol = 3, byrow = TRUE, dimnames = list(c("R","C","C2"),c("R","C","C2"))))
+LVC_model3v2$update_state(pars = p_new, time = 0)
+LVC_model3v2$state()
 
 
 n_times <- 500
-x <- array(NA, dim = c(LVC_model$info()$len, n_particles, n_times))
+x <- array(NA, dim = c(LVC_model3v2$info()$len, n_particles, n_times))
 
 for (t in seq_len(n_times)) {
   x[ , , t] <- LVC_model$run(t)
@@ -143,11 +141,12 @@ time <- x[1, 1, ]
 x <- x[-1, , ]
 
 par(mar = c(4.1, 5.1, 0.5, 0.5), las = 1)
-cols <- c(R = "#8c8cd9", C = "#cc0044")
+cols <- c(R = "#8c8cd9", C = "#cc0044", C2 = "#FFA500")
 matplot(time, t(x[1, , ]), type = "l",
          xlab = "Time", ylab = "Number of individuals",
          col = cols[["R"]], lty = 1, ylim = range(x))
 matlines(time, t(x[2, , ]), col = cols[["C"]], lty = 1)
+matlines(time, (x[3,1 , ]), col = cols[["C2"]], lty = 1)
 legend("left", lwd = 1, col = cols, legend = names(cols), bty = "n")
 ```
 
