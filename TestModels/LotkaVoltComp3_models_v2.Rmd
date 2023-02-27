@@ -118,7 +118,6 @@ matlines(time, (x[3,1 , ]), col = cols[["C2"]], lty = 1)
 legend("left", lwd = 1, col = cols, legend = names(cols), bty = "n")
 ```
 
-#### it's running, but I don't think the values are correct.
 
 
 
@@ -134,7 +133,7 @@ n_times <- 500
 x <- array(NA, dim = c(LVC_model3v2$info()$len, n_particles, n_times))
 
 for (t in seq_len(n_times)) {
-  x[ , , t] <- LVC_model$run(t)
+  x[ , , t] <- LVC_model3v2$run(t)
 }
 time <- x[1, 1, ]
 x <- x[-1, , ]
