@@ -7,7 +7,7 @@ initial(time) <- 0
 update(time) <- (step + 1) * dt
 
 ## Core equations for transitions between compartments:
-update(C[]) <- C[i] + n_Ci[i] - sum(n_CjCi[i,]) ### something prob not right with the indexes yet
+update(C[]) <- C[i] - n_death[i] + n_birth[i]
 #update(C) <- C + n_C - n_CC - n_RC - n_C2C
 #update(C2) <- C2 + n_C2 - n_C2C2 - n_RC2 - n_CC2
 
@@ -15,18 +15,15 @@ update(C[]) <- C[i] + n_Ci[i] - sum(n_CjCi[i,]) ### something prob not right wit
 #N <- S + I + R
 
 ## Individual probabilities of transition:
-p_Ci[] <- 1 - exp(-r_C[i] * dt) # growth part of logistic growth
-p_CjCi[,]<- 1 - exp(-r_C[i] / K[i] * alpha[j,i] * C[j] * dt) 
-#### BE CAREFUL! THIS SHOULD BE J in alpha and C but did not work!
+alpha_pop[,] <- alpha[i, j] * C[j] #calculates the current influences of species, based on competition matrix and current population sizes
+# note to myself: this is a dot product, two for-loops. This is not standard matrix * vector multiplication (otherwise the result would be a vector, not a matrix)
 
+p_birth[] <- 1 - exp(-r_C[i] * dt) # probabilities for birth process
+p_death[] <- 1 - exp(-r_C[i] / K[i] * sum(alpha_pop[i,]) * dt) # probabilities for death processes, including the death process that is part of the logistic growth
 
-### should I divide C and R in p_RC and p_CR, respectively, by (R+C)? I am not sure.
-### because for SI term that made sense, did it not?
-
-## Draws from binomial distributions for numbers changing between
-## compartments:
-n_Ci[] <- rbinom(C[i], p_Ci[i])
-n_CjCi[,] <- rbinom(C[i], sum(p_CjCi[,i])) ### something prob not right with the indexes yet
+## Draws from binomial distributions for births and deaths in each population (=compartment):
+n_birth[] <- rbinom(C[i],p_birth[i])
+n_death[] <- rbinom(C[i],p_death[i]) 
 
 
 ## Initial states:
@@ -45,7 +42,8 @@ dim(C_ini) <- 3
 dim(r_C) <- 3
 dim(K) <- 3
 dim(alpha) <- c(3,3)
-dim(p_Ci) <- 3
-dim(p_CjCi) <- c(3,3)
-dim(n_Ci) <- 3
-dim(n_CjCi) <- c(3,3)
+dim(alpha_pop) <- c(3,3)
+dim(p_birth) <- 3
+dim(p_death) <- 3
+dim(n_birth) <- 3
+dim(n_death) <- 3

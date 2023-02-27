@@ -58,16 +58,19 @@ This is converted to a C++ dust model, and compiled into a library in a single s
 library(odin.dust)
 LotVolCompN <- odin.dust::odin_dust("LotkaVolterraCompN.R")
 ```
+### Define model parameters
+```{r}
+#params <- list(dt = 1, species_no = 3, C_ini = c(200,200,200), r_C = c(0.2,0.2,0.1), K = c(200,200,200), alpha = matrix(data = c(1,0,.1,.5,1,-.2,.1,.4,1),nrow = 3, ncol = 3, byrow = TRUE))
+params <- list(dt = 1, species_no = 4, C_ini = c(200,200,200,200), r_C = c(0.2,0.2,0.1,0.2), K = c(200,200,200,200), alpha = matrix(data = c(1,0,.1,.5,.2,1,.4,-.2,.1,.4,1,.3,.1,-.4,-.2,1),nrow = 4, ncol = 4, byrow = TRUE))
+#params <- list(dt = 1, species_no = 9, C_ini = rep(200,9), r_C = rep(.2,9), K = rep(200,9), alpha = diag(9)) #test with nine compartments
+```
+
+
 
 ### Running the model:
 
 ```{r}
-LVC_modelN <- LotVolCompN$new(pars = list(dt = 1,
-                                     species_no = 2,
-                                     C_ini = c(200,200),
-                                     r_C = c(0.2,0.2),
-                                     K = c(500,500),
-                                     alpha = matrix(data = c(1,.15,.1,1),nrow = 2, ncol = 2, byrow = TRUE, dimnames = list(c("R","C"),c("R","C")) )),
+LVC_modelN <- LotVolCompN$new(pars = params,
                          time = 1,
                          n_particles = 10L,
                          n_threads = 4L,
@@ -93,7 +96,7 @@ LVC_modelN$run(3)
 ```{r}
 dt <- 1
 n_particles <- 10L
-p_new <- list(dt = 1, species_no = 2, C_ini = c(200,200), r_C = c(0.2,0.2), K = c(200,200), alpha = matrix(data = c(1,.15,.1,1),nrow = 2, ncol = 2, byrow = TRUE, dimnames = list(c("R","C"),c("R","C"))))
+p_new <- params
 LVC_modelN$update_state(pars = p_new, time = 0)
 LVC_modelN$state()
 ```
@@ -110,17 +113,26 @@ time <- x[1, 1, ]
 x <- x[-1, , ]
 
 par(mar = c(4.1, 5.1, 0.5, 0.5), las = 1)
-cols <- c(R = "#8c8cd9", C = "#cc0044", C2 = "#FFA500")
+if (length(x[,1,1]) <= 8){
+  cols <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7") #8 colorblind friendly colors
+} else {
+  cols <- rainbow(length(x[,1,1]))
+}
+
+# probably should find a more dynamic way for models with >8 species?
 matplot(time, (x[1,1 , ]), type = "l",
          xlab = "Time", ylab = "Number of individuals",
-         col = cols[["R"]], lty = 1, ylim = range(x))
-matlines(time, (x[2,1 , ]), col = cols[["C"]], lty = 1)
-legend("left", lwd = 1, col = cols, legend = names(cols), bty = "n")
+         col = cols[1], lty = 1, ylim = range(x))
+for (species in 2:length(x[,1,1])) {
+  matlines(time, (x[species,1 , ]), col = cols[species:length(x[,1,1])], lty = 1)
+}
+
+legend("bottomleft", lwd = 1, col = cols[1:length(x[,1,1])], legend = 1:length(x[,1,1]), bty = "n")
 ```
 
-#### it's running, but I don't think the values are correct.
-### at the moment, the values definitively seem to be different from the one in the "hand made" two species model!
+#### I compared this to the "hand made" 2-species model and the behaviour seems very similar! :-)
 
+### issue with negative values in alpha??? check whether the same issue exists with the poisson distribution or not. hm. Could be that I get a "negative probability"?
 
 
 ```{r fig.height=5, fig.width=7}
