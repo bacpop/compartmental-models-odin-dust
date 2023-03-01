@@ -61,8 +61,14 @@ LotVolCompN <- odin.dust::odin_dust("LotkaVolterraCompN.R")
 ### Define model parameters
 ```{r}
 #params <- list(dt = 1, species_no = 3, C_ini = c(200,200,200), r_C = c(0.2,0.2,0.1), K = c(200,200,200), alpha = matrix(data = c(1,0,.1,.5,1,-.2,.1,.4,1),nrow = 3, ncol = 3, byrow = TRUE))
-params <- list(dt = 1, species_no = 4, C_ini = c(200,200,200,200), r_C = c(0.2,0.2,0.1,0.2), K = c(200,200,200,200), alpha = matrix(data = c(1,0,.1,.5,.2,1,.4,-.2,.1,.4,1,.3,.1,-.4,-.2,1),nrow = 4, ncol = 4, byrow = TRUE))
+#params <- list(dt = 1, species_no = 4, C_ini = c(200,200,200,200), r_C = c(0.2,0.2,0.1,0.2), K = c(200,200,200,200), alpha = matrix(data = c(1,0,.1,.5,.2,1,.4,-.2,.1,.4,1,.3,.1,-.4,-.2,1),nrow = 4, ncol = 4, byrow = TRUE))
 #params <- list(dt = 1, species_no = 9, C_ini = rep(200,9), r_C = rep(.2,9), K = rep(200,9), alpha = diag(9)) #test with nine compartments
+
+### parameter values that cause issues with version 1
+params <- list(dt = 1, species_no = 2, C_ini = c(50,200), r_C = c(.2,.2), K = c(200,200), alpha = matrix(data = c(1,-.5,.2,1),nrow = 2, ncol = 2, byrow = TRUE)) 
+
+#### parameter values that cause issues with version 2
+#params <- list(dt = 1, species_no = 2, C_ini = c(500,200), r_C = c(.2,.2), K = c(200,200), alpha = matrix(data = c(1,-.5,.2,1),nrow = 2, ncol = 2, byrow = TRUE)) 
 ```
 
 
@@ -135,37 +141,43 @@ legend("bottomleft", lwd = 1, col = cols[1:length(x[,1,1])], legend = 1:length(x
 ### issue with negative values in alpha??? check whether the same issue exists with the poisson distribution or not. hm. Could be that I get a "negative probability"?
 
 
-```{r fig.height=5, fig.width=7}
-dt <- 1
-n_particles <- 10L
-p_new <- list(dt = 1, C_ini = c(200,200,200), r_C = c(0.2,0.2,0.2), K = c(500,500,500), alpha = matrix(data = c(1,.15,.1,.1,1,.12,.1,.11,1),nrow = 3, ncol = 3, byrow = TRUE, dimnames = list(c("R","C","C2"),c("R","C","C2"))))
-LVC_model3v2$update_state(pars = p_new, time = 0)
-LVC_model3v2$state()
+# -------------------------
+### First trial of fitting the Lotka Volterra model begins
 
+## Create a "data" frame based on simulations (data produced by the model itself)
 
-n_times <- 500
-x <- array(NA, dim = c(LVC_model3v2$info()$len, n_particles, n_times))
-
-for (t in seq_len(n_times)) {
-  x[ , , t] <- LVC_model$run(t)
-}
-time <- x[1, 1, ]
-x <- x[-1, , ]
-
-par(mar = c(4.1, 5.1, 0.5, 0.5), las = 1)
-cols <- c(R = "#8c8cd9", C = "#cc0044", C2 = "#FFA500")
-matplot(time, t(x[1, , ]), type = "l",
-         xlab = "Time", ylab = "Number of individuals",
-         col = cols[["R"]], lty = 1, ylim = range(x))
-matlines(time, t(x[2, , ]), col = cols[["C"]], lty = 1)
-matlines(time, (x[3,1 , ]), col = cols[["C2"]], lty = 1)
-legend("left", lwd = 1, col = cols, legend = names(cols), bty = "n")
+```{r}
+# create a data frame based on the simulation 1 that I can use to fit the model to
+df_LVN <- data.frame(t(unlist(x[,1,])))
+names(df_LVN) <- 1:length(x[,1,1])
+df_LVN$day <- 1:length(x[1,1,])
 ```
 
+```{r}
+#install.packages("drat") # -- if you don't have drat installed
+drat:::add("ncov-ic")
+#install.packages("mcstate")
+library(mcstate)
+```
 
-### this is the Lotka Volterra model for competition between two species.
-# next step is to extend it to three species, then n>3
-# also, I should produce "data" with the model and then try to fit the model to it. The question is a bit, which parameters should be fitted...? There are quite a lot of parameters (at least 6 for the 2-species model). With this amount of parameters, I can fit a lot, can't I?
-
-
-
+```{r paged.print = TRUE, layout = "l-body-outset"}
+#dt <- 0.25
+dt <- 1
+LVN_data <- mcstate::particle_filter_data(data = df_LVN,
+                                          time = "day",
+                                          rate = 1 / dt)
+rmarkdown::paged_table(LVN_data)
+plot(df_LVN$day, df_LVN$"1",
+     type = "l", xlab = "Day", ylab = "Population 1")
+```
+```{r}
+popsize_compare <- function(state, observed, pars = NULL) {
+  exp_noise <- 1e6
+  pop_modelled <- state[3, , drop = TRUE] # "1," should be time, "2," should be S, "3," should be I, "4," R
+  pop_observed <- observed$Infected
+  lambda <- incidence_modelled 
+  +
+    rexp(n = length(incidence_modelled), rate = exp_noise)
+  dpois(x = incidence_observed, lambda = lambda, log = TRUE)
+}
+```
