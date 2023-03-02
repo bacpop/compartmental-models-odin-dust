@@ -56,6 +56,9 @@ This is converted to a C++ dust model, and compiled into a library in a single s
 
 ```{r}
 library(odin.dust)
+```
+
+```{r}
 LotVolCompN <- odin.dust::odin_dust("LotkaVolterraCompN.R")
 ```
 ### Define model parameters
@@ -65,7 +68,7 @@ LotVolCompN <- odin.dust::odin_dust("LotkaVolterraCompN.R")
 #params <- list(dt = 1, species_no = 9, C_ini = rep(200,9), r_C = rep(.2,9), K = rep(200,9), alpha = diag(9)) #test with nine compartments
 
 ### parameter values that cause issues with version 1
-params <- list(dt = 1, species_no = 2, C_ini = c(50,200), r_C = c(.2,.2), K = c(200,200), alpha = matrix(data = c(1,-.5,.2,1),nrow = 2, ncol = 2, byrow = TRUE)) 
+params <- list(dt = 1, species_no = 2, C_ini = c(50,2000000), r_C = c(.2,.2), K = c(200,200), alpha_pos = matrix(data = c(0,0,0,0),nrow = 2, ncol = 2, byrow = TRUE), alpha_neg = matrix(data = c(1,1,.2,1),nrow = 2, ncol = 2, byrow = TRUE)) 
 
 #### parameter values that cause issues with version 2
 #params <- list(dt = 1, species_no = 2, C_ini = c(500,200), r_C = c(.2,.2), K = c(200,200), alpha = matrix(data = c(1,-.5,.2,1),nrow = 2, ncol = 2, byrow = TRUE)) 
