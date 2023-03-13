@@ -9,22 +9,16 @@ update(time) <- (step + 1) * dt
 # with n=pop_size and p1 = (p + 1/2q) + (1/2 * (p + 1/2 q)) and p2 = (r + 1/2 q) + (1/2 * (p+q+r)) + (p + 1/2 q)
 # the number of BB individuals is determined by pop_size - number of AA - number of AB
 
-#probAA <- (AA / pop_size + 1/2 * (AB / pop_size)) + (1/2 * (AA / pop_size + 1/2 * (AB / pop_size)))
-#probAB <- (BB / pop_size + 1/2 * (AB / pop_size)) + (1/2 * (AA + AB + BB) / pop_size) + (AA / pop_size + 1/2 * (AB / pop_size))
-#probAA <- .2
-#probAB <- .4
-
 p[1] <- .2
 p[2] <- .8
-y[1] <- rbinom(pop_size, p[1])
-y[2] <- rbinom(pop_size - y[1], p[2])
 
-#update(x[]) <- y[i]
-#dim(x) <- 2
-#y[] <- rmultinom(pop_size, p)
-# initial(x[]) <- initx[i]
-# initx[] <- user()
-# dim(initx) <- 2
+
+update(x[]) <- y[i]
+dim(x) <- 2
+y[] <- rmultinom(pop_size, p)
+initial(x[]) <- initx[i]
+initx[] <- user()
+dim(initx) <- 2
 dim(p) <- 2
 dim(y) <- 2
 
