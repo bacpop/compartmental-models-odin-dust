@@ -15,7 +15,9 @@ p[2] <- .8
 
 update(x[]) <- y[i]
 dim(x) <- 2
-y[] <- rmultinom(pop_size, p)
+y[] <- rmultinom(pop_size, p) 
+### We checked with Rich and rmultinom for vector is currently not supported for odin.dust
+### instead, I will implement multiple binomial draws
 initial(x[]) <- initx[i]
 initx[] <- user()
 dim(initx) <- 2
