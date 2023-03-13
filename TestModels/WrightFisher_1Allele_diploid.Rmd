@@ -131,15 +131,15 @@ legend("bottomleft", lwd = 1, col = cols[1:length(x[,1,1])], legend = 1:length(x
 dt <- 1
 n_particles <- 10L
 p_new <-params
-WFmodel_1A_h$update_state(pars = p_new, time = 0)
+WFmodel_1A_d$update_state(pars = p_new, time = 0)
 #WFmodel_1A_h$state()
 
 
 n_times <- 500
-x <- array(NA, dim = c(WFmodel_1A_h$info()$len, n_particles, n_times))
+x <- array(NA, dim = c(WFmodel_1A_d$info()$len, n_particles, n_times))
 
 for (t in seq_len(n_times)) {
-  x[ , , t] <- WFmodel_1A_h$run(t)
+  x[ , , t] <- WFmodel_1A_d$run(t)
 }
 time <- x[1, 1, ]
 x <- x[-1, , ]
@@ -153,6 +153,8 @@ if (length(x[,1,1]) <= 8){
 matplot(time, t(x[1, , ]), type = "l",
          xlab = "Time", ylab = "Number of individuals",
          col = cols[1], lty = 1, ylim = range(x))
-matlines(time, t(x[2, , ]), col = cols[2], lty = 1)
+for (species in 2:length(x[,1,1])) {
+  matlines(time, (x[species,1 , ]), col = cols[species:length(x[,1,1])], lty = 1)
+}
 legend("left", lwd = 1, col = cols,  legend = 1:length(x[,1,1]), bty = "n")
 ```
