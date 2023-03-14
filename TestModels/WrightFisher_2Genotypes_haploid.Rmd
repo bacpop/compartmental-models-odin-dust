@@ -49,7 +49,7 @@ n_{C} &\sim B(C, 1 - e^{-\gamma \cdot dt})
 The above equations can straightforwardly be written out using the odin DSL:
 
 ```{r odin_sir, echo = FALSE, results = "asis"}
-r_output(readLines(file.path("WrightFisher_1Allele_haploid.R")))
+r_output(readLines(file.path("WrightFisher_2Genotypes_haploid.R")))
 ```
 
 This is converted to a C++ dust model, and compiled into a library in a single step, using [`odin.dust`](https://mrc-ide.github.io/odin.dust/). Save the above code as a file named `sir.R`. File names must not contain special characters.
@@ -59,7 +59,7 @@ library(odin.dust)
 ```
 
 ```{r}
-WF_1A_h <- odin.dust::odin_dust("WrightFisher_1Allele_haploid.R")
+WF_1A_h <- odin.dust::odin_dust("WrightFisher_2Genotypes_haploid.R")
 ```
 
 ### Define model parameters
