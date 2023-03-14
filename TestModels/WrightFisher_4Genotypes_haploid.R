@@ -1,0 +1,31 @@
+## Definition of the time-step and output as "time"
+dt <- user(1)
+initial(time) <- 0
+update(time) <- (step + 1) * dt
+
+## Core equation for population (assume constant size here, at first):
+
+# number of individuals with Genotype A is determined by drawing from Bin(n, p)
+# with n=pop_size and p = A/pop_size (relative abundance of Genotype A in the population)
+y1 <- rbinom(pop_size, (A/pop_size)) 
+y2 <- rbinom(pop_size - y1, B/(pop_size-y1))
+y3 <- rbinom(pop_size - y1 - y2, C/(pop_size - y1 - y2))
+y4 <- rbinom(pop_size - y1 - y2 -y3, 1)
+
+update(A) <- y1
+update(B) <- y2
+update(C) <- y3
+update(D) <- y4
+
+## Initial states:
+initial(A) <- pop_size * A_ini # deterministic, user-based start value
+initial(B) <- pop_size * B_ini # deterministic, user-based start value
+initial(C) <- pop_size * C_ini # deterministic, user-based start value
+initial(D) <- pop_size * D_ini # deterministic, user-based start value
+
+## User defined parameters - default in parentheses:
+A_ini <- user(.25) # initial frequency of Genotype A
+B_ini <- user(.25) # initial frequency of Genotype B
+C_ini <- user(.25) # initial frequency of Genotype C
+D_ini <- user(.25) # initial frequency of Genotype D
+pop_size <- user() # population size
