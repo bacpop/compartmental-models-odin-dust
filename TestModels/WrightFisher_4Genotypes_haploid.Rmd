@@ -64,7 +64,7 @@ WF_4G_h <- odin.dust::odin_dust("WrightFisher_4Genotypes_haploid.R")
 
 ### Define model parameters
 ```{r}
-params <- list(dt = 1, A_ini = .20, B_ini = .25, C_ini = .30, D_ini = .25, pop_size = 100) 
+params <- list(dt = 1, A_ini = .25, B_ini = .25, C_ini = .25, D_ini = .25, pop_size = 100) 
 ```
 
 
@@ -85,9 +85,14 @@ WFmodel_4G_h$state()
 
 # running the model for 10, 20, 30 time steps:
 ```{r}
-WFmodel_4G_h$run(1)
-WFmodel_4G_h$run(2)
-WFmodel_4G_h$run(3)
+WFmodel_4G_h$run(10)
+WFmodel_4G_h$run(20)
+WFmodel_4G_h$run(30)
+WFmodel_4G_h$run(40)
+WFmodel_4G_h$run(132)
+WFmodel_4G_h$run(133)
+WFmodel_4G_h$run(134)
+WFmodel_4G_h$run(135)
 ```
 
 ```{r}

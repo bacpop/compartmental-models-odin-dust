@@ -7,15 +7,28 @@ update(time) <- (step + 1) * dt
 
 # number of individuals with Genotype A is determined by drawing from Bin(n, p)
 # with n=pop_size and p = A/pop_size (relative abundance of Genotype A in the population)
-y1 <- rbinom(pop_size, (A/pop_size)) 
-y2 <- rbinom(pop_size - y1, B/(pop_size-y1))
-y3 <- rbinom(pop_size - y1 - y2, C/(pop_size - y1 - y2))
-y4 <- rbinom(pop_size - y1 - y2 -y3, 1)
+
+p1 <-  (A/pop_size)
+y1 <- rbinom(pop_size, p1)
+p_tot <- 1- p1
+p2 <- (B/pop_size)
+y2 <- rbinom( pop_size-y1, (p2/p_tot))
+p_tot2 <- p_tot - B/pop_size
+p3 <- ((C/pop_size)/p_tot2)
+y3 <- rbinom(pop_size-y1-y2, p3)
+
+### currently issue with random draws
+### by re-scaling p it can sometimes become (slightly) bigger than 1!
+### not sure why this is not an issue for them:
+### https://github.com/mrc-ide/dust/blob/master/inst/include/dust/random/binomial.hpp
+
+
+#n_inf[2:4] <- rbinom(pop_size - sum(n_inf[1:(i - 1)]), p_inf[i])
 
 update(A) <- y1
 update(B) <- y2
 update(C) <- y3
-update(D) <- y4
+update(D) <- pop_size-y1-y2-y3
 
 ## Initial states:
 initial(A) <- pop_size * A_ini # deterministic, user-based start value
