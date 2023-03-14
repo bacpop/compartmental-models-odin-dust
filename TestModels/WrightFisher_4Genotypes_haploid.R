@@ -7,10 +7,10 @@ update(time) <- (step + 1) * dt
 
 # number of individuals with Genotype A is determined by drawing from Bin(n, p)
 # with n=pop_size and p = A/pop_size (relative abundance of Genotype A in the population)
-y1 <- rbinom(pop_size, (A/pop_size)) 
-y2 <- rbinom(pop_size - y1, B/(pop_size-y1))
-y3 <- rbinom(pop_size - y1 - y2, C/(pop_size - y1 - y2))
-y4 <- rbinom(pop_size - y1 - y2 -y3, 1)
+y1 <- rbinom(pop_size, A/pop_size) 
+y2 <- rbinom(pop_size - y1, B/pop_size)
+y3 <- rbinom(pop_size - y1 - y2, C/pop_size)
+y4 <- rbinom(pop_size - y1 - y2 -y3, D/pop_size)
 
 update(A) <- y1
 update(B) <- y2
