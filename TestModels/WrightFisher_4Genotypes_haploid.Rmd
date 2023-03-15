@@ -64,7 +64,7 @@ WF_4G_h <- odin.dust::odin_dust("WrightFisher_4Genotypes_haploid.R")
 
 ### Define model parameters
 ```{r}
-params <- list(dt = 1, A_ini = .25, B_ini = .25, C_ini = .25, D_ini = .25, pop_size = 100) 
+params <- list(dt = 1, A_ini = .25, B_ini = .25, C_ini = .25, D_ini = .25, pop_size = 300) 
 ```
 
 
@@ -88,11 +88,8 @@ WFmodel_4G_h$state()
 WFmodel_4G_h$run(10)
 WFmodel_4G_h$run(20)
 WFmodel_4G_h$run(30)
-WFmodel_4G_h$run(40)
-WFmodel_4G_h$run(132)
-WFmodel_4G_h$run(133)
-WFmodel_4G_h$run(134)
-WFmodel_4G_h$run(135)
+WFmodel_4G_h$run(50)
+WFmodel_4G_h$run(100000)
 ```
 
 ```{r}
@@ -128,7 +125,7 @@ for (species in 2:length(x[,1,1])) {
   matlines(time, (x[species,1 , ]), col = cols[species:length(x[,1,1])], lty = 1)
 }
 
-legend("bottomleft", lwd = 1, col = cols[1:length(x[,1,1])], legend = 1:length(x[,1,1]), bty = "n")
+legend("right", lwd = 1, col = cols[1:length(x[,1,1])], legend = 1:length(x[,1,1]), bty = "n")
 ```
 
 ```{r fig.height=5, fig.width=7}
@@ -158,8 +155,9 @@ matplot(time, t(x[1, , ]), type = "l",
          xlab = "Time", ylab = "Number of individuals",
          col = cols[1], lty = 1, ylim = range(x))
 for (species in 2:length(x[,1,1])) {
-  matlines(time, (x[species,1 , ]), col = cols[species:length(x[,1,1])], lty = 1)
+  matlines(time, t(x[species,, ]), col = cols[species:length(x[,1,1])], lty = 1)
 }
+#matlines(time, t(x[2,, ]), col = cols[2], lty = 1)
 
 legend("right", lwd = 1, col = cols,  legend = 1:length(x[,1,1]), bty = "n")
 ```
