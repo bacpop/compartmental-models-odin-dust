@@ -49,7 +49,7 @@ n_{C} &\sim B(C, 1 - e^{-\gamma \cdot dt})
 The above equations can straightforwardly be written out using the odin DSL:
 
 ```{r odin_sir, echo = FALSE, results = "asis"}
-r_output(readLines(file.path("WrightFisher_4Genotypes_haploid.R")))
+r_output(readLines(file.path("WrightFisher_nGenotypes_haploid.R")))
 ```
 
 This is converted to a C++ dust model, and compiled into a library in a single step, using [`odin.dust`](https://mrc-ide.github.io/odin.dust/). Save the above code as a file named `sir.R`. File names must not contain special characters.
@@ -59,18 +59,19 @@ library(odin.dust)
 ```
 
 ```{r}
-WF_4G_h <- odin.dust::odin_dust("WrightFisher_4Genotypes_haploid.R")
+WF_nG_h <- odin.dust::odin_dust("WrightFisher_nGenotypes_haploid.R")
 ```
+
 
 ### Define model parameters
 ```{r}
-params <- list(dt = 1, A_ini = .25, B_ini = .25, C_ini = .25, D_ini = .25, pop_size = 400) 
+params_n <- list(dt = 1, species_no = 4,  Pop_ini = rep(.25,4), pop_size = 400, fitness = c(0,0,0,0)) 
 ```
 
 
 ### Running the model:
 ```{r}
-WFmodel_4G_h <- WF_4G_h$new(pars = params,
+WFmodel_nG_h <- WF_nG_h$new(pars = params_n,
                          time = 1,
                          n_particles = 10L,
                          n_threads = 4L,
@@ -79,43 +80,42 @@ WFmodel_4G_h <- WF_4G_h$new(pars = params,
 
 # initial state: 
 ```{r}
-WFmodel_4G_h$state()
+WFmodel_nG_h$state()
 ```
 
 
 # running the model for 10, 20, 30 time steps:
 ```{r}
-WFmodel_4G_h$run(1)
-WFmodel_4G_h$run(2)
-WFmodel_4G_h$run(3)
-WFmodel_4G_h$run(40)
-WFmodel_4G_h$run(41)
-WFmodel_4G_h$run(42)
-WFmodel_4G_h$run(43)
-WFmodel_4G_h$run(44)
-WFmodel_4G_h$run(45)
-WFmodel_4G_h$run(50)
+WFmodel_nG_h$run(1)
+WFmodel_nG_h$run(2)
+WFmodel_nG_h$run(3)
+WFmodel_nG_h$run(40)
+WFmodel_nG_h$run(41)
+WFmodel_nG_h$run(42)
+WFmodel_nG_h$run(43)
+WFmodel_nG_h$run(44)
+WFmodel_nG_h$run(45)
+WFmodel_nG_h$run(50)
 ```
 
 ```{r}
 dt <- 1
 n_particles <- 10L
-p_new <- params
-#WFmodel_4G_h$update_state(pars = p_new, time = 0)
-WFmodel_4G_h <- WF_4G_h$new(pars = params,
+WFmodel_nG_h <- WF_nG_h$new(pars = params_n,
                          time = 1,
                          n_particles = 10L,
                          n_threads = 4L,
                          seed = 1L)
-WFmodel_4G_h$state()
+#WFmodel_nG_h$update_state(pars = params_n, time = 0,seed = 1L)
+WFmodel_nG_h$state()
 ```
 
 ```{r fig.height=5, fig.width=7}
 n_times <- 500
-x <- array(NA, dim = c(WFmodel_4G_h$info()$len, n_particles, n_times))
+x <- array(NA, dim = c(WFmodel_nG_h$info()$len, n_particles, n_times))
 
 for (t in seq_len(n_times)) {
-  x[ , , t] <- WFmodel_4G_h$run(t)
+  x[ , , t] <- WFmodel_nG_h$run(t)
 }
 time <- x[1, 1, ]
 x <- x[-1, , ]
@@ -141,19 +141,18 @@ legend("right", lwd = 1, col = cols[1:length(x[,1,1])], legend = 1:length(x[,1,1
 ```{r fig.height=5, fig.width=7}
 dt <- 1
 n_particles <- 10L
-p_new <-params
-#WFmodel_4G_h$update_state(pars = p_new, time = 0)
-WFmodel_4G_h <- WF_4G_h$new(pars = params,
+#WFmodel_nG_h$update_state(pars = params_n, time = 0)
+WFmodel_nG_h <- WF_nG_h$new(pars = params_n,
                          time = 1,
                          n_particles = 10L,
                          n_threads = 4L,
                          seed = 1L)
 
 n_times <- 500
-x <- array(NA, dim = c(WFmodel_4G_h$info()$len, n_particles, n_times))
+x <- array(NA, dim = c(WFmodel_nG_h$info()$len, n_particles, n_times))
 
 for (t in seq_len(n_times)) {
-  x[ , , t] <- WFmodel_4G_h$run(t)
+  x[ , , t] <- WFmodel_nG_h$run(t)
 }
 time <- x[1, 1, ]
 x <- x[-1, , ]
