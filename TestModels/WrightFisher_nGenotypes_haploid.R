@@ -4,7 +4,7 @@ initial(time) <- 0
 update(time) <- (step + 1) * dt
 
 # calculate probabilities based on relative sizes of groups and their fitness (does not necessarily sum to 1):
-probs[] <- (1 + fitness[i]) * Pop[i]/pop_size 
+probs[] <- (1 + GenotypeFitness[i]) * Pop[i]/pop_size 
 
 # number of individuals with Genotype 1 is determined by drawing from Bin(n, p)
 # with n=pop_size and p = probs[1]/sum(probs) (relative abundance of Genotype 1 in the population)
@@ -31,15 +31,24 @@ Pop_ini_norm[] <- Pop_ini[i]/sum(Pop_ini[1:species_no]) # normalizing input vect
 
 initial(Pop[]) <- as.integer(pop_size * Pop_ini_norm[i]) # deterministic, user-based start value
 
+FitnessMatrix[,] <- (GeneFitness[i]*Genotypes[i,j]) # calculate the fitness for genes in each genotype
+GenotypeFitness[] <- sum(FitnessMatrix[,i]) #calculate overall fitness for all genotype (sum over genes*fitness)
 
 ## User defined parameters - default in parentheses:
-species_no <- user()
+pop_size <- user() # population size (number of individuals in the whole population, constant)
+species_no <- user() #number of species / strains / genotypes in the population
+gene_no <- user() # number of genes in the data set
 Pop_ini[] <- user() # initial frequency of Genotypes
-fitness[] <- user() # fitness vector for different genotypes
+GeneFitness[] <- user() # fitness vector for different genes
+Genotypes[,] <- user() # each column is a genotype, giving the information which genes are present in that genotype and which are not
+
 dim(Pop_ini) <- species_no
 dim(Pop_ini_norm) <- species_no
+dim(FitnessMatrix) <- c(gene_no,species_no) # a matrix that stores the presence and the fitness for each gene and genotype
+dim(Genotypes) <- c(gene_no, species_no) # we have in each column the genes (present/not present, i.e. 1/0) of one genotype
 dim(Pop) <- species_no
 dim(y) <- species_no
 dim(probs) <- species_no
-dim(fitness) <- species_no
-pop_size <- user() # population size
+dim(GeneFitness) <- gene_no
+dim(GenotypeFitness) <- species_no
+
