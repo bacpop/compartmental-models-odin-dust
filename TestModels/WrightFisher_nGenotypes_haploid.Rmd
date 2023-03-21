@@ -65,7 +65,7 @@ WF_nG_h <- odin.dust::odin_dust("WrightFisher_nGenotypes_haploid.R")
 
 ### Define model parameters
 ```{r}
-params_n <- list(dt = 1, species_no = 4,  Pop_ini = rep(.25,4), pop_size = 400, fitness = c(0,0,0,0)) 
+params_n <- list(dt = 1, species_no = 4,  gene_no = 5, Pop_ini = rep(.25,4), pop_size = 400, Genotypes = cbind(c(1,0,0,0,0),c(0,0,1,0,0),c(1,0,0,0,1),c(0,0,0,0,1)), GeneFitness = c(0.02, 0, 0, 0, 0.03)) 
 ```
 
 
@@ -75,7 +75,7 @@ WFmodel_nG_h <- WF_nG_h$new(pars = params_n,
                          time = 1,
                          n_particles = 10L,
                          n_threads = 4L,
-                         seed = 2L)
+                         seed = 1L)
 ```
 
 # initial state: 
@@ -86,16 +86,9 @@ WFmodel_nG_h$state()
 
 # running the model for 10, 20, 30 time steps:
 ```{r}
-WFmodel_nG_h$run(1)
-WFmodel_nG_h$run(2)
-WFmodel_nG_h$run(3)
-WFmodel_nG_h$run(40)
-WFmodel_nG_h$run(41)
-WFmodel_nG_h$run(42)
-WFmodel_nG_h$run(43)
-WFmodel_nG_h$run(44)
-WFmodel_nG_h$run(45)
-WFmodel_nG_h$run(50)
+WFmodel_nG_h$run(10)
+WFmodel_nG_h$run(20)
+WFmodel_nG_h$run(30)
 ```
 
 ```{r}
@@ -106,7 +99,7 @@ WFmodel_nG_h <- WF_nG_h$new(pars = params_n,
                          n_particles = 10L,
                          n_threads = 4L,
                          seed = 1L)
-#WFmodel_nG_h$update_state(pars = params_n, time = 0,seed = 1L)
+
 WFmodel_nG_h$state()
 ```
 
