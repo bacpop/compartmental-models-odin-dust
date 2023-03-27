@@ -1,0 +1,4 @@
+Package: dust2252a231
+LinkingTo: cpp11
+Version: 0.0.1
+SystemRequirements: C++11
