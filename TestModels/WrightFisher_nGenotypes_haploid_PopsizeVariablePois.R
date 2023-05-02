@@ -18,8 +18,6 @@ pi_genotypes[] <- sum(pi_freq[1:gene_no,i])
 
 # Genotype specific probability to produce offspring
 # those are the individuals' probabilities multiplied by the number of individual that have this genotype
-#probs[] <- (1 + GenotypeFitness[i])^pi_genotypes[i] * Pop[i]/Pop_size
-#probs[] <- (1 + GenotypeFitness[i])^pi_genotypes[i] * Pop[i]
 probs[] <- (1 + sigma)^pi_genotypes[i] * Pop[i]
 
 
@@ -37,11 +35,26 @@ probs[] <- (1 + sigma)^pi_genotypes[i] * Pop[i]
 
 
 y[] <- if (probs[i]/sum(probs[1:species_no]) < 1) #not strictly necessary for poisson but probs>1 should be avoided anyway
-  rpois(capacity * (probs[i] / sum(probs[1:species_no]))) else rpois(capacity * 1)
+  rpois(capacity * (probs[i] / sum(probs[1:species_no])) * (1-m) * (1- (as.integer(time >= vacc_time) * vaccTypes[i] * v))) else rpois(capacity * 1 *(1-m) * (1- (as.integer(time >= vacc_time) * vaccTypes[i] * v)))
+# so, hmm, I am thinking that the population size will not really be constant because of the (1-v) term
+# ((1-m) should be compensated by the migrating individuals)
+# this might be a theoretical problem if v is small. but still a problem?
+# If I understand it correctly, Corander et al. do not compensate for that.
+# Please discuss with John.
 
+# effect of vaccine term: (vaccTypes[i] * (1-v))
+# if genotype is of vaccine phenotype, its fitness is reduced by v*fitness
+# I should find a way to introduce vaccination at a certain time point.
+
+# m is the migration rate
+# fitness of individuals in the community is reduced by this rate
+# determining migration number:
+mig_num <- rbinom(capacity, m)
+Pop_mig[] <- rbinom(mig_num, 1/species_no)
+# this is a very simple implementation of migration. It does not care what the rates of the different genotypes are (I think we define them as unknown) and just makes uniform, random draws from all existing genotypes.
 
 ## Core equation for population (assume constant size here):
-update(Pop[]) <- y[i] 
+update(Pop[]) <- y[i] + Pop_mig[i]
 #update(probs2[]) <- eq[i]
 
 initial(Pop[]) <- Pop_ini[i] # deterministic, user-based start value
@@ -63,14 +76,19 @@ Pop_ini[] <- user() # initial frequency of Genotypes
 Pop_eq[] <- user()
 capacity <- user()
 sigma <- user()
+m <- user() # migration rate
 #GeneFitness[] <- user() # fitness vector for different genes
 Genotypes[,] <- user() # each column is a genotype, giving the information which genes are present in that genotype and which are not
+vaccTypes[] <- user() # Boolean vector (0/1) whether genotype is affected by vaccine (1) or not (0)
+v <- user() # effect size of vaccine on vaccine genotypes
+vacc_time <- user() # time when the vaccination happens / starts to have an effect
 
 #dim(probs2) <- gene_no
 dim(gene_freq) <- c(gene_no, species_no)
 dim(freq) <- gene_no
 dim(Pop_ini) <- species_no
 dim(Pop_eq) <- species_no
+dim(Pop_mig) <- species_no
 dim(gene_eq) <- c(gene_no, species_no) #frequency of genes at equilibrium
 dim(eq) <- gene_no
 dim(pi_freq) <- c(gene_no, species_no)
@@ -80,5 +98,6 @@ dim(Genotypes) <- c(gene_no, species_no) # we have in each column the genes (pre
 dim(Pop) <- species_no
 dim(y) <- species_no
 dim(probs) <- species_no
+dim(vaccTypes) <- species_no
 #dim(GeneFitness) <- gene_no
 #dim(GenotypeFitness) <- species_no
