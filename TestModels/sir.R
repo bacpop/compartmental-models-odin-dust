@@ -3,12 +3,6 @@ dt <- user(1)
 initial(time) <- 0
 update(time) <- (step + 1) * dt
 
-alpha[,] <- user() # competition matrix
-
-##### hmmm, how can I code the dynamically, depending on the user's choices? 
-# try and solve this on Tuesday :-) 
-
-
 ## Core equations for transitions between compartments:
 update(S) <- S - n_SI
 update(I) <- I + n_SI - n_IR
