@@ -54,3 +54,25 @@ for (i in 1:no_clusters){
 
 # attempt 2: record relative frequencies. Probably not advantageous.
 # attempt 3: keep track of all existing variants. This can be done later
+
+
+#need the information of when probes where taken
+accNo_to_filename <- read.delim("~/Documents/PhD_Project/Code/1st_project/odin-dust-examples/Data/filereport_read_run_PRJEB2632_tsv.txt")
+accNo_to_filename <- accNo_to_filename[,c(1,8)]
+accNo_to_filename[3] <- unlist(strsplit(accNo_to_filename[,2],"/"))[6]
+accNo_to_filename[3] <- unlist(strsplit(accNo_to_filename[,3],"[.]"))[1]
+accNo_to_filename <- accNo_to_filename[,c(1,3)]
+colnames(accNo_to_filename) <- c(colnames(accNo_to_filename)[1], "filenames")
+
+Croucher_seqYears <- read_excel("~/Documents/PhD_Project/Code/1st_project/odin-dust-examples/Data/Croucher_41588_2013_BFng2625_MOESM28_ESM.xlsx")
+Croucher_seqYears <- Croucher_seqYears[,c(1,5)]
+
+# read in information on vaccine types
+library(readxl)
+vaccine_types <- read_excel("~/Documents/PhD_Project/Code/1st_project/odin-dust-examples/Data/Corander_suppData3.xlsx")
+vaccine_types <- vaccine_types[,c(2,3,4,6)]
+vaccine_types_mass <- subset(vaccine_types, vaccine_types$Population == "Massachusetts")
+isVT <- c()
+for (i in 1:nrow(vaccine_types_mass)){
+  isVT[vaccine_types_mass$`Accession Code`[i]] <- (vaccine_types_mass$`Vaccine Type`[i] == "VT")
+}

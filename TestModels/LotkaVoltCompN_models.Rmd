@@ -3,8 +3,10 @@ title: "Lotka Volterra models"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{sir_models}
-  %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r, include = FALSE}
@@ -138,7 +140,7 @@ for (species in 2:length(x[,1,1])) {
   matlines(time, (x[species,1 , ]), col = cols[species:length(x[,1,1])], lty = 1)
 }
 
-legend("bottomleft", lwd = 1, col = cols[1:length(x[,1,1])], legend = 1:length(x[,1,1]), bty = "n")
+legend("right", lwd = 1, col = cols[1:length(x[,1,1])], legend = 1:length(x[,1,1]), bty = "n")
 ```
 
 #### I compared this to the "hand made" 2-species model and the behaviour seems very similar! :-)
