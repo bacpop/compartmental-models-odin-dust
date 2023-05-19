@@ -13,12 +13,17 @@ gene_freq[,] <-  Genotypes[i,j] * Pop[j]
 freq[] <- sum(gene_freq[i,1:species_no]) / Pop_size
 
 # overall deviation of loci for genomes
-pi_freq[,] <- Genotypes[i,j] * (eq[i] - freq[i])
-pi_genotypes[] <- sum(pi_freq[1:gene_no,i])
+# idea 1: make a Boolean vector for strongly selected genes
+delta_bool[] <- if ((delta[i] <= prop_f * gene_no)) 1 else 0
+pi_f_freq[,] <-  Genotypes[i,j] * (eq[i] - freq[i]) * delta_bool[i]
+pi_f_genotypes[] <- sum(pi_f_freq[1:gene_no,i])
+
+pi_w_freq[,] <-  Genotypes[i,j] * (eq[i] - freq[i]) * (1 - delta_bool[i])
+pi_w_genotypes[] <- sum(pi_w_freq[1:gene_no,i])
 
 # Genotype specific probability to produce offspring
 # those are the individuals' probabilities multiplied by the number of individual that have this genotype
-probs[] <- (1 + sigma)^pi_genotypes[i] * Pop[i]
+probs[] <- ((1 + sigma_f)^pi_f_genotypes[i] + (1 + sigma_w)^pi_w_genotypes[i]) * Pop[i]
 
 
 # Okay, my current interpretation is:
@@ -75,7 +80,10 @@ gene_no <- user() # number of genes in the data set
 Pop_ini[] <- user() # initial frequency of Genotypes
 Pop_eq[] <- user()
 capacity <- user()
-sigma <- user()
+sigma_f <- user()
+sigma_w <- user()
+prop_f <- user()
+delta[] <- user()
 m <- user() # migration rate
 #GeneFitness[] <- user() # fitness vector for different genes
 Genotypes[,] <- user() # each column is a genotype, giving the information which genes are present in that genotype and which are not
@@ -91,8 +99,12 @@ dim(Pop_eq) <- species_no
 dim(Pop_mig) <- species_no
 dim(gene_eq) <- c(gene_no, species_no) #frequency of genes at equilibrium
 dim(eq) <- gene_no
-dim(pi_freq) <- c(gene_no, species_no)
-dim(pi_genotypes) <- species_no
+dim(pi_f_freq) <- c(gene_no, species_no)
+dim(pi_f_genotypes) <- species_no
+dim(pi_w_freq) <- c(gene_no, species_no)
+dim(pi_w_genotypes) <- species_no
+dim(delta) <- gene_no
+dim(delta_bool) <- gene_no
 #dim(FitnessMatrix) <- c(gene_no,species_no) # a matrix that stores the presence and the fitness for each gene and genotype
 dim(Genotypes) <- c(gene_no, species_no) # we have in each column the genes (present/not present, i.e. 1/0) of one genotype
 dim(Pop) <- species_no
