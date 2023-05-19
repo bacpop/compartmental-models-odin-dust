@@ -270,6 +270,8 @@ gamma <- mcstate::pmcmc_parameter("gamma", 0.1, min = 0.075, prior = function(p)
 proposal_matrix <- diag(0.1, 2)
 mcmc_pars <- mcstate::pmcmc_parameters$new(list(beta = beta, gamma = gamma),
                                            proposal_matrix)
+mcmc_pars$initial()
+mcmc_pars$model(mcmc_pars$initial())
 ```
 
 
