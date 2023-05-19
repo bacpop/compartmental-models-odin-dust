@@ -6,7 +6,7 @@ vignette: >
   %\VignetteEncoding{UTF-8}
   %\VignetteEngine{knitr::rmarkdown}
 editor_options: 
-  chunk_output_type: inline
+  chunk_output_type: console
 ---
 
 ```{r, include = FALSE}
@@ -496,6 +496,103 @@ cluster_compare <- function(state, observed, pars = NULL) {
 ```
 
 ```{r}
+# heavily based on this: https://mrc-ide.github.io/mcstate/articles/sir_models.html
+# trying to generalise the comparison function so that we can later fit to all strain data
+# log-likelihood of Poisson count
+ll_pois <- function(obs, model) {
+  exp_noise <- 1e6
+  if (is.na(obs)) {
+    # Creates vector of zeros in ll with same length, if no data
+    ll_obs <- numeric(length(model))
+  } else {
+    lambda <- model +
+      rexp(n = length(model), rate = exp_noise)
+    ll_obs <- dpois(x = obs, lambda = lambda, log = TRUE)
+  }
+  ll_obs
+}
+
+combined_compare <- function(state, observed, pars = NULL) {
+  result <- 0
+  #for (i in 1:62){
+  #  ind <- 4 +i 
+  #  print(observed[as.character(ind)])
+  #  print(state[1+i, , drop = TRUE])
+  #  result <- result + ll_pois(observed[as.character(ind)], state[1+i, , drop = TRUE])
+  #}
+  result <- result + ll_pois(observed$"1", state[2, , drop = TRUE])
+  result <- result + ll_pois(observed$"2", state[3, , drop = TRUE])
+  result <- result + ll_pois(observed$"3", state[4, , drop = TRUE])
+  result <- result + ll_pois(observed$"4", state[5, , drop = TRUE])
+  result <- result + ll_pois(observed$"5", state[6, , drop = TRUE])
+  result <- result + ll_pois(observed$"6", state[7, , drop = TRUE])
+  result <- result + ll_pois(observed$"7", state[8, , drop = TRUE])
+  result <- result + ll_pois(observed$"8", state[9, , drop = TRUE])
+  result <- result + ll_pois(observed$"9", state[10, , drop = TRUE])
+  result <- result + ll_pois(observed$"10", state[11, , drop = TRUE])
+  result <- result + ll_pois(observed$"11", state[12, , drop = TRUE])
+  result <- result + ll_pois(observed$"12", state[13, , drop = TRUE])
+  result <- result + ll_pois(observed$"13", state[14, , drop = TRUE])
+  result <- result + ll_pois(observed$"14", state[5, , drop = TRUE])
+  result <- result + ll_pois(observed$"15", state[16, , drop = TRUE])
+  result <- result + ll_pois(observed$"16", state[17, , drop = TRUE])
+  result <- result + ll_pois(observed$"17", state[18, , drop = TRUE])
+  result <- result + ll_pois(observed$"18", state[19, , drop = TRUE])
+  result <- result + ll_pois(observed$"19", state[20, , drop = TRUE])
+  result <- result + ll_pois(observed$"20", state[21, , drop = TRUE])
+  result <- result + ll_pois(observed$"21", state[22, , drop = TRUE])
+  result <- result + ll_pois(observed$"22", state[23, , drop = TRUE])
+  result <- result + ll_pois(observed$"23", state[24, , drop = TRUE])
+  result <- result + ll_pois(observed$"24", state[25, , drop = TRUE])
+  result <- result + ll_pois(observed$"25", state[26, , drop = TRUE])
+  result <- result + ll_pois(observed$"26", state[27, , drop = TRUE])
+  result <- result + ll_pois(observed$"27", state[28, , drop = TRUE])
+  result <- result + ll_pois(observed$"28", state[29, , drop = TRUE])
+  result <- result + ll_pois(observed$"29", state[30, , drop = TRUE])
+  result <- result + ll_pois(observed$"30", state[31, , drop = TRUE])
+  result <- result + ll_pois(observed$"31", state[32, , drop = TRUE])
+  result <- result + ll_pois(observed$"32", state[33, , drop = TRUE])
+  result <- result + ll_pois(observed$"33", state[34, , drop = TRUE])
+  result <- result + ll_pois(observed$"34", state[35, , drop = TRUE])
+  result <- result + ll_pois(observed$"35", state[36, , drop = TRUE])
+  result <- result + ll_pois(observed$"36", state[37, , drop = TRUE])
+  result <- result + ll_pois(observed$"37", state[38, , drop = TRUE])
+  result <- result + ll_pois(observed$"38", state[39, , drop = TRUE])
+  result <- result + ll_pois(observed$"39", state[40, , drop = TRUE])
+  result <- result + ll_pois(observed$"40", state[41, , drop = TRUE])
+  result <- result + ll_pois(observed$"41", state[42, , drop = TRUE])
+  result <- result + ll_pois(observed$"42", state[43, , drop = TRUE])
+  result <- result + ll_pois(observed$"43", state[44, , drop = TRUE])
+  result <- result + ll_pois(observed$"44", state[45, , drop = TRUE])
+  result <- result + ll_pois(observed$"45", state[46, , drop = TRUE])
+  result <- result + ll_pois(observed$"46", state[47, , drop = TRUE])
+  result <- result + ll_pois(observed$"47", state[48, , drop = TRUE])
+  result <- result + ll_pois(observed$"48", state[49, , drop = TRUE])
+  result <- result + ll_pois(observed$"49", state[50, , drop = TRUE])
+  result <- result + ll_pois(observed$"50", state[51, , drop = TRUE])
+  result <- result + ll_pois(observed$"51", state[52, , drop = TRUE])
+  result <- result + ll_pois(observed$"52", state[53, , drop = TRUE])
+  result <- result + ll_pois(observed$"53", state[54, , drop = TRUE])
+  result <- result + ll_pois(observed$"54", state[55, , drop = TRUE])
+  result <- result + ll_pois(observed$"55", state[56, , drop = TRUE])
+  result <- result + ll_pois(observed$"56", state[57, , drop = TRUE])
+  result <- result + ll_pois(observed$"57", state[58, , drop = TRUE])
+  result <- result + ll_pois(observed$"58", state[59, , drop = TRUE])
+  result <- result + ll_pois(observed$"59", state[60, , drop = TRUE])
+  result <- result + ll_pois(observed$"60", state[61, , drop = TRUE])
+  result <- result + ll_pois(observed$"61", state[62, , drop = TRUE])
+  result <- result + ll_pois(observed$"62", state[63, , drop = TRUE])
+  
+  #ll_one <- ll_pois(observed$"1", state[2, , drop = TRUE])
+  #ll_two <- ll_pois(observed$"2", state[3, , drop = TRUE])
+  #ll_three <- ll_pois(observed$"3", state[4, , drop = TRUE])
+  #ll_four <- ll_pois(observed$"4", state[5, , drop = TRUE])
+  #ll_one + ll_two + ll_three + ll_four
+  result
+}
+```
+
+```{r}
 ### Inferring parameters
 
 n_particles <- 10
@@ -510,7 +607,7 @@ n_particles <- 10
 filter <- mcstate::particle_filter$new(data = mass_data,
                                        model = WF_nG_h_vP,
                                        n_particles = n_particles,
-                                       compare = cluster_compare,
+                                       compare = combined_compare,
                                        seed = 1L)
 ```
 
@@ -533,19 +630,186 @@ plot_particle_filter <- function(history, true_history, times, obs_end = NULL) {
     obs_end <- max(times)
   }
 
+
   par(mar = c(4.1, 5.1, 0.5, 0.5), las = 1)
-  cols <- c(S = "#8c8cd9", I = "#cc0044", R = "#999966")
-  matplot(times, t(history[1, , -1]), type = "l",
+  cols <- rainbow(62)
+  
+  matplot(times, t(history[2, , -1]), type = "l",
           xlab = "Time", ylab = "Number of individuals",
-          col = cols[["S"]], lty = 1, ylim = range(history))
-  matlines(times, t(history[2, , -1]), col = cols[["I"]], lty = 1)
-  matlines(times, t(history[3, , -1]), col = cols[["R"]], lty = 1)
-  matpoints(times[1:obs_end], t(true_history[1:3, , -1]), pch = 19,
-            col = cols)
-  legend("left", lwd = 1, col = cols, legend = names(cols), bty = "n")
+          col = cols[1], lty = 1, ylim = range(history[2:5, , -1]))
+  for (species in 3:length(history[,1,1])) {
+    matlines(times, t(history[species, , -1]), col = cols[species], lty = 1)
+  }  
+  for (species in 2:length(history[,1,1])) {
+    matpoints(times[1:obs_end], (true_history[1:3,species , -1]), pch = 19, col = cols[species-1])
+  }
+  legend("left", lwd = 1, col = cols, legend = 1:62, bty = "n")
+  
+  
+  #par(mar = c(4.1, 5.1, 0.5, 0.5), las = 1)
+  #cols <- c(S = "#8c8cd9", I = "#cc0044", R = "#999966")
+  #matplot(times, t(history[1, , -1]), type = "l",
+  #        xlab = "Time", ylab = "Number of individuals",
+  #        col = cols[["S"]], lty = 1, ylim = range(history))
+  #matlines(times, t(history[2, , -1]), col = cols[["I"]], lty = 1)
+  #matlines(times, t(history[3, , -1]), col = cols[["R"]], lty = 1)
+  #matpoints(times[1:obs_end], t(true_history[1:3, , -1]), pch = 19,
+  #          col = cols)
+  #legend("left", lwd = 1, col = cols, legend = names(cols), bty = "n")
 }
 
-true_history <- cluster_freq_df$cluster_freq_all_times
-plot_particle_filter(filter$history(), true_history, 1:180)
+true_history <- fitting_cluster_freq_df
+plot_particle_filter(filter$history(), true_history, 1:3)
+```
+```{r}
+# Using MCMC to infer parameters
+pmcmc_sigma_f <- mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0)
+pmcmc_sigma_w <- mcstate::pmcmc_parameter("sigma_w", 0.05, min = 0)
+pmcmc_prop_f <- mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1)
+pmcmc_m <- mcstate::pmcmc_parameter("m", 0.03, min = 0)
+pmcmc_v <- mcstate::pmcmc_parameter("v", 0.05, min = 0)
+species_no <- no_clusters
+gene_no <- nrow(cluster_gene_presence_absence)
+Pop_ini <- cluster_freq_1
+Pop_eq <- cluster_freq_1
+Genotypes <-matrix_cluster_gene_presence_absence
+capacity <- sum(cluster_freq_1)
+delta <- delta_ranking
+vaccTypes <- isVT_vec
+vacc_time <- 100
+dt <- 1/36
+
+
+complex_params <- c(Pop_ini, Pop_eq, Genotypes, capacity, delta, vaccTypes, species_no, gene_no, vacc_time, dt, 0.15, 0.05, 0.25, 0.03, 0.05)
+#set_names <- function(x, nms) {
+#  names(x) <- nms
+#  x
+#}
+#transform <- set_names(lapply(complex_params, make_transform), complex_params)
+make_transform <- function(p) {
+    list(Pop_ini = p[1:62],
+         Pop_eq = p[63 : 124],
+         Genotypes = matrix(p[125 : (125 + (nrow(matrix_cluster_gene_presence_absence) * ncol(matrix_cluster_gene_presence_absence))-1)], nrow = gene_no, ncol = no_clusters),
+         capacity = p[(125 + (nrow(matrix_cluster_gene_presence_absence) * ncol(matrix_cluster_gene_presence_absence))-1) +1],
+         delta = p[((125 + (nrow(matrix_cluster_gene_presence_absence) * ncol(matrix_cluster_gene_presence_absence))-1) + 2) : (((125 + (nrow(matrix_cluster_gene_presence_absence) * ncol(matrix_cluster_gene_presence_absence))-1) + 2) + gene_no -1)],
+         vaccTypes = p[(((125 + (nrow(matrix_cluster_gene_presence_absence) * ncol(matrix_cluster_gene_presence_absence))-1) + 2) + gene_no) : (((125 + (nrow(matrix_cluster_gene_presence_absence) * ncol(matrix_cluster_gene_presence_absence))-1) + 2) + gene_no + 1 + no_clusters -2)],
+         species_no = p[(((125 + (nrow(matrix_cluster_gene_presence_absence) * ncol(matrix_cluster_gene_presence_absence))-1) + 2) + gene_no + 1 + no_clusters -1)],
+         gene_no = p[(((125 + (nrow(matrix_cluster_gene_presence_absence) * ncol(matrix_cluster_gene_presence_absence))-1) + 2) + gene_no + 1 + no_clusters)],
+         vacc_time = p[(((125 + (nrow(matrix_cluster_gene_presence_absence) * ncol(matrix_cluster_gene_presence_absence))-1) + 2) + gene_no + 1 + no_clusters) + 1],
+         dt = p[(((125 + (nrow(matrix_cluster_gene_presence_absence) * ncol(matrix_cluster_gene_presence_absence))-1) + 2) + gene_no + 1 + no_clusters) + 2],
+         sigma_f = p[(((125 + (nrow(matrix_cluster_gene_presence_absence) * ncol(matrix_cluster_gene_presence_absence))-1) + 2) + gene_no + 1 + no_clusters) + 3],
+         sigma_w = p[(((125 + (nrow(matrix_cluster_gene_presence_absence) * ncol(matrix_cluster_gene_presence_absence))-1) + 2) + gene_no + 1 + no_clusters) + 4],
+         prop_f = p[(((125 + (nrow(matrix_cluster_gene_presence_absence) * ncol(matrix_cluster_gene_presence_absence))-1) + 2) + gene_no + 1 + no_clusters) + 5],
+         m = p[(((125 + (nrow(matrix_cluster_gene_presence_absence) * ncol(matrix_cluster_gene_presence_absence))-1) + 2) + gene_no + 1 + no_clusters) + 6],
+         v = p[(((125 + (nrow(matrix_cluster_gene_presence_absence) * ncol(matrix_cluster_gene_presence_absence))-1) + 2) + gene_no + 1 + no_clusters) + 7])
+  }
+
+transform <- function(x) {
+  make_transform(complex_params)}
+proposal_matrix <- diag(0.1, 5) # the proposal matrix defines the covariance-variance matrix for a mult normal dist
+# here, all parameters are proposed independently. 
+# think about this, this might not actually be true
+#mcmc_pars <- mcstate::pmcmc_parameters$new(list(pmcmc_sigma_f, pmcmc_sigma_w, pmcmc_prop_f, pmcmc_m, pmcmc_v), proposal_matrix, transform)
+mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0), mcstate::pmcmc_parameter("sigma_w", 0.05, min = 0), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0), mcstate::pmcmc_parameter("v", 0.05, min = 0)), proposal_matrix, transform)
+#= make_transform(c(Pop_ini, Pop_eq, Genotypes, capacity, delta, vaccTypes, species_no, gene_no, vacc_time)))
+#mcmc_pars$names()
+#mcmc_pars$model(mcmc_pars$initial())
+mcmc_pars$initial()
+# read this: https://mrc-ide.github.io/mcstate/reference/pmcmc_parameters.html
+# it explains how to not fit all parameters but just the ones I want
+# non-scalar parameters have to be transformed for this.
+```
+
+```{r}
+n_steps <- 500
+n_burnin <- 200
+```
+
+```{r}
+control <- mcstate::pmcmc_control(
+    n_steps,
+    save_state = TRUE,
+    save_trajectories = TRUE,
+    progress = TRUE)
+pmcmc_run <- mcstate::pmcmc(mcmc_pars, filter, control = control)
+# Running chain 1 / 1
+# Error in filter_run(self, private, pars, save_history, save_restart, min_log_likelihood) : 
+# could not find function "filter_run"
+### I do not understand this error message.
+### might be that I still have issues with my parameters :-/
+
+plot_particle_filter(pmcmc_run$trajectories$state, true_history, 1:3)
+```
+
+```{r}
+processed_chains <- mcstate::pmcmc_thin(pmcmc_run, burnin = n_burnin, thin = 2)
+parameter_mean_hpd <- apply(processed_chains$pars, 2, mean)
+parameter_mean_hpd
+```
+
+```{r}
+library(coda)
+mcmc1 <- coda::as.mcmc(cbind(pmcmc_run$probabilities, pmcmc_run$pars))
+
+summary(mcmc1)
+```
+```{r}
+plot(mcmc1)
+```
+### Tuning the pMCMC
+```{r}
+coda::effectiveSize(mcmc1)
+```
+
+```{r}
+1 - coda::rejectionRate(mcmc1)
+```
+# acceptance rate for all parameters the same?! why?
+# and also it is wayyyy to low (0.5 as a start, then 0.234 is thought to be optimal)
+# --> proposal distribution is not good
+```{r}
+proposal_matrix <- cov(pmcmc_run$pars)
+mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0), mcstate::pmcmc_parameter("sigma_w", 0.05, min = 0), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0), mcstate::pmcmc_parameter("v", 0.05, min = 0)), proposal_matrix, transform)
+proposal_matrix
+```
+
+```{r}
+control <- mcstate::pmcmc_control(
+    n_steps,
+    save_state = TRUE,
+    save_trajectories = TRUE,
+    progress = TRUE,
+    n_chains = 2)
+pmcmc_tuned_run <- mcstate::pmcmc(mcmc_pars, filter, control = control)
+#> Running chain 1 / 4
+#> Finished 500 steps in 13 secs
+#> Running chain 2 / 4
+#> Finished 500 steps in 13 secs
+#> Running chain 3 / 4
+#> Finished 500 steps in 13 secs
+#> Running chain 4 / 4
+#> Finished 500 steps in 13 secs
+
+mcmc2 <- coda::as.mcmc(cbind(
+  pmcmc_tuned_run$probabilities, pmcmc_tuned_run$pars))
+
+summary(mcmc2)
+plot(mcmc2)
+```
+
+```{r}
+coda::effectiveSize(mcmc2)
+# log_prior log_likelihood  log_posterior        sigma_f        sigma_w         prop_f              m              v 
+#     0.000000       6.211637       6.211637       2.956989       1.012543       3.381379       1.946453       1.655769 
+1 - coda::rejectionRate(mcmc2)
+# log_prior log_likelihood  log_posterior        sigma_f        sigma_w         prop_f              m              v 
+#   0.00000000     0.01301301     0.01301301     0.01301301     0.01301301     0.01301301     0.01301301     0.01301301 
+# oh oh 
+# acceptance rate is even worse
+# and the log prior is constantly 0, I am sure that is the main issue
+
+
+
+# most of the above about fitting is taken from https://mrc-ide.github.io/mcstate/articles/sir_models.html
 ```
 

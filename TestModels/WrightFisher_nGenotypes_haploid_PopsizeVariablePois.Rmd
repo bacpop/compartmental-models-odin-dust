@@ -327,6 +327,33 @@ cluster_compare <- function(state, observed, pars = NULL) {
     rexp(n = length(clusters_modelled), rate = exp_noise)
   dpois(x = clusters_observed, lambda = lambda, log = TRUE)
 }
+
+```
+
+```{r}
+# heavily based on this: https://mrc-ide.github.io/mcstate/articles/sir_models.html
+# trying to generalise the comparison function so that we can later fit to all strain data
+# log-likelihood of Poisson count
+ll_pois <- function(obs, model) {
+  exp_noise <- 1e6
+  if (is.na(obs)) {
+    # Creates vector of zeros in ll with same length, if no data
+    ll_obs <- numeric(length(model))
+  } else {
+    lambda <- model +
+      rexp(n = length(model), rate = exp_noise)
+    ll_obs <- dpois(x = obs, lambda = lambda, log = TRUE)
+  }
+  ll_obs
+}
+
+combined_compare <- function(state, observed, pars = NULL) {
+  ll_one <- ll_pois(observed$"1", state[2, , drop = TRUE])
+  ll_two <- ll_pois(observed$"2", state[3, , drop = TRUE])
+  ll_three <- ll_pois(observed$"3", state[4, , drop = TRUE])
+  ll_four <- ll_pois(observed$"4", state[5, , drop = TRUE])
+  ll_one + ll_two + ll_three + ll_four
+}
 ```
 
 ```{r}
@@ -344,7 +371,7 @@ n_particles <- 100
 filter <- mcstate::particle_filter$new(data = test_data_filt,
                                        model = WF_nG_h_vP,
                                        n_particles = n_particles,
-                                       compare = cluster_compare,
+                                       compare = combined_compare,
                                        seed = 1L)
 ```
 
