@@ -85,32 +85,69 @@ gene_presence_absence <- read.csv("~/Documents/PhD_Project/Code/1st_project/odin
 convert_to_bool <- function(x){
   if (x=="") 0 else 1
 }
-bool_gene_presence_absence <- gene_presence_absence
+#bool_gene_presence_absence <- gene_presence_absence
 
-for (i in 4:length(bool_gene_presence_absence[1,])) {
-  bool_gene_presence_absence[,i] <- unlist(lapply(bool_gene_presence_absence[,i], FUN =  convert_to_bool))
-}
-bool_gene_presence_absence[1,] <- gene_presence_absence[1,]
+#for (i in 4:length(bool_gene_presence_absence[1,])) {
+#  bool_gene_presence_absence[,i] <- unlist(lapply(bool_gene_presence_absence[,i], FUN =  convert_to_bool))
+#}
+#bool_gene_presence_absence[1,] <- gene_presence_absence[1,]
+
+bool_gene_presence_absence <- gene_presence_absence
+bool_gene_presence_absence[2:nrow(bool_gene_presence_absence),4:ncol(bool_gene_presence_absence)] <- apply(gene_presence_absence[2:nrow(gene_presence_absence),4:ncol(gene_presence_absence)],c(1,2), convert_to_bool)
+
 ```
 
 ```{r}
 # calculate frequency of genes to only keep those which appear in 5-95% of the genomes
-gene_freq <- rep(0, nrow(bool_gene_presence_absence)-1)
-for (i in 1:length(gene_freq)) {
-  gene_freq[i] <- sum(as.integer(bool_gene_presence_absence[i+1,4:ncol(bool_gene_presence_absence)]))
+#gene_freq <- rep(0, nrow(bool_gene_presence_absence)-1)
+#for (i in 1:length(gene_freq)) {
+#  gene_freq[i] <- sum(as.integer(bool_gene_presence_absence[i+1,4:ncol(bool_gene_presence_absence)]))
+#}
+# gene_freq <- gene_freq / (length(bool_gene_presence_absence[2,])-3)
+
+sum_as_int <- function(x){
+  sum(as.integer(x))
 }
-gene_freq <- gene_freq / (length(bool_gene_presence_absence[2,])-3)
+
+gene_freq <- rep(0, nrow(bool_gene_presence_absence)-1)
+gf_bool_gene_presence_absence <- bool_gene_presence_absence[2:nrow(bool_gene_presence_absence),4:ncol(bool_gene_presence_absence)]
+
+gene_freq <- apply(gf_bool_gene_presence_absence,1, sum_as_int)
+gene_freq <- as.vector(gene_freq / (length(bool_gene_presence_absence[2,])-3))
+
+
 
 # create a dataframe that only contains the genes that appear in 5-95% of the genomes
-filtered_bool_gene_presence_absence <- data.frame(matrix(nrow = 0, ncol = length(bool_gene_presence_absence[1,])))
+#filtered_bool_gene_presence_absence <- data.frame(matrix(nrow = 0, ncol = length(bool_gene_presence_absence[1,])))
 
+#for (i in 1:length(gene_freq)){
+#  if (0.05 <= gene_freq[i] & gene_freq[i] <= 0.95 ){
+#    filtered_bool_gene_presence_absence[nrow(filtered_bool_gene_presence_absence)+1,] <- bool_gene_presence_absence[i+1,]
+#  }
+#}
+#colnames(filtered_bool_gene_presence_absence) <- bool_gene_presence_absence[1,]
+#rownames(filtered_bool_gene_presence_absence) <- 1:nrow(filtered_bool_gene_presence_absence)
+
+filtered_bool_gene_presence_absence <- data.frame(matrix(nrow = sum(gene_freq <= 0.95 & gene_freq >= 0.05), ncol = length(bool_gene_presence_absence[1,])))
+counter <- 1
 for (i in 1:length(gene_freq)){
-  if (0.05 < gene_freq[i] & gene_freq[i] < 0.95 ){
-    filtered_bool_gene_presence_absence[nrow(filtered_bool_gene_presence_absence)+1,] <- bool_gene_presence_absence[i+1,]
+  if (0.05 <= gene_freq[i] & gene_freq[i] <= 0.95 ){
+    filtered_bool_gene_presence_absence[counter,] <- bool_gene_presence_absence[i+1,]
+    counter <- counter + 1
   }
 }
 colnames(filtered_bool_gene_presence_absence) <- bool_gene_presence_absence[1,]
 rownames(filtered_bool_gene_presence_absence) <- 1:nrow(filtered_bool_gene_presence_absence)
+
+# this is a bit better but still slow
+# but atm I do not know how to use the apply function for this
+# this is what I have tried so far:
+#calc_freq <- function(x){
+#  if (0.05 <= gene_freq[i] & gene_freq[i] <= 0.95) {return(x)}
+#}
+
+#filtered_test <- apply(bool_gene_presence_absence[2:nrow(bool_gene_presence_absence),], 1, calc_freq)
+
 ```
 
 ```{r}
@@ -123,25 +160,35 @@ colnames(cluster_gene_presence_absence)[1:3] <- colnames(filtered_bool_gene_pres
 cluster_gene_presence_absence[1:3] <- filtered_bool_gene_presence_absence[1:3]
 colnames(cluster_gene_presence_absence)[4:ncol(cluster_gene_presence_absence)] <- 1:no_clusters
 
-mean_cluster_gene_p_a <- cluster_gene_presence_absence # this is just to assess how valid it is to make consensus genomes
+#mean_cluster_gene_p_a <- cluster_gene_presence_absence # this is just to assess how valid it is to make consensus genomes
+
+#for (i in 1:no_clusters){
+#  curr_cluster <- clusters[which(clusters[,"Cluster"]==i),1] # select all genomes in cluster i
+#  curr_genomes <- as.matrix(filtered_bool_gene_presence_absence[,curr_cluster])
+#  for (j in 1:nrow(filtered_bool_gene_presence_absence)){
+#    cluster_gene_presence_absence[j,i+3] <- as.double(median(as.integer(curr_genomes[j,])))
+#    mean_cluster_gene_p_a[j,i+3] <-(as.double(mean(as.integer(curr_genomes[j,]))))
+#  }
+#}
+
+cons_genomes <- function(x){
+  as.double(median(as.integer(x)))
+}
 
 for (i in 1:no_clusters){
-  curr_cluster <- subset(clusters, clusters$Cluster == i)[,1] # select all genomes in cluster i
+  curr_cluster <- clusters[which(clusters[,"Cluster"]==i),1] # select all genomes in cluster i
   curr_genomes <- as.matrix(filtered_bool_gene_presence_absence[,curr_cluster])
-  for (j in 1:nrow(filtered_bool_gene_presence_absence)){
-    cluster_gene_presence_absence[j,i+3] <- as.double(median(as.integer(curr_genomes[j,])))
-    mean_cluster_gene_p_a[j,i+3] <-(as.double(mean(as.integer(curr_genomes[j,]))))
-  }
+  cluster_gene_presence_absence[,i+3] <- apply(curr_genomes,1,cons_genomes)
 }
 matrix_cluster_gene_presence_absence <- as.matrix((cluster_gene_presence_absence[,4:ncol(cluster_gene_presence_absence)]))
 
 ### this is just to have a look at the within-cluster diversity
-matrix_mean_cluster_gene_presence_absence <- as.matrix((mean_cluster_gene_p_a[,4:ncol(mean_cluster_gene_p_a)]))
-par(mfrow=c(1,1))
-plot(1:nrow(matrix_mean_cluster_gene_presence_absence), matrix_mean_cluster_gene_presence_absence[,1], pch=20)
-for (clust in 2:length(matrix_mean_cluster_gene_presence_absence[1,])){
-  points(matrix_mean_cluster_gene_presence_absence[,clust], pch=20)
-}
+#matrix_mean_cluster_gene_presence_absence <- as.matrix((mean_cluster_gene_p_a[,4:ncol(mean_cluster_gene_p_a)]))
+#par(mfrow=c(1,1))
+#plot(1:nrow(matrix_mean_cluster_gene_presence_absence), matrix_mean_cluster_gene_presence_absence[,1], pch=20)
+#for (clust in 2:length(matrix_mean_cluster_gene_presence_absence[1,])){
+#  points(matrix_mean_cluster_gene_presence_absence[,clust], pch=20)
+#}
 
 # well, I'd say that many, many genes are still quite diversely present within the same cluster
 # that suggest that taking one consensus genome per cluster might not work
@@ -155,8 +202,9 @@ for (clust in 2:length(matrix_mean_cluster_gene_presence_absence[1,])){
 #calculate the frequency of the gene clusters
 cluster_freq <- rep(0,no_clusters)
 for (i in 1:no_clusters){
-  cluster_freq[i] <- length(subset(clusters, clusters$Cluster == i)[,1])
+cluster_freq[i] <- length(which(clusters[,"Cluster"]==i))
 }
+
 #cluster_freq <- cluster_freq / length(clusters[,1])
 # I think I don't want frequency but rather the absolute numbers?
 ```
@@ -170,9 +218,8 @@ accNo_to_filename[,3] <- matrix(unlist(strsplit(accNo_to_filename[,3],"[.]")), n
 accNo_to_filename <- accNo_to_filename[,c(1,3)]
 colnames(accNo_to_filename) <- c(colnames(accNo_to_filename)[1], "filenames")
 accNoToFilename <- c()
-for (i in 1:nrow(accNo_to_filename)){
-  accNoToFilename[as.character(accNo_to_filename[i,2])]<- accNo_to_filename[i,1] 
-}
+accNoToFilename[as.character(accNo_to_filename[,2])] <- accNo_to_filename[,1]
+
 library(readxl)
 Croucher_seqYears <- read_excel("~/Documents/PhD_Project/Code/1st_project/odin-dust-examples/Data/Croucher_41588_2013_BFng2625_MOESM28_ESM.xlsx")
 Croucher_seqYears <- Croucher_seqYears[,c(1,5)]
@@ -197,9 +244,9 @@ cluster_freq_1 <- rep(0,no_clusters)
 cluster_freq_2 <- rep(0,no_clusters)
 cluster_freq_3 <- rep(0,no_clusters)
 for (i in 1:no_clusters){
-  cluster_freq_1[i] <- length(subset(subset(clusters, clusters$Cluster == i), subset(clusters, clusters$Cluster == i)$seqYear == 2001)[,1])
-  cluster_freq_2[i] <- length(subset(subset(clusters, clusters$Cluster == i), subset(clusters, clusters$Cluster == i)$seqYear == 2004)[,1])
-  cluster_freq_3[i] <- length(subset(subset(clusters, clusters$Cluster == i), subset(clusters, clusters$Cluster == i)$seqYear == 2007)[,1])
+  cluster_freq_1[i] <- length(which(clusters[which(clusters[,"Cluster"]==i),]$seqYear == 2001))
+  cluster_freq_2[i] <- length(which(clusters[which(clusters[,"Cluster"]==i),]$seqYear == 2004))
+  cluster_freq_3[i] <- length(which(clusters[which(clusters[,"Cluster"]==i),]$seqYear == 2007))
 }
 
 # make a data frame that contains this information
@@ -213,20 +260,14 @@ names(fitting_cluster_freq_df) <- c("year", as.character(1:62))
 ```{r}
 #plot gene freqs
 data_gene_freq_1_m <-  matrix_cluster_gene_presence_absence * cluster_freq_1
-data_gene_freq_1 <- rep(0, length(data_gene_freq_1_m[,1]))
-for (i in 1:length(data_gene_freq_1_m[,1])){
-  data_gene_freq_1[i] <- sum(data_gene_freq_1_m[i,1:62])
-}
+#data_gene_freq_1 <- rep(0, length(data_gene_freq_1_m[,1]))
+data_gene_freq_1 <- apply(data_gene_freq_1_m[,1:62], 1, sum)
+
 data_gene_freq_2_m <-  matrix_cluster_gene_presence_absence * cluster_freq_2
-data_gene_freq_2 <- rep(0, length(data_gene_freq_2_m[,1]))
-for (i in 1:length(data_gene_freq_2_m[,1])){
-  data_gene_freq_2[i] <- sum(data_gene_freq_2_m[i,1:62])
-}
+data_gene_freq_2 <- apply(data_gene_freq_2_m[,1:62], 1, sum)
+
 data_gene_freq_3_m <-  matrix_cluster_gene_presence_absence * cluster_freq_3
-data_gene_freq_3 <- rep(0, length(data_gene_freq_3_m[,1]))
-for (i in 1:length(data_gene_freq_3_m[,1])){
-  data_gene_freq_3[i] <- sum(data_gene_freq_3_m[i,1:62])
-}
+data_gene_freq_3 <- apply(data_gene_freq_3_m[,1:62], 1, sum)
 
 par(mfrow=c(1,3))
 plot(data_gene_freq_1 / nrow(subset(clusters,clusters$seqYear==2001)), data_gene_freq_2 / nrow(subset(clusters,clusters$seqYear==2004)))
@@ -234,6 +275,8 @@ plot(data_gene_freq_1 / nrow(subset(clusters,clusters$seqYear==2001)), data_gene
 plot(data_gene_freq_2 / nrow(subset(clusters,clusters$seqYear==2004)), data_gene_freq_3 / nrow(subset(clusters,clusters$seqYear==2007)))
 # very strong correlation between gene frequencies before and after vaccination
 # especially second plot looks a lot like figure 2 d, the first, in Corander et al. (though they only did pre vs. post vacc)
+par(mfrow=c(1,1))
+plot((data_gene_freq_1 + data_gene_freq_2) / (nrow(subset(clusters,clusters$seqYear==2001)) + nrow(subset(clusters,clusters$seqYear==2004))), data_gene_freq_3 / nrow(subset(clusters,clusters$seqYear==2007)))
 ```
 
 ```{r}
@@ -243,6 +286,9 @@ plot(cluster_freq_1 / sum(cluster_freq_1), cluster_freq_2 / sum(cluster_freq_2))
 plot(cluster_freq_1 / sum(cluster_freq_1), cluster_freq_3 / sum(cluster_freq_3))
 plot(cluster_freq_2 / sum(cluster_freq_2), cluster_freq_3 / sum(cluster_freq_3))
 # the second plot (2001 vs. 2007) looks a lot like figure 2 c, the first, in Corander et al.
+
+par(mfrow=c(1,1))
+plot((cluster_freq_1 + cluster_freq_2)/ (sum(cluster_freq_1) + sum(cluster_freq_2)), cluster_freq_3 / sum(cluster_freq_3))
 ```
 
 ```{r}
@@ -250,7 +296,7 @@ plot(cluster_freq_2 / sum(cluster_freq_2), cluster_freq_3 / sum(cluster_freq_3))
 #library(readxl)
 vaccine_types <- read_excel("~/Documents/PhD_Project/Code/1st_project/odin-dust-examples/Data/Corander_suppData3.xlsx")
 vaccine_types <- vaccine_types[,c(2,3,4,6)]
-vaccine_types_mass <- subset(vaccine_types, vaccine_types$Population == "Massachusetts")
+vaccine_types_mass <- vaccine_types[which(vaccine_types$Population == "Massachusetts"),]
 isVT <- c()
 for (i in 1:nrow(vaccine_types_mass)){
   isVT[vaccine_types_mass$`Accession Code`[i]] <- if (vaccine_types_mass$`Vaccine Type`[i] == "VT") {0} else {1}
@@ -291,7 +337,7 @@ scale_x_continuous(breaks = 1:no_clusters)
 # add low and high levels of selection to the model.
 
 # first, calculate pre/peri and post vacc frequencies of genes:
-pre_peri_vacc_gene_freq <- (data_gene_freq_1 + data_gene_freq_2)/(nrow(subset(clusters,clusters$seqYear==2001))+nrow(subset(clusters,clusters$seqYear==2004)))
+pre_peri_vacc_gene_freq <- (data_gene_freq_1 + data_gene_freq_2) / (nrow(subset(clusters,clusters$seqYear==2001)) + nrow(subset(clusters,clusters$seqYear==2004)))
 post_vacc_gene_freq <- data_gene_freq_3 / nrow(subset(clusters,clusters$seqYear==2007))
 
 # calculate delta statistic (refer to Corander et al. for more info)
@@ -368,7 +414,7 @@ if (length(x[,1,1]) <= 8){
 
 library(dplyr)
 library(zoo)
-
+par(ask = FALSE)
 matplot(time, rollmean(x[1,1 , ], k=30, fill=NA), type = "l",
          xlab = "Time", ylab = "Number of individuals",
          col = cols[1], lty = 1, ylim = range(x))
@@ -458,6 +504,107 @@ grid.arrange(data_plot, sim_plot, nrow = 2)
 # the other times n_times/2 and n_times are chosen quite arbitrarily at the moment. not sure how to choose them?
 ```
 
+### run the model with Corander parameters from heterogeneous-rate multilocus NFDS
+
+```{r}
+#quick fix for population size: currently sum(clusters_2001) = 133
+# I want 50,000, so I'll take an integer approx of 50000/133 = 375.94, which is 400 :D
+cluster_freq_ini_expanded <- cluster_freq_1 *400
+Corander_params <- list(dt = 1/36, species_no = no_clusters,  gene_no = nrow(cluster_gene_presence_absence), Pop_ini = cluster_freq_ini_expanded, Pop_eq = cluster_freq_ini_expanded, capacity = sum(cluster_freq_ini_expanded), Genotypes = matrix_cluster_gene_presence_absence, sigma_f = 0.1363, sigma_w = 0.0023, prop_f = 0.2483, delta = delta_ranking, m = 0.0044, vaccTypes = isVT_vec, v = 0.0812, vacc_time = 12) 
+params_n_vP <- Corander_params
+# now, adjusting the values and seeing whether I get closer to the data
+params_n_vP <- list(dt = 1/36, species_no = no_clusters,  gene_no = nrow(cluster_gene_presence_absence), Pop_ini = cluster_freq_ini_expanded, Pop_eq = cluster_freq_ini_expanded, capacity = sum(cluster_freq_ini_expanded), Genotypes = matrix_cluster_gene_presence_absence, sigma_f = 0.5363, sigma_w = 0.023, prop_f = 0.2483, delta = delta_ranking, m = 0.00044, vaccTypes = isVT_vec, v = 0.7812, vacc_time = 6) 
+```
+
+
+```{r fig.height=5, fig.width=7}
+par(mfrow=c(1,1))
+dt <- 1
+n_particles <- 10L
+#WFmodel_nG_h_vP$update_state(pars = params_n_vP, time = 0)
+WFmodel_nG_h_vP_expanded <- WF_nG_h_vP$new(pars = params_n_vP,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+
+
+n_times <- 180
+x <- array(NA, dim = c(WFmodel_nG_h_vP_expanded$info()$len, n_particles, n_times))
+
+for (t in seq_len(n_times)) {
+  x[ , , t] <- WFmodel_nG_h_vP_expanded$run(t)
+}
+time <- x[1, 1, ]
+x <- x[-1, , ]
+
+
+
+par(mar = c(4.1, 5.1, 0.5, 0.5), las = 1)
+if (length(x[,1,1]) <= 8){
+  cols <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7") #8 colorblind friendly colors
+} else {
+  cols <- rainbow(length(x[,1,1]))
+}
+
+
+library(dplyr)
+library(zoo)
+
+#matplot(time, rollmean(x[1,1 , ], k=30, fill=NA), type = "l",
+#         xlab = "Time", ylab = "Number of individuals",
+#         col = cols[1], lty = 1, ylim = range(x))
+#for (species in 2:length(x[,1,1])) {
+#  matlines(time, rollmean(x[species,1 , ], k=30, fill=NA), col = cols[species], lty = 1)
+#}
+# or 
+ matplot(time,(x[1,1 , ]), type = "l",
+         xlab = "Time", ylab = "Number of individuals",
+         col = cols[1], lty = 1, ylim = range(x))
+for (species in 2:length(x[,1,1])) {
+  matlines(time, (x[species,1 , ]), col = cols[species], lty = 1)
+}
+#if you want to see all single values, not the monthly rolling mean
+
+
+legend("bottomright", lwd = 1, col = cols[1:length(x[,1,1])], legend = 1:length(x[,1,1]), bty = "n")
+```
+
+```{r}
+# make a grouped bar plot similar to Croucher et al.
+library(ggplot2)
+
+cluster_names <- rep(1:no_clusters, 3)
+cluster_names <- sort(cluster_names)
+#cluster_names <- as.character(cluster_names)
+simTimes <- rep(c("pt 1", "pt 2", "pt 3"), no_clusters)
+sim_cluster_freq_all_times <- rep(0, no_clusters *3)
+for (i in 1:no_clusters) {
+  sim_cluster_freq_all_times[3*(i-1) + 1 ] <- x[i,1,1]/sum(x[,1,1])
+  sim_cluster_freq_all_times[3 * (i-1) + 2] <- x[i,1,36]/sum(x[,1,36])
+  sim_cluster_freq_all_times[3 * (i-1) + 3] <- x[i,1,72]/sum(x[,1,72])
+}
+sim_cluster_freq_df <- data.frame(cluster_names, simTimes, sim_cluster_freq_all_times)
+
+
+library(gridExtra)
+
+
+sim_plot <- ggplot(sim_cluster_freq_df, aes(fill=simTimes, y=sim_cluster_freq_all_times, x=cluster_names)) +   geom_bar(position="dodge", stat="identity") +
+scale_fill_manual("legend", values = c("pt 1" = "#E69F00", "pt 2" = "#56B4E9", "pt 3" = "#009E73")) +
+scale_x_continuous(breaks = 1:no_clusters)
+
+data_plot <- ggplot(cluster_freq_df, aes(fill=seqTimes, y=cluster_freq_all_times, x=cluster_names)) +   geom_bar(position="dodge", stat="identity") +
+scale_fill_manual("legend", values = c("2001" = "#E69F00", "2004" = "#56B4E9", "2007" = "#009E73")) +
+scale_x_continuous(breaks = 1:no_clusters)
+
+grid.arrange(data_plot, sim_plot, nrow = 2)
+# this is obviously not great at the moment. However, this is no surprise because the model parameters were not fitted against the data yet.
+
+# this can be used to compare the simulated data to the real data
+# 2001 should be the same because this is a deterministic start state
+# the other times n_times/2 and n_times are chosen quite arbitrarily at the moment. not sure how to choose them?
+```
 
 ### now, the fitting can begin! :-)
 ```{r}
@@ -471,28 +618,58 @@ library(mcstate)
 # process data with particle filter:
 dt <- 1/36 # we assume that the generation time of Strep. pneumo is 1 month
 # we have data from 2001, 2004, 2007, so we want 3 (years) * 12 (months) = 36 updates in-between
-mass_data <- mcstate::particle_filter_data(data = fitting_cluster_freq_df,
+
+# adding additional times to df, filled with NAs
+vecNA <- rep(NA, 62)
+pfd_fitting_cluster_freq_df <- fitting_cluster_freq_df
+pfd_fitting_cluster_freq_df[4,] <- pfd_fitting_cluster_freq_df[2,]
+pfd_fitting_cluster_freq_df[5,] <- c(2005, vecNA)
+pfd_fitting_cluster_freq_df[6,] <- c(2006, vecNA)
+pfd_fitting_cluster_freq_df[7,] <- pfd_fitting_cluster_freq_df[3,]
+pfd_fitting_cluster_freq_df[2,] <- c(2002, vecNA)
+pfd_fitting_cluster_freq_df[3,] <- c(2003, vecNA)
+
+pfd_simpleInts_fitting_cluster_freq_df <- pfd_fitting_cluster_freq_df
+pfd_simpleInts_fitting_cluster_freq_df$year <- c(1,2,3,4,5,6,7) # this is a test
+# I have all years from 2001-2007 now, but the some are NAs obviously
+# and I renamed the years to 1-7, to not cause weird effects of the model running 2000 years before already
+
+# No! This is unnecessary because it means more work for the fitting algorithm where we actually do not have data
+
+#instead, I want to excluded 2001 data from fitting, since that is just the start (and the start population is sampled from that)
+
+peripost_fitting_cluster_freq_df <- fitting_cluster_freq_df[2:3,]
+
+mass_data <- mcstate::particle_filter_data(data = peripost_fitting_cluster_freq_df,
                                           time = "year",
                                           rate = 1 / dt,
                                           initial_time = 2001)
+#the original:
+# dt <- 1/36
+#mass_data <- mcstate::particle_filter_data(data = fitting_cluster_freq_df,
+#                                          time = "year",
+#                                          rate = 1 / dt,
+#                                          initial_time = 2001)
 ```
 
 ```{r}
 # Defining the comparison function
 # state is the model state at some point in time
 # observed is the real data 
-cluster_compare <- function(state, observed, pars = NULL) {
-  exp_noise <- 1e6
+#cluster_compare <- function(state, observed, pars = NULL) {
+#  exp_noise <- 1e6
   #print(dim(state))
   
   #state_x[ , ] <- state
-  state <- state[-1, ]
-  clusters_modelled <- state[,1]
-  clusters_observed <- observed$"1"
-  lambda <- clusters_modelled +
-    rexp(n = length(clusters_modelled), rate = exp_noise)
-  dpois(x = clusters_observed, lambda = lambda, log = TRUE)
-}
+#  state <- state[-1, ]
+#  clusters_modelled <- state[,1]
+#  clusters_observed <- observed$"1"
+#  lambda <- clusters_modelled +
+#    rexp(n = length(clusters_modelled), rate = exp_noise)
+#  dpois(x = clusters_observed, lambda = lambda, log = TRUE)
+#}
+
+### this is an old version of the compare function that only fitted the first cluster
 ```
 
 ```{r}
@@ -505,89 +682,23 @@ ll_pois <- function(obs, model) {
     # Creates vector of zeros in ll with same length, if no data
     ll_obs <- numeric(length(model))
   } else {
-    lambda <- model +
-      rexp(n = length(model), rate = exp_noise)
-    ll_obs <- dpois(x = obs, lambda = lambda, log = TRUE)
+    lambda <- model + rexp(n = length(model), rate = exp_noise)
+    #ll_obs <- dpois(x = obs, lambda = lambda, log = TRUE) # this is the simplest prior possible
+    # it would be good to think about a binomial, neg binomial or beta binomial version
+    # ll_obs <- dbinom() 
+    # for neg binom: maybe n is the capacity of the system? the model value is the mu, and the y is the data?
+    ll_obs <- dnbinom(x = obs, size = capacity, mu = lambda, log = TRUE)
   }
   ll_obs
 }
 
 combined_compare <- function(state, observed, pars = NULL) {
   result <- 0
-  #for (i in 1:62){
-  #  ind <- 4 +i 
-  #  print(observed[as.character(ind)])
-  #  print(state[1+i, , drop = TRUE])
-  #  result <- result + ll_pois(observed[as.character(ind)], state[1+i, , drop = TRUE])
-  #}
-  result <- result + ll_pois(observed$"1", state[2, , drop = TRUE])
-  result <- result + ll_pois(observed$"2", state[3, , drop = TRUE])
-  result <- result + ll_pois(observed$"3", state[4, , drop = TRUE])
-  result <- result + ll_pois(observed$"4", state[5, , drop = TRUE])
-  result <- result + ll_pois(observed$"5", state[6, , drop = TRUE])
-  result <- result + ll_pois(observed$"6", state[7, , drop = TRUE])
-  result <- result + ll_pois(observed$"7", state[8, , drop = TRUE])
-  result <- result + ll_pois(observed$"8", state[9, , drop = TRUE])
-  result <- result + ll_pois(observed$"9", state[10, , drop = TRUE])
-  result <- result + ll_pois(observed$"10", state[11, , drop = TRUE])
-  result <- result + ll_pois(observed$"11", state[12, , drop = TRUE])
-  result <- result + ll_pois(observed$"12", state[13, , drop = TRUE])
-  result <- result + ll_pois(observed$"13", state[14, , drop = TRUE])
-  result <- result + ll_pois(observed$"14", state[5, , drop = TRUE])
-  result <- result + ll_pois(observed$"15", state[16, , drop = TRUE])
-  result <- result + ll_pois(observed$"16", state[17, , drop = TRUE])
-  result <- result + ll_pois(observed$"17", state[18, , drop = TRUE])
-  result <- result + ll_pois(observed$"18", state[19, , drop = TRUE])
-  result <- result + ll_pois(observed$"19", state[20, , drop = TRUE])
-  result <- result + ll_pois(observed$"20", state[21, , drop = TRUE])
-  result <- result + ll_pois(observed$"21", state[22, , drop = TRUE])
-  result <- result + ll_pois(observed$"22", state[23, , drop = TRUE])
-  result <- result + ll_pois(observed$"23", state[24, , drop = TRUE])
-  result <- result + ll_pois(observed$"24", state[25, , drop = TRUE])
-  result <- result + ll_pois(observed$"25", state[26, , drop = TRUE])
-  result <- result + ll_pois(observed$"26", state[27, , drop = TRUE])
-  result <- result + ll_pois(observed$"27", state[28, , drop = TRUE])
-  result <- result + ll_pois(observed$"28", state[29, , drop = TRUE])
-  result <- result + ll_pois(observed$"29", state[30, , drop = TRUE])
-  result <- result + ll_pois(observed$"30", state[31, , drop = TRUE])
-  result <- result + ll_pois(observed$"31", state[32, , drop = TRUE])
-  result <- result + ll_pois(observed$"32", state[33, , drop = TRUE])
-  result <- result + ll_pois(observed$"33", state[34, , drop = TRUE])
-  result <- result + ll_pois(observed$"34", state[35, , drop = TRUE])
-  result <- result + ll_pois(observed$"35", state[36, , drop = TRUE])
-  result <- result + ll_pois(observed$"36", state[37, , drop = TRUE])
-  result <- result + ll_pois(observed$"37", state[38, , drop = TRUE])
-  result <- result + ll_pois(observed$"38", state[39, , drop = TRUE])
-  result <- result + ll_pois(observed$"39", state[40, , drop = TRUE])
-  result <- result + ll_pois(observed$"40", state[41, , drop = TRUE])
-  result <- result + ll_pois(observed$"41", state[42, , drop = TRUE])
-  result <- result + ll_pois(observed$"42", state[43, , drop = TRUE])
-  result <- result + ll_pois(observed$"43", state[44, , drop = TRUE])
-  result <- result + ll_pois(observed$"44", state[45, , drop = TRUE])
-  result <- result + ll_pois(observed$"45", state[46, , drop = TRUE])
-  result <- result + ll_pois(observed$"46", state[47, , drop = TRUE])
-  result <- result + ll_pois(observed$"47", state[48, , drop = TRUE])
-  result <- result + ll_pois(observed$"48", state[49, , drop = TRUE])
-  result <- result + ll_pois(observed$"49", state[50, , drop = TRUE])
-  result <- result + ll_pois(observed$"50", state[51, , drop = TRUE])
-  result <- result + ll_pois(observed$"51", state[52, , drop = TRUE])
-  result <- result + ll_pois(observed$"52", state[53, , drop = TRUE])
-  result <- result + ll_pois(observed$"53", state[54, , drop = TRUE])
-  result <- result + ll_pois(observed$"54", state[55, , drop = TRUE])
-  result <- result + ll_pois(observed$"55", state[56, , drop = TRUE])
-  result <- result + ll_pois(observed$"56", state[57, , drop = TRUE])
-  result <- result + ll_pois(observed$"57", state[58, , drop = TRUE])
-  result <- result + ll_pois(observed$"58", state[59, , drop = TRUE])
-  result <- result + ll_pois(observed$"59", state[60, , drop = TRUE])
-  result <- result + ll_pois(observed$"60", state[61, , drop = TRUE])
-  result <- result + ll_pois(observed$"61", state[62, , drop = TRUE])
-  result <- result + ll_pois(observed$"62", state[63, , drop = TRUE])
-  
-  #ll_one <- ll_pois(observed$"1", state[2, , drop = TRUE])
-  #ll_two <- ll_pois(observed$"2", state[3, , drop = TRUE])
-  #ll_three <- ll_pois(observed$"3", state[4, , drop = TRUE])
-  #ll_four <- ll_pois(observed$"4", state[5, , drop = TRUE])
-  #ll_one + ll_two + ll_three + ll_four
+  for (i in 1:62){
+    #print(observed[as.character(ind)])
+    #print(state[1+i, , drop = TRUE])
+    result <- result + ll_pois(observed[[as.character(i)]], state[1+i, , drop = TRUE])
+  }
   result
 }
 ```
@@ -596,14 +707,8 @@ combined_compare <- function(state, observed, pars = NULL) {
 ### Inferring parameters
 
 n_particles <- 10
-### I have an issue with the dimensions!
-# these three blocks of code only run if n_particles = 62.
-# so probably it confuses the number of strains and the number of particles.
-# that is a bit weird, I think.
-# maybe in my data, it think that the three times points are the three compartments?
-# but that does not really make sense - it recognizes 2001, 2004 and 2007 as times.
-# BUT the info about the different strains got lost - it is not in the dataset.
-# SO that is because for the SIR they only had the data for one compartment, the I, here I have infos about all compartments.
+# n_particles <- 100 nicer but takes about 35 minutes atm
+
 filter <- mcstate::particle_filter$new(data = mass_data,
                                        model = WF_nG_h_vP,
                                        n_particles = n_particles,
@@ -612,14 +717,13 @@ filter <- mcstate::particle_filter$new(data = mass_data,
 ```
 
 ```{r}
+#original:
+ params_n_vP$dt <- 1/36
+#params_n_vP$dt <- 1/12
 filter$run(save_history = TRUE, pars = params_n_vP)
-# this results in the following error message at the moment:
-# Error: Expected a vector of length 10 for 'index' but given 62
-
-# I seem to have a problem with the dimensions still.
-# maybe I should try fitting it in just one dimension but that does not sound very promising...
-# probably, I should go back to my toy example with 4 species, try to construct a data set and then try to fit it.
-# in that setting, the mistake will probably be easier to spot. :-) 
+#I have an issue with the filter since it only outputs three time point. Is that an issue? I think so.
+# Or are those just the three time points that we have data to compare to?
+# but I thought that was the reason to set dt <- 1/36, so that I have shorter time steps in the model than in the data set...?
 ```
 
 ```{r}
@@ -641,7 +745,7 @@ plot_particle_filter <- function(history, true_history, times, obs_end = NULL) {
     matlines(times, t(history[species, , -1]), col = cols[species], lty = 1)
   }  
   for (species in 2:length(history[,1,1])) {
-    matpoints(times[1:obs_end], (true_history[1:3,species , -1]), pch = 19, col = cols[species-1])
+    matpoints(times[1:obs_end], (true_history[1:2,species , -1]), pch = 19, col = cols[species-1])
   }
   legend("left", lwd = 1, col = cols, legend = 1:62, bty = "n")
   
@@ -657,17 +761,17 @@ plot_particle_filter <- function(history, true_history, times, obs_end = NULL) {
   #          col = cols)
   #legend("left", lwd = 1, col = cols, legend = names(cols), bty = "n")
 }
-
-true_history <- fitting_cluster_freq_df
-plot_particle_filter(filter$history(), true_history, 1:3)
+par(mfrow = c(1,1))
+true_history <- peripost_fitting_cluster_freq_df
+plot_particle_filter(filter$history(), true_history, 1:2)
 ```
 ```{r}
 # Using MCMC to infer parameters
 pmcmc_sigma_f <- mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0)
 pmcmc_sigma_w <- mcstate::pmcmc_parameter("sigma_w", 0.05, min = 0)
 pmcmc_prop_f <- mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1)
-pmcmc_m <- mcstate::pmcmc_parameter("m", 0.03, min = 0)
-pmcmc_v <- mcstate::pmcmc_parameter("v", 0.05, min = 0)
+pmcmc_m <- mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 1)
+pmcmc_v <- mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)
 species_no <- no_clusters
 gene_no <- nrow(cluster_gene_presence_absence)
 Pop_ini <- cluster_freq_1
@@ -710,7 +814,7 @@ proposal_matrix <- diag(0.1, 5) # the proposal matrix defines the covariance-var
 # here, all parameters are proposed independently. 
 # think about this, this might not actually be true
 #mcmc_pars <- mcstate::pmcmc_parameters$new(list(pmcmc_sigma_f, pmcmc_sigma_w, pmcmc_prop_f, pmcmc_m, pmcmc_v), proposal_matrix, transform)
-mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0), mcstate::pmcmc_parameter("sigma_w", 0.05, min = 0), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0), mcstate::pmcmc_parameter("v", 0.05, min = 0)), proposal_matrix, transform)
+mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0), mcstate::pmcmc_parameter("sigma_w", 0.05, min = 0), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 1), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), proposal_matrix, transform)
 #= make_transform(c(Pop_ini, Pop_eq, Genotypes, capacity, delta, vaccTypes, species_no, gene_no, vacc_time)))
 #mcmc_pars$names()
 #mcmc_pars$model(mcmc_pars$initial())
@@ -728,17 +832,13 @@ n_burnin <- 200
 ```{r}
 control <- mcstate::pmcmc_control(
     n_steps,
-    save_state = TRUE,
+    save_state = TRUE, 
     save_trajectories = TRUE,
     progress = TRUE)
 pmcmc_run <- mcstate::pmcmc(mcmc_pars, filter, control = control)
-# Running chain 1 / 1
-# Error in filter_run(self, private, pars, save_history, save_restart, min_log_likelihood) : 
-# could not find function "filter_run"
-### I do not understand this error message.
-### might be that I still have issues with my parameters :-/
 
-plot_particle_filter(pmcmc_run$trajectories$state, true_history, 1:3)
+par(mfrow = c(1,1))
+plot_particle_filter(pmcmc_run$trajectories$state, true_history, 1:2)
 ```
 
 ```{r}
@@ -769,7 +869,7 @@ coda::effectiveSize(mcmc1)
 # --> proposal distribution is not good
 ```{r}
 proposal_matrix <- cov(pmcmc_run$pars)
-mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0), mcstate::pmcmc_parameter("sigma_w", 0.05, min = 0), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0), mcstate::pmcmc_parameter("v", 0.05, min = 0)), proposal_matrix, transform)
+mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0), mcstate::pmcmc_parameter("sigma_w", 0.05, min = 0), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 1), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), proposal_matrix, transform)
 proposal_matrix
 ```
 
@@ -781,15 +881,8 @@ control <- mcstate::pmcmc_control(
     progress = TRUE,
     n_chains = 2)
 pmcmc_tuned_run <- mcstate::pmcmc(mcmc_pars, filter, control = control)
-#> Running chain 1 / 4
-#> Finished 500 steps in 13 secs
-#> Running chain 2 / 4
-#> Finished 500 steps in 13 secs
-#> Running chain 3 / 4
-#> Finished 500 steps in 13 secs
-#> Running chain 4 / 4
-#> Finished 500 steps in 13 secs
 
+# runs in 4 minutes per chain right now
 mcmc2 <- coda::as.mcmc(cbind(
   pmcmc_tuned_run$probabilities, pmcmc_tuned_run$pars))
 
@@ -808,8 +901,18 @@ coda::effectiveSize(mcmc2)
 # acceptance rate is even worse
 # and the log prior is constantly 0, I am sure that is the main issue
 
-
+plot_particle_filter(pmcmc_tuned_run$trajectories$state, true_history, 1:7)
+# hmm, not a great fit yet
 
 # most of the above about fitting is taken from https://mrc-ide.github.io/mcstate/articles/sir_models.html
+```
+
+```{r}
+# Notes to myself:
+# the log prior does not show any variation at all. Why is that? I think I need to ask John about it.
+# I'm still not sure whether the fitting actually happens with the dt = 1/12 that I defined
+# is just the plotting weird? or are the time steps off?
+# They choose the genes present in 5-95% of the pre and peri vacc population, not overall
+# also they simulate 10^5 bacterial genomes. The data set is just the subset probed. So I should make my groups bigger and work with their frequencies, not the absolute numbers.
 ```
 
