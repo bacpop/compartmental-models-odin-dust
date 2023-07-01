@@ -12,8 +12,8 @@ update(R) <- R + n_IR
 N <- S + I + R
 
 ## Individual probabilities of transition:
-p_SI <- 1 - exp(-beta * I / N ) #* dt) # S to I
-p_IR <- 1 - exp(-gamma ) #* dt) # I to R
+p_SI <- 1 - exp(-beta * I / N * dt) # S to I
+p_IR <- 1 - exp(-gamma * dt) # I to R
 
 ## Draws from binomial distributions for numbers changing between
 ## compartments:

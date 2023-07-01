@@ -235,14 +235,15 @@ plot_particle_filter <- function(history, true_history, times, obs_end = NULL) {
     obs_end <- max(times)
   }
   par(mar = c(4.1, 5.1, 0.5, 0.5), las = 1)
-  cols <- c(S = "#8c8cd9", I = "#cc0044", R = "#999966", TH = "#000000")
+  #cols <- c(S = "#8c8cd9", I = "#cc0044", R = "#999966", TH = "#000000")
+  cols <- c(S = "#000000", I = "#E69F00", R = "#56B4E9", TH = "#009E73")
   matplot(times, t(history[2, , -1]), type = "l",
           xlab = "Time", ylab = "Number of individuals",
           col = cols[["S"]], lty = 1, ylim = range(history))
   matlines(times, t(history[3, , -1]), col = cols[["I"]], lty = 1)
   matlines(times, t(history[4, , -1]), col = cols[["R"]], lty = 1)
-  matpoints(times[1:obs_end], (true_history), pch = 19, col = cols[["TH"]])
-  legend("left", lwd = 1, col = cols, legend = names(cols), bty = "n")
+  matpoints(times[1:obs_end], (true_history), pch = 20, col = cols[["TH"]])
+  legend("left", lwd = 1, col = cols, legend = c("S","I","R","Data"), bty = "n")
 }
 #true_history <- readRDS("seir_true_history.rds")
 true_history <- df_SIRinfected$Infected
@@ -378,10 +379,30 @@ print(length(pmcmc_tuned_run$pars[,"beta"]))
 # checking the fit of the tuned run visually:
 
 ```{r}
-plot_particle_filter(pmcmc_tuned_run$trajectories$state, true_history, df_infected$day)
+plot_particle_filter_avg <- function(history, true_history, times, obs_end = NULL) {
+  if (is.null(obs_end)) {
+    obs_end <- max(times)
+  }
+  par(mar = c(4.1, 5.1, 0.5, 0.5), las = 1)
+  #cols <- c(S = "#8c8cd9", I = "#cc0044", R = "#999966", TH = "#000000")
+  cols <- c(S = "#000000", I = "#E69F00", R = "#56B4E9", TH = "#009E73")
+  matplot(times, colMeans(history[2, , -1]), type = "l", lwd = 5,
+          xlab = "Time", ylab = "Number of individuals",
+          col = cols[["S"]], lty = 1, ylim = range(history))
+  matlines(times, colMeans(history[3, , -1]), col = cols[["I"]], lty = 1,lwd = 5)
+  matlines(times, colMeans(history[4, , -1]), col = cols[["R"]], lty = 1,lwd = 5)
+  matpoints(times[1:obs_end], (true_history), pch = 20, col = cols[["TH"]])
+  legend("left", lwd = 1, col = cols, legend = c("S","I","R","Data"), bty = "n")
+}
+plot_particle_filter_avg(pmcmc_tuned_run$trajectories$state, true_history, df_infected$day)
 ```
 
 
+```{r}
+processed_chains <- mcstate::pmcmc_thin(pmcmc_tuned_run, burnin = n_burnin, thin = 2)
+parameter_mean_hpd <- apply(processed_chains$pars, 2, mean)
+parameter_mean_hpd
+```
 
 
 

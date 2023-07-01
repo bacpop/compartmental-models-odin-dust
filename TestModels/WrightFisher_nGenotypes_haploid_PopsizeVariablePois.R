@@ -1,5 +1,5 @@
 ## Definition of the time-step and output as "time"
-dt <- user(1)
+dt <- 1
 initial(time) <- 0
 update(time) <- (step + 1) * dt
 
@@ -9,7 +9,7 @@ Pop_size <- sum(Pop[1:species_no])
 # frequency dependent selection (i.e. the fitness of the genotypes are not constant but based on how frequent the genes/loci they contain are in the population)
 # based on Corander et al. (2017)
 # frequency of each gene at current time:
-gene_freq[,] <-  Genotypes[i,j] * Pop[j]
+gene_freq[,] <-  Genotypes[i,j] * Pop[j] 
 freq[] <- sum(gene_freq[i,1:species_no]) / Pop_size
 
 # overall deviation of loci for genomes
@@ -23,7 +23,7 @@ pi_w_genotypes[] <- sum(pi_w_freq[1:gene_no,i])
 
 # Genotype specific probability to produce offspring
 # those are the individuals' probabilities multiplied by the number of individual that have this genotype
-probs[] <- ((1 + sigma_f)^pi_f_genotypes[i] + (1 + sigma_w)^pi_w_genotypes[i]) * Pop[i]
+probs[] <- ((1 + sigma_f)^pi_f_genotypes[i] * (1 + sigma_w)^pi_w_genotypes[i]) * Pop[i] * (1- (as.integer(time >= vacc_time) * vaccTypes[i] * v))
 
 
 # Okay, my current interpretation is:
@@ -40,7 +40,7 @@ probs[] <- ((1 + sigma_f)^pi_f_genotypes[i] + (1 + sigma_w)^pi_w_genotypes[i]) *
 
 
 y[] <- if (probs[i]/sum(probs[1:species_no]) < 1) #not strictly necessary for poisson but probs>1 should be avoided anyway
-  rpois(capacity * (probs[i] / sum(probs[1:species_no])) * (1-m) * (1- (as.integer(time >= vacc_time) * vaccTypes[i] * v))) else rpois(capacity * 1 *(1-m) * (1- (as.integer(time >= vacc_time) * vaccTypes[i] * v)))
+  rpois(capacity * (probs[i] / sum(probs[1:species_no])) * (1-m) ) else rpois(capacity * 1 *(1-m) )
 # so, hmm, I am thinking that the population size will not really be constant because of the (1-v) term
 # ((1-m) should be compensated by the migrating individuals)
 # this might be a theoretical problem if v is small. but still a problem?
