@@ -1,13 +1,7 @@
----
-title: "SIR models"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{sir_models}
-  %\VignetteEncoding{UTF-8}
-  %\VignetteEngine{knitr::rmarkdown}
-editor_options: 
-  chunk_output_type: console
----
+
+### Running and fitting of the model based on the following tutorials:
+# https://mrc-ide.github.io/odin.dust/articles/sir_models.html#running-the-sir-model-with-dust
+# https://mrc-ide.github.io/mcstate/articles/sir_models.html
 
 ```{r, include = FALSE}
 knitr::opts_chunk$set(

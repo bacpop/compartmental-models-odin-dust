@@ -1,3 +1,6 @@
+#implementation of the model based on the following tutorial:
+# https://mrc-ide.github.io/odin.dust/articles/sir_models.html#running-the-sir-model-with-dust
+
 ## Definition of the time-step and output as "time"
 dt <- user(1)
 initial(time) <- 0

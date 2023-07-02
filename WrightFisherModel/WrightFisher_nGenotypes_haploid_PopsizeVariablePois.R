@@ -1,3 +1,5 @@
+# model definition derived from Corander et al. (2017)
+
 ## Definition of the time-step and output as "time"
 dt <- 1
 initial(time) <- 0
@@ -26,37 +28,20 @@ pi_w_genotypes[] <- sum(pi_w_freq[1:gene_no,i])
 probs[] <- ((1 + sigma_f)^pi_f_genotypes[i] * (1 + sigma_w)^pi_w_genotypes[i]) * Pop[i] * (1- (as.integer(time >= vacc_time) * vaccTypes[i] * v))
 
 
-# Okay, my current interpretation is:
-# probs stores the probability for a genotype to produce offspring. That has to be relative to the genotype frequency.
-# I want to normalise this probability because I want that the sum of the probabilities of all genotypes to have offspring is 1.
-# Why? I think because I want X~Pois(lambda), Y~Pois(mu) independent -> X+Y~Pois(lambda+mu) to hold true and make sense.
 
 # The lambda of the poisson distribution then consists of the normalised probability and a factor that describes how close we are to the capacity and a factor for the population size.
 # You could simplify this by cancelling out the Pop_size (which makes sense because we will loose less accuracy but it will make it a bit less easy to interpret.)
 
-#old version that is a bit easier to interpret:
-#y[] <- if (probs[i]/sum(probs[1:species_no]) < 1) #not strictly necessary for poisson but probs>1 should be avoided anyway
-#  rpois((capacity/Pop_size)*(probs[i]/sum(probs[1:species_no]))*Pop_size) else rpois((capacity/Pop_size)*(1)*Pop_size)
-
-
 y[] <- if (probs[i]/sum(probs[1:species_no]) < 1) #not strictly necessary for poisson but probs>1 should be avoided anyway
   rpois(capacity * (probs[i] / sum(probs[1:species_no])) * (1-m) ) else rpois(capacity * 1 *(1-m) )
-# so, hmm, I am thinking that the population size will not really be constant because of the (1-v) term
-# ((1-m) should be compensated by the migrating individuals)
-# this might be a theoretical problem if v is small. but still a problem?
-# If I understand it correctly, Corander et al. do not compensate for that.
-# Please discuss with John.
 
-# effect of vaccine term: (vaccTypes[i] * (1-v))
-# if genotype is of vaccine phenotype, its fitness is reduced by v*fitness
-# I should find a way to introduce vaccination at a certain time point.
 
 # m is the migration rate
 # fitness of individuals in the community is reduced by this rate
 # determining migration number:
 mig_num <- rbinom(capacity, m)
 Pop_mig[] <- rbinom(mig_num, 1/species_no)
-# this is a very simple implementation of migration. It does not care what the rates of the different genotypes are (I think we define them as unknown) and just makes uniform, random draws from all existing genotypes.
+# this is a very simple implementation of migration. It does not care what the rates of the different genotypes are and just makes uniform, random draws from all existing genotypes.
 
 ## Core equation for population (assume constant size here):
 update(Pop[]) <- y[i] + Pop_mig[i]
@@ -64,10 +49,6 @@ update(Pop[]) <- y[i] + Pop_mig[i]
 
 initial(Pop[]) <- Pop_ini[i] # deterministic, user-based start value
 #initial(probs2[]) <- (1 + 0.02) * Pop_ini[i]
-
-#FitnessMatrix[,] <- (GeneFitness[i]*Genotypes[i,j]) # calculate the fitness for genes in each genotype
-#GenotypeFitness[] <- sum(FitnessMatrix[1:gene_no,i]) #calculate overall fitness for all genotype (sum over genes*fitness)
-
 
 #calculate equilibrium frequencies of genes
 gene_eq[,] <- Genotypes[i,j] * Pop_eq[j]
