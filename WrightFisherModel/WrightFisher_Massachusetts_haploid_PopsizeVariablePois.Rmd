@@ -392,7 +392,7 @@ for (i in 1:no_clusters){
 }
 
 op <- par(mar = c(5,7,4,2) + 0.1,mgp=c(3,1,0))
-plot(cluster_freq_1 / sum(cluster_freq_1), cluster_freq_2 / sum(cluster_freq_2), axes = FALSE, ann = FALSE, pch = 19, col = VT_colours)
+plot(cluster_freq_1 / sum(cluster_freq_1), cluster_freq_3 / sum(cluster_freq_3), axes = FALSE, ann = FALSE, pch = 19, col = VT_colours)
 legend("topleft", title = "Clusters", c("VT", "Non-VT", "mixed"),fill = c("#E69F00", "#56B4E9", "black" ))
 axis(1,cex.axis = 1.5)
 axis(2, cex.axis = 1.5)
@@ -550,8 +550,9 @@ theme(text = element_text(size = 20))
 
 # first, calculate pre/peri and post vacc frequencies of genes:
 pre_peri_vacc_gene_freq <- (data_gene_freq_1 + data_gene_freq_2) / (nrow(subset(clusters,clusters$seqYear==2001)) + nrow(subset(clusters,clusters$seqYear==2004)))
-#pre_vacc_gene_freq <- (data_gene_freq_1) / (nrow(subset(clusters,clusters$seqYear==2001)))
+pre_vacc_gene_freq <- (data_gene_freq_1) / (nrow(subset(clusters,clusters$seqYear==2001)))
 post_vacc_gene_freq <- data_gene_freq_3 / nrow(subset(clusters,clusters$seqYear==2007))
+peri_post <- (data_gene_freq_2 + data_gene_freq_3) / (nrow(subset(clusters,clusters$seqYear==2004)) + nrow(subset(clusters,clusters$seqYear==2007)))
 
 # calculate delta statistic (refer to Corander et al. for more info)
 delta_data <- (post_vacc_gene_freq - pre_peri_vacc_gene_freq) ^ 2 / (1 - pre_peri_vacc_gene_freq * (1 - pre_peri_vacc_gene_freq))
@@ -561,6 +562,11 @@ delta_ranking <- rank(delta_data)
 #delta_ranking <- rank(delta_data)
 #<- sort(delta_data, index.return = TRUE)
 # access the indexes of the corresponding genes through sorted_delta$ix, access the values through sorted_delta$x
+
+
+delta_data3 <- (peri_post - pre_vacc_gene_freq) ^ 2 / (1 - pre_vacc_gene_freq * (1 - pre_vacc_gene_freq))
+delta_ranking3 <- rank(delta_data3)
+delta_ranking <- delta_ranking3
 
 ```
 
@@ -590,10 +596,16 @@ delta_ranking <- rank(delta_data)
 # wow, 50% of the second method seem to be taken up by measuring the time!
 
 # So I will go with option 2, but maybe should double check that this actually the same (I think it is though).
-start_pop <- as.vector(as.double(rmultinom(1,50000,prob = cluster_freq_1/sum(cluster_freq_1))))
+#start_pop <- as.vector(as.double(rmultinom(1,50000,prob = cluster_freq_1/sum(cluster_freq_1))))
 # or sample
 
-# and Pop_eq? I feel like I am setting that wrong.
+### create initial population that is based on the 2001 data set but not an exact sampling from it
+# but a Poisson process
+expand_factor <- 15000 / sum(cluster_freq_1)
+exp_noise <- 10
+start_pop <- (sapply((cluster_freq_1 + rexp(n = length(cluster_freq_1), rate = exp_noise)) * expand_factor, rpois, n=1))
+
+
 ```
 
 
@@ -772,15 +784,30 @@ grid.arrange(data_plot, sim_plot, nrow = 2)
 ```
 
 ### run the model with Corander parameters from heterogeneous-rate multilocus NFDS
+```{r}
+### create initial population that is based on the 2001 data set but not an exact sampling from it
+# but a Poisson process
+expand_factor <- 15000 / sum(cluster_freq_1)
+exp_noise <- 10
+model_start_pop <- as.double(sapply((cluster_freq_1 + rexp(n = length(cluster_freq_1), rate = exp_noise)) * expand_factor, rpois, n=1))
+
+# visual check for the "sampling"
+#plot(cluster_freq_1/sum(cluster_freq_1))
+#points(model_start_pop/sum(model_start_pop), col = "red")
+# looks similar enough, I would say
+```
+
 
 ```{r}
 #quick fix for population size: currently sum(clusters_2001) = 133
 # I want 50,000, so I'll take an integer approx of 50000/133 = 375.94, which is 400 :D
 #cluster_freq_ini_expanded <- cluster_freq_1 *400
-Corander_params <- list(dt = 1/36, species_no = no_clusters,  gene_no = nrow(cluster_gene_presence_absence), Pop_ini = start_pop, Pop_eq = start_pop, capacity = sum(start_pop), Genotypes = matrix_cluster_gene_presence_absence, sigma_f = 0.1363, sigma_w = 0.0023, prop_f = 0.2483, delta = delta_ranking, m = 0.0044, vaccTypes = isVT_vec, v = 0.0812, vacc_time = 1) 
+Corander_params <- list(dt = 1/36, species_no = no_clusters,  gene_no = nrow(cluster_gene_presence_absence), Pop_ini = model_start_pop, Pop_eq = model_start_pop, capacity = sum(model_start_pop), Genotypes = matrix_cluster_gene_presence_absence, sigma_f = 0.1363, sigma_w = 0.0023, prop_f = 0.2483, delta = delta_ranking, m = 0.0044, vaccTypes = isVT_vec, v = 0.0812, vacc_time = 1) 
 params_n_vP <- Corander_params
 # now, adjusting the values and seeing whether I get closer to the data
 #params_n_vP <- list(dt = 1/36, species_no = no_clusters,  gene_no = nrow(cluster_gene_presence_absence), Pop_ini = start_pop, Pop_eq = start_pop, capacity = sum(start_pop), Genotypes = matrix_cluster_gene_presence_absence, sigma_f = 0.5363, sigma_w = 0.023, prop_f = 0.2483, delta = delta_ranking, m = 0.00044, vaccTypes = isVT_vec, v = 0.7812, vacc_time = 6) 
+adap_Corander_params <- list(dt = 1/36, species_no = no_clusters,  gene_no = nrow(cluster_gene_presence_absence), Pop_ini = model_start_pop, Pop_eq = model_start_pop, capacity = sum(model_start_pop), Genotypes = matrix_cluster_gene_presence_absence, sigma_f = 0.1363, sigma_w = 0.0023, prop_f = 0.2483, delta = delta_ranking, m = 0.0044, vaccTypes = isVT_vec, v = 0.1812, vacc_time = 1) 
+params_n_vP <- adap_Corander_params
 ```
 
 
@@ -872,8 +899,143 @@ grid.arrange(data_plot, sim_plot, nrow = 2)
 
 # this can be used to compare the simulated data to the real data
 # 2001 should be the same because this is a deterministic start state
-# the other times n_times/2 and n_times are chosen quite arbitrarily at the moment. not sure how to choose them?
 ```
+
+
+# create lollipop plot for testing different parameter values manually
+```{r}
+x_mean <- apply(x, c(1,3), mean)
+# Create data
+          lollipop_data_2001_nVT <- data.frame(
+            x=which(isVT_vec==0),
+            model2001=x_mean[which(isVT_vec==0),1] / sum(x_mean[,1]),
+            data2001=as.numeric(cluster_freq_1[which(isVT_vec==0)] / sum(cluster_freq_1))
+          )
+          lollipop_data_2001_VT <- data.frame(
+            x=which(isVT_vec==1),
+            model2001=x_mean[which(isVT_vec==1),1] / sum(x_mean[,1]),
+            data2001=as.numeric(cluster_freq_1[which(isVT_vec==1)] / sum(cluster_freq_1))
+          )
+          lollipop_data_2004_nVT <- data.frame(
+            x=which(isVT_vec==0),
+            model2004=x_mean[which(isVT_vec==0),37] / sum(x_mean[,37]),
+            data2004=as.numeric(cluster_freq_2[which(isVT_vec==0)] / sum(cluster_freq_2))
+          )
+          lollipop_data_2004_VT <- data.frame(
+            x=which(isVT_vec==1),
+            model2004=x_mean[which(isVT_vec==1),37] / sum(x_mean[,37]),
+            data2004=as.numeric(cluster_freq_2[which(isVT_vec==1)] / sum(cluster_freq_2))
+          )
+          lollipop_data_2007_nVT <- data.frame(
+            x=which(isVT_vec==0),
+            model2007=x_mean[which(isVT_vec==0),73] / sum(x_mean[,73]),
+            data2007=as.numeric(cluster_freq_3[which(isVT_vec==0)] / sum(cluster_freq_3))
+          )
+          lollipop_data_2007_VT <- data.frame(
+            x=which(isVT_vec==1),
+            model2007=x_mean[which(isVT_vec==1),73] / sum(x_mean[,73]),
+            data2007=as.numeric(cluster_freq_3[which(isVT_vec==1)] / sum(cluster_freq_3))
+          )
+          # Change baseline
+          lollipop_plot_2001_nVT <- ggplot(lollipop_data_2001_nVT) +
+            geom_segment( aes(x=x, xend=x, y=model2001, yend=data2001), color="grey") +
+            geom_point( aes(x=x, y=model2001, color="Model non-VT"), size=3 ) +
+            geom_point( aes(x=x, y=data2001, color="Data non_VT"), size=3 ) +
+            scale_color_manual(values = c("#E69F00", "#56B4E9"),
+                               guide  = guide_legend(), 
+                               name   = "Group") +
+            coord_flip()+
+            #theme_ipsum() +
+            theme(legend.position = "none") +
+            ggtitle("2001 Non-Vaccine Types") +
+            ylab("Frequency") +
+            xlab("Clusters") +
+            theme(axis.title  = element_text(size = 20), axis.text = element_text(size = 20), plot.title = element_text(size = 25,hjust = 0.5))  +
+            ylim(0, max(max(lollipop_data_2001_nVT$model2001),max(lollipop_data_2001_nVT$data2001),max(lollipop_data_2004_VT$model2004),max(lollipop_data_2004_VT$data2004),max(lollipop_data_2007_nVT$model2007),max(lollipop_data_2007_nVT$data2007)))
+          lollipop_plot_2001_VT <- ggplot(lollipop_data_2001_VT) +
+            geom_segment( aes(x=x, xend=x, y=model2001, yend=data2001), color="grey") +
+            geom_point( aes(x=x, y=model2001, color="Model non-VT"), size=3 ) +
+            geom_point( aes(x=x, y=data2001, color="Data non_VT"), size=3 ) +
+            scale_color_manual(values = c("#E69F00", "#56B4E9"),
+                               guide  = guide_legend(), 
+                               name   = "Group") +
+            coord_flip()+
+            #theme_ipsum() +
+            theme(legend.position = "none") +
+            ggtitle("2001 Vaccine Types") +
+            ylab("Frequency") +
+            xlab("Clusters") +
+            theme(axis.title  = element_text(size = 20), axis.text = element_text(size = 20), plot.title = element_text(size = 25,hjust = 0.5))  +
+            ylim(0, max(max(lollipop_data_2001_nVT$model2001),max(lollipop_data_2001_nVT$data2001),max(lollipop_data_2004_VT$model2004),max(lollipop_data_2004_VT$data2004),max(lollipop_data_2007_nVT$model2007),max(lollipop_data_2007_nVT$data2007)))
+          lollipop_plot_2004_nVT <- ggplot(lollipop_data_2004_nVT) +
+            geom_segment( aes(x=x, xend=x, y=model2004, yend=data2004), color="grey") +
+            geom_point( aes(x=x, y=model2004, color="Model"), size=3 ) +
+            geom_point( aes(x=x, y=data2004, color="Data"), size=3 ) +
+            scale_color_manual(values = c("#E69F00", "#56B4E9"),
+                               guide  = guide_legend(), 
+                               name   = "Group") +
+            coord_flip()+
+            #theme_ipsum() +
+            theme(legend.position = "none") +
+            ggtitle("2004 Non-Vaccine Types") +
+            ylab("Frequency") +
+            xlab("Clusters") +
+            theme(axis.title  = element_text(size = 20), axis.text = element_text(size = 20), plot.title = element_text(size = 25,hjust = 0.5))  +
+ylim(0, max(max(lollipop_data_2001_nVT$model2001),max(lollipop_data_2001_nVT$data2001),max(lollipop_data_2004_VT$model2004),max(lollipop_data_2004_VT$data2004),max(lollipop_data_2007_nVT$model2007),max(lollipop_data_2007_nVT$data2007)))          
+          lollipop_plot_2004_VT <- ggplot(lollipop_data_2004_VT) +
+            geom_segment( aes(x=x, xend=x, y=model2004, yend=data2004), color="grey") +
+            geom_point( aes(x=x, y=model2004, color="Model"), size=3 ) +
+            geom_point( aes(x=x, y=data2004, color="Data"), size=3 ) +
+            scale_color_manual(values = c("#E69F00", "#56B4E9"),
+                               guide  = guide_legend(), 
+                               name   = "Group") +
+            coord_flip()+
+            #theme_ipsum() +
+            theme(legend.position = "none") +
+            ggtitle("2004 Vaccine Types") +
+            ylab("Frequency") +
+            xlab("Clusters") +
+            theme(axis.title  = element_text(size = 20), axis.text = element_text(size = 20), plot.title = element_text(size = 25,hjust = 0.5))  +
+            ylim(0, max(max(lollipop_data_2001_nVT$model2001),max(lollipop_data_2001_nVT$data2001),max(lollipop_data_2004_VT$model2004),max(lollipop_data_2004_VT$data2004),max(lollipop_data_2007_nVT$model2007),max(lollipop_data_2007_nVT$data2007))) 
+          lollipop_plot_2007_nVT <- ggplot(lollipop_data_2007_nVT) +
+            geom_segment( aes(x=x, xend=x, y=model2007, yend=data2007), color="grey") +
+            geom_point( aes(x=x, y=model2007, color="Model"), size=3 ) +
+            geom_point( aes(x=x, y=data2007, color="Data"), size=3 ) +
+            scale_color_manual(values = c("#E69F00", "#56B4E9"),
+                               guide  = guide_legend(), 
+                               name   = "Group") +
+            coord_flip()+
+            #theme_ipsum() +
+            theme(legend.position = "none") +
+            ggtitle("2007 Non-Vaccine Types") +
+            ylab("Frequency") +
+            xlab("Clusters") +
+            theme(axis.title  = element_text(size = 20), axis.text = element_text(size = 20), plot.title = element_text(size = 25,hjust = 0.5))  +
+            ylim(0, max(max(lollipop_data_2001_nVT$model2001),max(lollipop_data_2001_nVT$data2001),max(lollipop_data_2004_VT$model2004),max(lollipop_data_2004_VT$data2004),max(lollipop_data_2007_nVT$model2007),max(lollipop_data_2007_nVT$data2007)))          
+          lollipop_plot_2007_VT <- ggplot(lollipop_data_2007_VT) +
+            geom_segment( aes(x=x, xend=x, y=model2007, yend=data2007), color="grey") +
+            geom_point( aes(x=x, y=model2007, color="Model"), size=3 ) +
+            geom_point( aes(x=x, y=data2007, color="Data"), size=3 ) +
+            scale_color_manual(values = c("#E69F00", "#56B4E9"),
+                               guide  = guide_legend(), 
+                               name   = "Legend") +
+            coord_flip()+
+            #theme_ipsum() +
+            theme(legend.position = c(.8,.8),legend.text = element_text(size = 20),legend.title = element_text(size = 20)) +
+            ggtitle("2007 Vaccine Types") +
+            ylab("Frequency") +
+            xlab("Clusters") +
+            theme(axis.title  = element_text(size = 20), axis.text = element_text(size = 20), plot.title = element_text(size = 25,hjust = 0.5))  +
+            ylim(0, max(max(lollipop_data_2001_nVT$model2001),max(lollipop_data_2001_nVT$data2001),max(lollipop_data_2004_VT$model2004),max(lollipop_data_2004_VT$data2004),max(lollipop_data_2007_nVT$model2007),max(lollipop_data_2007_nVT$data2007)))
+          #save plot as a png
+          #g <- arrangeGrob(lollipop_plot_2001,lollipop_plot_2004, lollipop_plot_2007, ncol =3) #generates g
+          #ggsave(file=paste(paste("plot",as.character(counter), sep=""), ".png", sep=""), g, width = 16, height = 16) #saves g
+          grid.arrange(lollipop_plot_2001_nVT + theme(plot.margin = unit(c(.5,0.5,1,0.5), "cm")),lollipop_plot_2004_nVT+ theme(plot.margin = unit(c(.5,0.5,1,0.5), "cm")), lollipop_plot_2007_nVT + theme(plot.margin = unit(c(.5,0.5,1,0.5), "cm")),lollipop_plot_2001_VT + theme(plot.margin = unit(c(.5,0.5,.5,0.5), "cm")), lollipop_plot_2004_VT + theme(plot.margin = unit(c(.5,0.5,.5,0.5), "cm")), lollipop_plot_2007_VT + theme(plot.margin = unit(c(.5,0.5,.5,0.5), "cm")), ncol = 3, nrow=2)
+          #grid.arrange(lollipop_plot_2001_VT,lollipop_plot_2004_VT, lollipop_plot_2007_VT, ncol = 3)
+          #          grid.arrange(lollipop_plot_2004_nVT+ theme(plot.margin = unit(c(.5,0.5,1,0.5), "cm")), lollipop_plot_2007_nVT + theme(plot.margin = unit(c(.5,0.5,1,0.5), "cm")), lollipop_plot_2004_VT + theme(plot.margin = unit(c(.5,0.5,.5,0.5), "cm")), lollipop_plot_2007_VT + theme(plot.margin = unit(c(.5,0.5,.5,0.5), "cm")), ncol = 2, nrow=2)
+```
+
+
 
 
 
@@ -910,17 +1072,24 @@ dt <- 1/36 # we assume that the generation time of Strep. pneumo is 1 month
 #instead, I want to excluded 2001 data from fitting, since that is just the start (and the start population is sampled from that)
 
 peripost_fitting_cluster_freq_df <- fitting_cluster_freq_df[2:3,]
+### testing this whether it helps with the fitting:
+peripost_fitting_cluster_freq_df$year <- c(1,2)
+# (until now I had 2004 and 2007 there and then in the model that resulted in times 72144 and 72252. does not make sense)
+# when changing this back, also change initial_time back to 2001
 
 mass_data <- mcstate::particle_filter_data(data = peripost_fitting_cluster_freq_df,
                                           time = "year",
                                           rate = 1 / dt,
-                                          initial_time = 2001)
+                                          initial_time = 0)
 #the original:
 # dt <- 1/36
-#mass_data <- mcstate::particle_filter_data(data = fitting_cluster_freq_df,
+###maybe I do need the 2001 data for fitting? Because what do I do otherwise with the first model point?
+#all_fitting_freq_df <- fitting_cluster_freq_df
+#all_fitting_freq_df$year <- c(1,2,3)
+#mass_data <- mcstate::particle_filter_data(data = all_fitting_freq_df,
 #                                          time = "year",
 #                                          rate = 1 / dt,
-#                                          initial_time = 2001)
+#                                          initial_time = 0)
 ```
 
 ```{r}
@@ -969,7 +1138,50 @@ combined_compare <- function(state, observed, pars = NULL) {
 }
 ```
 
+
 ```{r}
+# log-likelihood of with Poisson distribution
+ll_pois <- function(obs, model) {
+  exp_noise <- 1e6
+  #browser()
+  if (is.na(obs)) {
+    # Creates vector of zeros in ll with same length, if no data
+    ll_obs <- numeric(length(model))
+  } else {
+    lambda <- model + rexp(n = length(model), rate = exp_noise)
+    ll_obs <- dpois(x = obs, lambda = lambda, log = TRUE)
+  }
+  ll_obs
+}
+
+combined_compare <- function(state, observed, pars = NULL) {
+  result <- 0
+  #data_size <- sum(observed[as.character(1:62)])
+  # cannot get this to work for now
+  # instead I will use this:
+  data_size <- sum(cluster_freq_1)
+  #model_size <- sum(state[, , drop = TRUE])
+  model_size = 15000
+  
+  for (i in 1:62){
+    #print(observed[as.character(ind)])
+    #print(state[1+i, , drop = TRUE])
+    # just checking one particle
+    #result <- result + ll_pois(observed[[as.character(i)]], state[1+i,1 , drop = TRUE])
+    #used to be this:
+    result <- result + ll_pois(observed[[as.character(i)]], state[1+i, , drop = TRUE]/model_size * data_size)
+    #but I don't really want to look at all the particles, or do I?
+  }
+  result
+}
+
+#manual usage: combined_compare(WFmodel_nG_h_vP$state(), observed = mass_data[1,])
+```
+
+```{r}
+#index <- function(info) {
+#  list(run = 5L, state = 2:63)
+#}
 ### trying out deterministic particle filter
 det_filter <- particle_deterministic$new(data = mass_data,
                                        model = WF_nG_h_vP,
@@ -1071,7 +1283,7 @@ for (t in seq_len(n_times)) {
 time <- x[1, 1, ]
 x <- x[-1, , ]
 
-# vaccine types seem to be less successful, yeah!
+# vaccine types seem to be less successful
 #x_mean <- x
 library(hrbrthemes)
 x_mean <- apply(x, c(1,3), mean)
@@ -1210,34 +1422,50 @@ ylim(0, max(max(lollipop_data_2001_nVT$model2001),max(lollipop_data_2001_nVT$dat
                     grid.arrange(lollipop_plot_2004_nVT+ theme(plot.margin = unit(c(.5,0.5,1,0.5), "cm")), lollipop_plot_2007_nVT + theme(plot.margin = unit(c(.5,0.5,1,0.5), "cm")), lollipop_plot_2004_VT + theme(plot.margin = unit(c(.5,0.5,.5,0.5), "cm")), lollipop_plot_2007_VT + theme(plot.margin = unit(c(.5,0.5,.5,0.5), "cm")), ncol = 2, nrow=2)
 ```
 
+```{r}
+### create initial population that is based on the 2001 data set but not an exact sampling from it
+# but a Poisson process
+expand_factor <- 15000 / sum(cluster_freq_1)
+exp_noise <- 10
+model_start_pop <- (sapply((cluster_freq_1 + rexp(n = length(cluster_freq_1), rate = exp_noise)) * expand_factor, rpois, n=1))
+
+# visual check for the "sampling"
+plot(cluster_freq_1/sum(cluster_freq_1))
+points(model_start_pop/sum(model_start_pop), col = "red")
+# looks similar enough, I would say
+```
+
 
 ```{r}
 # Using MCMC to infer parameters
-pmcmc_sigma_f <- mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0)
-pmcmc_sigma_w <- mcstate::pmcmc_parameter("sigma_w", 0.05, min = 0)
+#pmcmc_sigma_f <- mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0)
+#pmcmc_sigma_w <- mcstate::pmcmc_parameter("sigma_w", 0.05, min = 0)
+pmcmc_sigma_f <- mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0, max = 1)
+pmcmc_sigma_w <- mcstate::pmcmc_parameter("sigma_w", 0.05, min = 0, max = 1)
 pmcmc_prop_f <- mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1)
 pmcmc_m <- mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 1)
 pmcmc_v <- mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)
 species_no <- no_clusters
 gene_no <- nrow(cluster_gene_presence_absence)
-Pop_ini <- cluster_freq_1
-Pop_eq <- cluster_freq_1
+#Pop_ini <- cluster_freq_1
+#Pop_eq <- cluster_freq_1
+Pop_ini <- model_start_pop
+Pop_eq <- model_start_pop
 Genotypes <-matrix_cluster_gene_presence_absence
-capacity <- sum(cluster_freq_1)
+#capacity <- sum(cluster_freq_1)
+capacity <- sum(model_start_pop)
 delta <- delta_ranking
 vaccTypes <- isVT_vec
-vacc_time <- 100
+vacc_time <- 0
 dt <- 1/36
 
 
-complex_params <- c(Pop_ini, Pop_eq, Genotypes, capacity, delta, vaccTypes, species_no, gene_no, vacc_time, dt, 0.15, 0.05, 0.25, 0.03, 0.05)
-#set_names <- function(x, nms) {
-#  names(x) <- nms
-#  x
-#}
+complex_params <- c(Pop_ini, Pop_eq, Genotypes, capacity, delta, vaccTypes, species_no, gene_no, vacc_time, dt)
+
 #transform <- set_names(lapply(complex_params, make_transform), complex_params)
 make_transform <- function(p) {
-    list(Pop_ini = p[1:62],
+  function(theta){
+    c(list(Pop_ini = p[1:62],
          Pop_eq = p[63 : 124],
          Genotypes = matrix(p[125 : (125 + (nrow(matrix_cluster_gene_presence_absence) * ncol(matrix_cluster_gene_presence_absence))-1)], nrow = gene_no, ncol = no_clusters),
          capacity = p[(125 + (nrow(matrix_cluster_gene_presence_absence) * ncol(matrix_cluster_gene_presence_absence))-1) +1],
@@ -1246,21 +1474,16 @@ make_transform <- function(p) {
          species_no = p[(((125 + (nrow(matrix_cluster_gene_presence_absence) * ncol(matrix_cluster_gene_presence_absence))-1) + 2) + gene_no + 1 + no_clusters -1)],
          gene_no = p[(((125 + (nrow(matrix_cluster_gene_presence_absence) * ncol(matrix_cluster_gene_presence_absence))-1) + 2) + gene_no + 1 + no_clusters)],
          vacc_time = p[(((125 + (nrow(matrix_cluster_gene_presence_absence) * ncol(matrix_cluster_gene_presence_absence))-1) + 2) + gene_no + 1 + no_clusters) + 1],
-         dt = p[(((125 + (nrow(matrix_cluster_gene_presence_absence) * ncol(matrix_cluster_gene_presence_absence))-1) + 2) + gene_no + 1 + no_clusters) + 2],
-         sigma_f = p[(((125 + (nrow(matrix_cluster_gene_presence_absence) * ncol(matrix_cluster_gene_presence_absence))-1) + 2) + gene_no + 1 + no_clusters) + 3],
-         sigma_w = p[(((125 + (nrow(matrix_cluster_gene_presence_absence) * ncol(matrix_cluster_gene_presence_absence))-1) + 2) + gene_no + 1 + no_clusters) + 4],
-         prop_f = p[(((125 + (nrow(matrix_cluster_gene_presence_absence) * ncol(matrix_cluster_gene_presence_absence))-1) + 2) + gene_no + 1 + no_clusters) + 5],
-         m = p[(((125 + (nrow(matrix_cluster_gene_presence_absence) * ncol(matrix_cluster_gene_presence_absence))-1) + 2) + gene_no + 1 + no_clusters) + 6],
-         v = p[(((125 + (nrow(matrix_cluster_gene_presence_absence) * ncol(matrix_cluster_gene_presence_absence))-1) + 2) + gene_no + 1 + no_clusters) + 7])
+         dt = p[(((125 + (nrow(matrix_cluster_gene_presence_absence) * ncol(matrix_cluster_gene_presence_absence))-1) + 2) + gene_no + 1 + no_clusters) + 2]), as.list(theta))
   }
-
+}
 transform <- function(x) {
   make_transform(complex_params)}
 proposal_matrix <- diag(0.1, 5) # the proposal matrix defines the covariance-variance matrix for a mult normal dist
 # here, all parameters are proposed independently. 
 # think about this, this might not actually be true
 #mcmc_pars <- mcstate::pmcmc_parameters$new(list(pmcmc_sigma_f, pmcmc_sigma_w, pmcmc_prop_f, pmcmc_m, pmcmc_v), proposal_matrix, transform)
-mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0), mcstate::pmcmc_parameter("sigma_w", 0.05, min = 0), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 1), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), proposal_matrix, transform)
+mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0, max = 1), mcstate::pmcmc_parameter("sigma_w", 0.05, min = 0, max = 1), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 1), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), proposal_matrix, make_transform(complex_params))
 #= make_transform(c(Pop_ini, Pop_eq, Genotypes, capacity, delta, vaccTypes, species_no, gene_no, vacc_time)))
 #mcmc_pars$names()
 #mcmc_pars$model(mcmc_pars$initial())
@@ -1271,17 +1494,122 @@ mcmc_pars$initial()
 ```
 
 ```{r}
-n_steps <- 500
+n_steps <- 1000
 n_burnin <- 200
 ```
 
 
+### DETERMINISTIC FITTING
+
 ```{r}
+# do fitting with deterministic particle filter
+#n_particles <- 20
+#processed_chains <- mcstate::pmcmc_thin(pmcmc_tuned_run, burnin = 200)
+#parameter_mean_hpd <- apply(processed_chains$pars, 2, mean)
+#parameter_mean_hpd
+
+#mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", parameter_mean_hpd[1], min = 0.075, max = 0.22), mcstate::pmcmc_parameter("sigma_w", parameter_mean_hpd[2], min = 0, max = 0.0749), mcstate::pmcmc_parameter("prop_f", parameter_mean_hpd[3], min = 0, max = 1), mcstate::pmcmc_parameter("m", parameter_mean_hpd[4], min = 0, max = 0.2), mcstate::pmcmc_parameter("v", parameter_mean_hpd[5], min = 0, max = 0.5)), proposal_matrix, make_transform(complex_params))
+
+det_filter <- particle_deterministic$new(data = mass_data,
+                                       model = WF_nG_h_vP,
+                                       compare = combined_compare)
+
+n_steps <- 5000
+n_burnin <- 0
+
+proposal_matrix <- diag(x=c(0.001, 0.001, 0.01, 0.001, 0.01), nrow = 5, ncol = 5)
+mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0.1, max = 0.5), mcstate::pmcmc_parameter("sigma_w", 0.005, min = 0, max = 0.0749), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 0.1), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), proposal_matrix, transform)
+mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0, max = 1), mcstate::pmcmc_parameter("sigma_w", 0.005, min = 0, max = 1), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 0.1), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), proposal_matrix, transform)
+
 control <- mcstate::pmcmc_control(
     n_steps,
     save_state = TRUE, 
     save_trajectories = TRUE,
-    progress = TRUE)
+    progress = TRUE,
+    adaptive_proposal = TRUE,
+    n_chains = 4)
+det_pmcmc_run <- mcstate::pmcmc(mcmc_pars, det_filter, control = control)
+par(mfrow = c(1,1))
+true_history <- peripost_fitting_cluster_freq_df
+plot_particle_filter(det_pmcmc_run$trajectories$state/15000*300, true_history, 1:2)
+```
+
+```{r}
+library(coda)
+det_mcmc1 <- coda::as.mcmc(cbind(det_pmcmc_run$probabilities, det_pmcmc_run$pars))
+
+
+plot(det_mcmc1)
+1 - coda::rejectionRate(det_mcmc1)
+# I currently have an acceptance rate of 1. WHY?!
+# my acceptance rate is way too high
+# the values of my likelihood do not really change.
+processed_chains <- mcstate::pmcmc_thin(det_pmcmc_run, burnin = 200)
+parameter_mean <- apply(processed_chains$pars, 2, mean)
+parameter_mean
+
+# in det_pmcmc_run$trajectories$state[,i,j] for each j and all i the vectors are exactly the same! 
+# Why?! where is the same in storing that information then? I though those are supposed to be the 
+```
+
+
+```{r}
+det_proposal_matrix <- cov(det_pmcmc_run$pars)
+mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", parameter_mean[1], min = 0.075, max = 1), mcstate::pmcmc_parameter("sigma_w", parameter_mean[2], min = 0, max = 0.0749), mcstate::pmcmc_parameter("prop_f", parameter_mean[3], min = 0, max = 1), mcstate::pmcmc_parameter("m", parameter_mean[4], min = 0, max = 0.2), mcstate::pmcmc_parameter("v", parameter_mean[5], min = 0, max = 0.5)), proposal_matrix, make_transform(complex_params))
+det_proposal_matrix
+```
+
+```{r}
+# do fitting with deterministic particle filter
+
+det_filter <- particle_deterministic$new(data = mass_data,
+                                       model = WF_nG_h_vP,
+                                       compare = combined_compare)
+
+n_steps <- 20000
+n_burnin <- 0
+
+control <- mcstate::pmcmc_control(
+    n_steps,
+    save_state = TRUE, 
+    save_trajectories = TRUE,
+    progress = TRUE,
+    adaptive_proposal = TRUE,
+    n_chains = 4)
+det_pmcmc_run2 <- mcstate::pmcmc(mcmc_pars, det_filter, control = control)
+par(mfrow = c(1,1))
+
+```
+
+```{r}
+det_mcmc2 <- coda::as.mcmc(cbind(det_pmcmc_run2$probabilities, det_pmcmc_run2$pars))
+summary(det_mcmc2)
+
+plot(det_mcmc2)
+```
+
+```{r}
+1 - coda::rejectionRate(det_mcmc2)
+
+processed_chains <- mcstate::pmcmc_thin(det_pmcmc_run2, burnin = 200)
+parameter_mean <- apply(processed_chains$pars, 2, mean)
+parameter_mean
+```
+
+
+```{r}
+#try doing a stochastic fit with these parameters now
+#det_mcmc_pars
+
+n_particles <- 100
+n_steps <- 500
+n_burnin <- 0
+control <- mcstate::pmcmc_control(
+    n_steps,
+    save_state = TRUE, 
+    save_trajectories = TRUE,
+    progress = TRUE,
+    n_chains = 1)
 pmcmc_run <- mcstate::pmcmc(mcmc_pars, filter, control = control)
 
 par(mfrow = c(1,1))
@@ -1289,343 +1617,167 @@ plot_particle_filter(pmcmc_run$trajectories$state, true_history, 1:2)
 ```
 
 ```{r}
-processed_chains <- mcstate::pmcmc_thin(pmcmc_run, burnin = n_burnin, thin = 2)
-parameter_mean_hpd <- apply(processed_chains$pars, 2, mean)
-parameter_mean_hpd
+stoch_mcmc1 <- coda::as.mcmc(cbind(pmcmc_run$probabilities, pmcmc_run$pars))
+
+processed_chains <- mcstate::pmcmc_thin(pmcmc_run, burnin = 200)
+parameter_mean <- apply(processed_chains$pars, 2, mean)
+parameter_mean
+
+summary(stoch_mcmc1)
+plot(stoch_mcmc1)
+1 - coda::rejectionRate(stoch_mcmc1)
 ```
 
 ```{r}
-library(coda)
-mcmc1 <- coda::as.mcmc(cbind(pmcmc_run$probabilities, pmcmc_run$pars))
-
-summary(mcmc1)
+stoch_proposal_matrix <- cov(pmcmc_run$pars)
+stoch_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", parameter_mean[1], min = 0.075, max = 1), mcstate::pmcmc_parameter("sigma_w", parameter_mean[2], min = 0, max = 0.0749), mcstate::pmcmc_parameter("prop_f", parameter_mean[3], min = 0, max = 1), mcstate::pmcmc_parameter("m", parameter_mean[4], min = 0, max = 0.2), mcstate::pmcmc_parameter("v", parameter_mean[5], min = 0, max = 0.5)), stoch_proposal_matrix, make_transform(complex_params))
+stoch_proposal_matrix
 ```
 
 ```{r}
-plot(mcmc1)
-```
-### Tuning the pMCMC
-```{r}
-coda::effectiveSize(mcmc1)
-```
-
-```{r}
-1 - coda::rejectionRate(mcmc1)
-```
-# acceptance rate for all parameters the same
-# and also it is wayyyy to low (0.5 as a start, then 0.234 is thought to be optimal)
-# --> proposal distribution is not good
-```{r}
-library(ggplot2)
-library(gridExtra)
-library(dplyr)
-library(hrbrthemes)
-# Create data
-lollipop_data_2004 <- data.frame(
-  x=1:no_clusters, 
-  model2004=pmcmc_run$trajectories$state[2:63,1,2]/sum(pmcmc_run$trajectories$state[2:63,1,2]),
-  data2004=as.numeric(true_history[1,2:63])/sum(as.numeric(true_history[1,2:63]))
-)
-lollipop_data_2007 <- data.frame(
-  x=1:no_clusters, 
-  model2007=pmcmc_run$trajectories$state[2:63,1,3]/sum(pmcmc_run$trajectories$state[2:63,1,3]),
-  data2007=as.numeric(true_history[2,2:63])/sum(as.numeric(true_history[2,2:63]))
-)
-# Change baseline
-lollipop_plot_2004 <- ggplot(lollipop_data_2004) +
-  geom_segment( aes(x=x, xend=x, y=model2004, yend=data2004), color="grey") +
-  geom_point( aes(x=x, y=model2004, color="Model"), size=3 ) +
-  geom_point( aes(x=x, y=data2004, color="Data"), size=3 ) +
-  scale_color_manual(values = c("#E69F00", "#56B4E9"),
-                     guide  = guide_legend(), 
-                     name   = "Group") +
-  coord_flip()+
-  theme_ipsum() +
-  theme(legend.position = "none") +
-  xlab("") +
-  ylab("Value of Y") +
-  ylim(0, max(max(lollipop_data_2004$model2004),max(lollipop_data_2004$data2004),max(lollipop_data_2007$model2007),max(lollipop_data_2007$data2007)))
-lollipop_plot_2007 <- ggplot(lollipop_data_2007) +
-  geom_segment( aes(x=x, xend=x, y=model2007, yend=data2007), color="grey") +
-  geom_point( aes(x=x, y=model2007, color="Model"), size=3 ) +
-  geom_point( aes(x=x, y=data2007, color="Data"), size=3 ) +
-  scale_color_manual(values = c("#E69F00", "#56B4E9"),
-                     guide  = guide_legend(), 
-                     name   = "Group") +
-  coord_flip()+
-  theme_ipsum() +
-  theme(legend.position = c(.8,.8)) +
-  xlab("") +
-  ylab("Value of Y") + 
-  ylim(0, max(max(lollipop_data_2004$model2004),max(lollipop_data_2004$data2004),max(lollipop_data_2007$model2007),max(lollipop_data_2007$data2007)))
-grid.arrange(lollipop_plot_2004, lollipop_plot_2007, ncol = 2)
-
-#what do I learn from this? maybe that my model is making the bigger clusters too big and the smaller ones too small? So stochastic dying of the population is an issue.
-
-#First Lollipop plot of a tuned model fit run. You can see that the model consistently overestimates the size of the big clusters and underestimates the size of the small clusters.
-#This can be due to the fact that we are handling such small numbers here.
-#I should maybe fit to the frequencies and not the absolute numbers and make sure that the start is being sampled, also for the fitting.
-# A quick fix could be to articifically increase the dataset numbers.
-```
-
-```{r}
-proposal_matrix <- cov(pmcmc_run$pars)
-mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0), mcstate::pmcmc_parameter("sigma_w", 0.05, min = 0), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 1), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), proposal_matrix, transform)
-proposal_matrix
-```
-
-```{r}
-n_particles <- 20
-control <- mcstate::pmcmc_control(
-    n_steps,
-    save_state = TRUE,
-    save_trajectories = TRUE,
-    progress = TRUE,
-    n_chains = 2)
-pmcmc_tuned_run <- mcstate::pmcmc(mcmc_pars, filter, control = control)
-
-# runs in 4 minutes per chain right now
-mcmc2 <- coda::as.mcmc(cbind(
-  pmcmc_tuned_run$probabilities, pmcmc_tuned_run$pars))
-
-par(mfrow = c(1,1))
-plot_particle_filter(pmcmc_tuned_run$trajectories$state, true_history, 1:2)
-
-summary(mcmc2)
-plot(mcmc2)
-```
-
-```{r}
-coda::effectiveSize(mcmc2)
-# log_prior log_likelihood  log_posterior        sigma_f        sigma_w         prop_f              m              v 
-#     0.000000       6.211637       6.211637       2.956989       1.012543       3.381379       1.946453       1.655769 
-1 - coda::rejectionRate(mcmc2)
-# log_prior log_likelihood  log_posterior        sigma_f        sigma_w         prop_f              m              v 
-#   0.00000000     0.01301301     0.01301301     0.01301301     0.01301301     0.01301301     0.01301301     0.01301301 
-# oh oh 
-# acceptance rate is even worse
-# and the log prior is constantly 0, I am sure that is the main issue
-
-plot_particle_filter(pmcmc_tuned_run$trajectories$state, true_history, 1:2)
-# hmm, not a great fit yet
-
-# most of the above about fitting is taken from https://mrc-ide.github.io/mcstate/articles/sir_models.html
-```
-
-```{r}
-library(ggplot2)
-library(gridExtra)
-library(dplyr)
-library(hrbrthemes)
-# Create data
-lollipop_data_2004 <- data.frame(
-  x=1:no_clusters, 
-  model2004=pmcmc_tuned_run$trajectories$state[2:63,1,2]/sum(pmcmc_tuned_run$trajectories$state[2:63,1,2]),
-  data2004=as.numeric(true_history[1,2:63])/sum(as.numeric(true_history[1,2:63]))
-)
-lollipop_data_2007 <- data.frame(
-  x=1:no_clusters, 
-  model2007=pmcmc_tuned_run$trajectories$state[2:63,1,3]/sum(pmcmc_tuned_run$trajectories$state[2:63,1,3]),
-  data2007=as.numeric(true_history[2,2:63])/sum(as.numeric(true_history[2,2:63]))
-)
-# Change baseline
-lollipop_plot_2004 <- ggplot(lollipop_data_2004) +
-  geom_segment( aes(x=x, xend=x, y=model2004, yend=data2004), color="grey") +
-  geom_point( aes(x=x, y=model2004, color="Model"), size=3 ) +
-  geom_point( aes(x=x, y=data2004, color="Data"), size=3 ) +
-  scale_color_manual(values = c("#E69F00", "#56B4E9"),
-                     guide  = guide_legend(), 
-                     name   = "Group") +
-  coord_flip()+
-  theme_ipsum() +
-  theme(legend.position = "none") +
-  xlab("") +
-  ylab("Value of Y") +
-  ylim(0, max(max(lollipop_data_2004$model2004),max(lollipop_data_2004$data2004),max(lollipop_data_2007$model2007),max(lollipop_data_2007$data2007)))
-lollipop_plot_2007 <- ggplot(lollipop_data_2007) +
-  geom_segment( aes(x=x, xend=x, y=model2007, yend=data2007), color="grey") +
-  geom_point( aes(x=x, y=model2007, color="Model"), size=3 ) +
-  geom_point( aes(x=x, y=data2007, color="Data"), size=3 ) +
-  scale_color_manual(values = c("#E69F00", "#56B4E9"),
-                     guide  = guide_legend(), 
-                     name   = "Group") +
-  coord_flip()+
-  theme_ipsum() +
-  theme(legend.position = c(.8,.8)) +
-  xlab("") +
-  ylab("Value of Y") + 
-  ylim(0, max(max(lollipop_data_2004$model2004),max(lollipop_data_2004$data2004),max(lollipop_data_2007$model2007),max(lollipop_data_2007$data2007)))
-grid.arrange(lollipop_plot_2004, lollipop_plot_2007, ncol = 2)
-
-#what do I learn from this? maybe that my model is making the bigger clusters too big and the smaller ones too small? So stochastic dying of the population is an issue.
-
-#First Lollipop plot of a tuned model fit run. You can see that the model consistently overestimates the size of the big clusters and underestimates the size of the small clusters.
-#This can be due to the fact that we are handling such small numbers here.
-#I should maybe fit to the frequencies and not the absolute numbers and make sure that the start is being sampled, also for the fitting.
-# A quick fix could be to articifically increase the dataset numbers.
-```
+#second stoch run
 
 
-### artificially increasing the individuals in the dataset is not what I want
-# instead I should run some tests how the negBinom behaves and see how much assertainment bias I actually have to deal with
-```{r}
-# peri and post vacc population size on average is 241.5, so 240ish
-# I want 50 000 ish
-# so 240 * 208 =  49920, I will multiply the data points by 208
-
-big_population_data <- peripost_fitting_cluster_freq_df
-big_population_data[,2:63] <- big_population_data[,2:63] * 208
-
-big_mass_data <- mcstate::particle_filter_data(data = big_population_data,
-                                          time = "year",
-                                          rate = 1 / dt,
-                                          initial_time = 2001)
-
-# parameter start values
-start_pop <- as.vector(as.double(rmultinom(1,50000,prob = cluster_freq_1/sum(cluster_freq_1))))
-capacity <- sum(start_pop)
-big_complex_params <- c(start_pop, start_pop, Genotypes, capacity, delta, vaccTypes, species_no, gene_no, vacc_time, dt, 0.15, 0.05, 0.25, 0.03, 0.05)
-big_transform <- function(x) {
-  make_transform(big_complex_params)}
-proposal_matrix <- diag(0.1, 5) # the proposal matrix defines the covariance-variance matrix for a mult normal dist
-# here, all parameters are proposed independently. 
-# think about this, this might not actually be true
-#mcmc_pars <- mcstate::pmcmc_parameters$new(list(pmcmc_sigma_f, pmcmc_sigma_w, pmcmc_prop_f, pmcmc_m, pmcmc_v), proposal_matrix, transform)
-mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0), mcstate::pmcmc_parameter("sigma_w", 0.05, min = 0), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 1), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), proposal_matrix, big_transform)
-### Inferring parameters
-
-n_particles <- 20
-# n_particles <- 100 nicer but takes about 35 minutes atm
-
-big_filter <- mcstate::particle_filter$new(data = big_mass_data,
-                                       model = WF_nG_h_vP,
-                                       n_particles = n_particles,
-                                       compare = combined_compare,
-                                       seed = 1L)
-
-big_control <- mcstate::pmcmc_control(
-    n_steps,
-    save_state = TRUE, 
-    save_trajectories = TRUE,
-    progress = TRUE,
-    n_chains = 1)
-big_pmcmc_run <- mcstate::pmcmc(mcmc_pars, big_filter, control = control)
-
-par(mfrow = c(1,1))
-plot_particle_filter(big_pmcmc_run$trajectories$state, big_population_data, 1:2)
-
-
-```
-
-```{r}
-library(hrbrthemes)
-# Create data
-lollipop_data_2004 <- data.frame(
-  x=1:no_clusters, 
-  model2004=big_pmcmc_run$trajectories$state[2:63,1,2],
-  data2004=as.numeric(big_population_data[1,2:63])
-)
-lollipop_data_2007 <- data.frame(
-  x=1:no_clusters, 
-  model2007=big_pmcmc_run$trajectories$state[2:63,1,3],
-  data2007=as.numeric(big_population_data[2,2:63])
-)
-# Change baseline
-lollipop_plot_2004 <- ggplot(lollipop_data_2004) +
-  geom_segment( aes(x=x, xend=x, y=model2004, yend=data2004), color="grey") +
-  geom_point( aes(x=x, y=model2004, color="Model"), size=3 ) +
-  geom_point( aes(x=x, y=data2004, color="Data"), size=3 ) +
-  scale_color_manual(values = c("#E69F00", "#56B4E9"),
-                     guide  = guide_legend(), 
-                     name   = "Group") +
-  coord_flip()+
-  theme_ipsum() +
-  theme(legend.position = "none") +
-  xlab("") +
-  ylab("Value of Y") +
-  ylim(0, max(max(lollipop_data_2004$model2004),max(lollipop_data_2004$data2004),max(lollipop_data_2007$model2007),max(lollipop_data_2007$data2007)))
-lollipop_plot_2007 <- ggplot(lollipop_data_2007) +
-  geom_segment( aes(x=x, xend=x, y=model2007, yend=data2007), color="grey") +
-  geom_point( aes(x=x, y=model2007, color="Model"), size=3 ) +
-  geom_point( aes(x=x, y=data2007, color="Data"), size=3 ) +
-  scale_color_manual(values = c("#E69F00", "#56B4E9"),
-                     guide  = guide_legend(), 
-                     name   = "Group") +
-  coord_flip()+
-  theme_ipsum() +
-  theme(legend.position = c(.8,.8)) +
-  xlab("") +
-  ylab("Value of Y") + 
-  ylim(0, max(max(lollipop_data_2004$model2004),max(lollipop_data_2004$data2004),max(lollipop_data_2007$model2007),max(lollipop_data_2007$data2007)))
-#library(gridExtra)
-grid.arrange(lollipop_plot_2004, lollipop_plot_2007, ncol = 2)
-```
-
-
-```{r}
-big_mcmc1 <- coda::as.mcmc(cbind(big_pmcmc_run$probabilities, big_pmcmc_run$pars))
-coda::effectiveSize(big_mcmc1)
-1 - coda::rejectionRate(big_mcmc1)
-big_proposal_matrix <- cov(big_pmcmc_run$pars)
-mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0), mcstate::pmcmc_parameter("sigma_w", 0.05, min = 0), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 1), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), proposal_matrix, big_transform)
-big_proposal_matrix
+mcmc_pars <- stoch_mcmc_pars
 n_particles <- 100
 n_steps <- 500
 n_burnin <- 200
 control <- mcstate::pmcmc_control(
     n_steps,
-    save_state = TRUE,
+    save_state = TRUE, 
     save_trajectories = TRUE,
     progress = TRUE,
     n_chains = 2)
-big_pmcmc_tuned_run <- mcstate::pmcmc(mcmc_pars, big_filter, control = control)
-
-# runs in 4 minutes per chain right now
-big_mcmc2 <- coda::as.mcmc(cbind(
-  big_pmcmc_tuned_run$probabilities, big_pmcmc_tuned_run$pars))
-
-par(mfrow = c(1,1))
-plot_particle_filter(big_pmcmc_tuned_run$trajectories$state, big_population_data, 1:2)
-
-summary(big_mcmc2)
-plot(big_mcmc2)
-
-coda::effectiveSize(big_mcmc2)
-1 - coda::rejectionRate(big_mcmc2)
+pmcmc_run2 <- mcstate::pmcmc(mcmc_pars, filter, control = control)
 ```
 
-# general comments/thoughts/ideas:
-# do I maybe want to fit against the frequencies of genotypes rather than the absolute numbers? possibly. But I think I still want to keep track of the absolute numbers within the model and use them for calculation, even if it is just because I don't want to run into issue with too small numbers.
+```{r}
+stoch_mcmc2 <- coda::as.mcmc(cbind(pmcmc_run2$probabilities, pmcmc_run2$pars))
+
+summary(stoch_mcmc2)
+plot(stoch_mcmc2)
+1 - coda::rejectionRate(stoch_mcmc2)
+
+parameter_mean <- apply(pmcmc_run2$pars, 2, mean)
+parameter_mean
+```
 
 ```{r}
-# do fitting with determinstic particle filter
+stoch_proposal_matrix2 <- cov(pmcmc_run2$pars)
+stoch_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0.1, max = 0.5), mcstate::pmcmc_parameter("sigma_w", 0.005, min = 0, max = 0.05), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 0.1), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 0.5)), stoch_proposal_matrix, transform)
+stoch_proposal_matrix2
+```
+
+```{r}
+#second stoch run
+
+
+mcmc_pars <- stoch_mcmc_pars
+n_particles <- 100
+n_steps <- 500
+n_burnin <- 200
 control <- mcstate::pmcmc_control(
     n_steps,
     save_state = TRUE, 
     save_trajectories = TRUE,
     progress = TRUE,
-    n_chains = 2)
-det_pmcmc_run <- mcstate::pmcmc(mcmc_pars, det_filter, control = control)
-par(mfrow = c(1,1))
-plot_particle_filter(det_pmcmc_run$trajectories$state, true_history, 1:2)
+    n_chains = 1)
+pmcmc_run3 <- mcstate::pmcmc(mcmc_pars, filter, control = control)
 ```
 
 ```{r}
-library(coda)
-det_mcmc1 <- coda::as.mcmc(cbind(det_pmcmc_run$probabilities, det_pmcmc_run$pars))
+stoch_mcmc3 <- coda::as.mcmc(cbind(pmcmc_run3$probabilities, pmcmc_run3$pars))
 
-summary(det_mcmc1)
-```
+summary(stoch_mcmc3)
+plot(stoch_mcmc3)
+1 - coda::rejectionRate(stoch_mcmc3)
 
-
-```{r}
-det_proposal_matrix <- cov(det_pmcmc_run$pars)
-det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0), mcstate::pmcmc_parameter("sigma_w", 0.05, min = 0), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 1), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), det_proposal_matrix, transform)
-det_proposal_matrix
+parameter_mean <- apply(pmcmc_run3$pars, 2, mean)
+parameter_mean
 ```
 
 ```{r}
-n_particles <- 20
+library(ggplot2)
+library(gridExtra)
+library(dplyr)
+library(hrbrthemes)
+# Create data
+lollipop_data_2001 <- data.frame(
+  x=1:no_clusters, 
+  model2001=pmcmc_run3$trajectories$state[2:63,1,1]/sum(pmcmc_run3$trajectories$state[2:63,1,1]),
+  data2001=as.numeric(cluster_freq_1)/sum(as.numeric(cluster_freq_1))
+)
+lollipop_data_2004 <- data.frame(
+  x=1:no_clusters, 
+  model2004=pmcmc_run3$trajectories$state[2:63,1,2]/sum(pmcmc_run3$trajectories$state[2:63,1,2]),
+  data2004=as.numeric(true_history[1,2:63])/sum(as.numeric(true_history[1,2:63]))
+)
+lollipop_data_2007 <- data.frame(
+  x=1:no_clusters, 
+  model2007=pmcmc_run3$trajectories$state[2:63,1,3]/sum(pmcmc_run3$trajectories$state[2:63,1,3]),
+  data2007=as.numeric(true_history[2,2:63])/sum(as.numeric(true_history[2,2:63]))
+)
+# Change baseline
+lollipop_plot_2001 <- ggplot(lollipop_data_2001) +
+  geom_segment( aes(x=x, xend=x, y=model2001, yend=data2001), color="grey") +
+  geom_point( aes(x=x, y=model2001, color="Model"), size=3 ) +
+  geom_point( aes(x=x, y=data2001, color="Data"), size=3 ) +
+  scale_color_manual(values = c("#E69F00", "#56B4E9"),
+                     guide  = guide_legend(), 
+                     name   = "Group") +
+  coord_flip()+
+  theme_ipsum() +
+  theme(legend.position = "none") +
+  xlab("") +
+  ylab("Value of Y") +
+  ylim(0, max(max(lollipop_data_2004$model2004),max(lollipop_data_2004$data2004),max(lollipop_data_2007$model2007),max(lollipop_data_2007$data2007)))
+lollipop_plot_2004 <- ggplot(lollipop_data_2004) +
+  geom_segment( aes(x=x, xend=x, y=model2004, yend=data2004), color="grey") +
+  geom_point( aes(x=x, y=model2004, color="Model"), size=3 ) +
+  geom_point( aes(x=x, y=data2004, color="Data"), size=3 ) +
+  scale_color_manual(values = c("#E69F00", "#56B4E9"),
+                     guide  = guide_legend(), 
+                     name   = "Group") +
+  coord_flip()+
+  theme_ipsum() +
+  theme(legend.position = "none") +
+  xlab("") +
+  ylab("Value of Y") +
+  ylim(0, max(max(lollipop_data_2004$model2004),max(lollipop_data_2004$data2004),max(lollipop_data_2007$model2007),max(lollipop_data_2007$data2007)))
+lollipop_plot_2007 <- ggplot(lollipop_data_2007) +
+  geom_segment( aes(x=x, xend=x, y=model2007, yend=data2007), color="grey") +
+  geom_point( aes(x=x, y=model2007, color="Model"), size=3 ) +
+  geom_point( aes(x=x, y=data2007, color="Data"), size=3 ) +
+  scale_color_manual(values = c("#E69F00", "#56B4E9"),
+                     guide  = guide_legend(), 
+                     name   = "Group") +
+  coord_flip()+
+  theme_ipsum() +
+  theme(legend.position = c(.8,.8)) +
+  xlab("") +
+  ylab("Value of Y") + 
+  ylim(0, max(max(lollipop_data_2004$model2004),max(lollipop_data_2004$data2004),max(lollipop_data_2007$model2007),max(lollipop_data_2007$data2007)))
+grid.arrange(lollipop_plot_2001, lollipop_plot_2004, lollipop_plot_2007, ncol = 3)
+
+#what do I learn from this? maybe that my model is making the bigger clusters too big and the smaller ones too small? So stochastic dying of the population is an issue.
+
+#First Lollipop plot of a tuned model fit run. You can see that the model consistently overestimates the size of the big clusters and underestimates the size of the small clusters.
+```
+
+```{r}
+
+ 
+```
+
+
+
+
+
+
+
+
+```{r}
+n_steps = 1000
 control <- mcstate::pmcmc_control(
     n_steps,
     save_state = TRUE,
@@ -1652,8 +1804,7 @@ det_proposal_matrix
 ```
 
 ```{r}
-n_particles <- 20
-n_steps = 1000
+n_steps = 2000
 control <- mcstate::pmcmc_control(
     n_steps,
     save_state = TRUE,
@@ -1702,6 +1853,188 @@ summary(mcmc2)
 plot(mcmc2)
 ```
 
+
+```{r}
+# function to run multiple determinstic fits in sequence
+make_det_runs <- function(n, pre_fit){
+  
+  det_proposal_matrix <- cov(pre_fit$pars)
+  det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0, max = 1), mcstate::pmcmc_parameter("sigma_w", 0.05, min = 0, max = 1), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 1), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), det_proposal_matrix, transform)
+  det_proposal_matrix
+  det_fits <- c()
+  
+  
+  for (i in 1:n){
+    n_particles <- 20
+    n_steps = 1000
+    control <- mcstate::pmcmc_control(
+      n_steps,
+      save_state = TRUE,
+      save_trajectories = TRUE,
+      progress = TRUE,
+      n_chains = 4)
+    det_pmcmc_tuned_run <- mcstate::pmcmc(det_mcmc_pars, det_filter, control = control)
+  
+    # runs in 4 minutes per chain right now
+    detmcmc_curr <- coda::as.mcmc(cbind(
+    det_pmcmc_tuned_run$probabilities, det_pmcmc_tuned_run$pars))
+  
+    det_fits <- c(det_fits, det_pmcmc_tuned_run)
+    det_proposal_matrix <- cov(det_pmcmc_tuned_run$pars)
+    det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0, max = 1), mcstate::pmcmc_parameter("sigma_w", 0.05, min = 0, max = 1), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 1), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), det_proposal_matrix, transform)
+    #det_proposal_matrix
+  }
+  det_fits
+}
+```
+
+
+
+
+```{r}
+plot(detmcmc_curr)
+plot_particle_filter(det_pmcmc_tuned_run$trajectories$state, true_history, 1:2)
+```
+
+```{r}
+coda::effectiveSize(detmcmc_curr)
+# log_prior log_likelihood  log_posterior        sigma_f        sigma_w         prop_f              m              v 
+#     0.000000       6.211637       6.211637       2.956989       1.012543       3.381379       1.946453       1.655769 
+1 - coda::rejectionRate(detmcmc_curr)
+# log_prior log_likelihood  log_posterior        sigma_f        sigma_w         prop_f              m              v 
+#   0.00000000     0.01301301     0.01301301     0.01301301     0.01301301     0.01301301     0.01301301     0.01301301 
+autocorr.plot(detmcmc_curr)
+det_proposal_matrix
+
+# most of the above about fitting is taken from https://mrc-ide.github.io/mcstate/articles/sir_models.html
+```
+
+```{r}
+# Plot of the four chains on top of each other for the five parameters:
+# (inspired by "plot 5" in FitzJohn (plot number in actual paper:6))
+
+cols <- c("#000000","#E69F00", "#56B4E9","#009E73")
+
+# Combine chains in columns for plotting
+sigmaf <- cbind(det_pmcmc_tuned_run$pars[,'sigma_f'][1:1000], det_pmcmc_tuned_run$pars[,'sigma_f'][1001:2000], det_pmcmc_tuned_run$pars[,'sigma_f'][2001:3000], det_pmcmc_tuned_run$pars[,'sigma_f'][3001:4000])
+sigmaw <- cbind(det_pmcmc_tuned_run$pars[,'sigma_w'][1:1000], det_pmcmc_tuned_run$pars[,'sigma_w'][1001:2000], det_pmcmc_tuned_run$pars[,'sigma_w'][2001:3000], det_pmcmc_tuned_run$pars[,'sigma_w'][3001:4000])
+propf <- cbind(det_pmcmc_tuned_run$pars[,'prop_f'][1:1000], det_pmcmc_tuned_run$pars[,'prop_f'][1001:2000], det_pmcmc_tuned_run$pars[,'prop_f'][2001:3000], det_pmcmc_tuned_run$pars[,'prop_f'][3001:4000])
+mig <- cbind(det_pmcmc_tuned_run$pars[,'m'][1:1000], det_pmcmc_tuned_run$pars[,'m'][1001:2000], det_pmcmc_tuned_run$pars[,'m'][2001:3000], det_pmcmc_tuned_run$pars[,'m'][3001:4000])
+vacc <- cbind(det_pmcmc_tuned_run$pars[,'v'][1:1000], det_pmcmc_tuned_run$pars[,'v'][1001:2000], det_pmcmc_tuned_run$pars[,'v'][2001:3000], det_pmcmc_tuned_run$pars[,'v'][3001:4000])
+
+par(mfrow=c(5,1))
+matplot(sigmaf, type = "l", lty = 1, 
+        xlab = "Iteration", 
+        ylab = "sigma_f", col = cols)
+matplot(sigmaw, type = "l", lty = 1, 
+        xlab = "Iteration", 
+        ylab = "sigma_w", col = cols)
+matplot(propf, type = "l", lty = 1, 
+        xlab = "Iteration", 
+        ylab = "prop_f", col = cols)
+matplot(mig, type = "l", lty = 1, 
+        xlab = "Iteration", 
+        ylab = "m", col = cols)
+matplot(vacc, type = "l", lty = 1, 
+        xlab = "Iteration", 
+        ylab = "v", col = cols)
+
+# result: the parameter space gets very well explored but probably no convergence?!
+
+```
+
+```{r}
+n_steps = 1000
+control <- mcstate::pmcmc_control(
+    n_steps,
+    save_state = TRUE,
+    save_trajectories = TRUE,
+    progress = TRUE,
+    n_chains = 1)
+det_pmcmc_tuned_run1 <- mcstate::pmcmc(det_mcmc_pars, det_filter, control = control)
+det_pmcmc_tuned_run2 <- mcstate::pmcmc(det_mcmc_pars, det_filter, control = control)
+det_pmcmc_tuned_run3 <- mcstate::pmcmc(det_mcmc_pars, det_filter, control = control)
+det_pmcmc_tuned_run4 <- mcstate::pmcmc(det_mcmc_pars, det_filter, control = control)
+
+coda_run1 <- coda::as.mcmc(cbind(det_pmcmc_tuned_run1$probabilities, det_pmcmc_tuned_run1$pars))
+coda_run2 <- coda::as.mcmc(cbind(det_pmcmc_tuned_run2$probabilities, det_pmcmc_tuned_run2$pars))
+coda_run3 <- coda::as.mcmc(cbind(det_pmcmc_tuned_run3$probabilities, det_pmcmc_tuned_run3$pars))
+coda_run4 <- coda::as.mcmc(cbind(det_pmcmc_tuned_run4$probabilities, det_pmcmc_tuned_run4$pars))
+
+coda_list <- coda::mcmc.list(coda_run1, coda_run2,coda_run3,coda_run3)
+
+coda_run <- coda::as.mcmc(cbind(det_pmcmc_tuned_run$probabilities, det_pmcmc_tuned_run$pars))
+
+# use coda to compute r hat
+library(coda)
+gelman.diag(coda_list, confidence = 0.95, transform=FALSE, autoburnin=TRUE,multivariate=FALSE)
+
+# I had to set multivariate=FALSE otherwise I had an issue with the covariance matrix not being positive definite
+# here probably because of the non-changing prior
+
+# I read that you should only trust values that have an R hat of below 1.05 (or <=1.05) which is true here
+# but probably you can see that m and v are less good than the other values. possibly not converged yet?
+```
+
+
+```{r}
+#I also still have the issue that sigma_f and sigma_w do not always behave as sigma_f > sigma_w because the algorithm does not know that I want that.
+# How can I solve that?
+# I could, for each iteration, enforce sigma_w < former sigma_f value estimate?
+# I am sure thre are better ways, but I can try that now
+
+n_particles <- 1
+control <- mcstate::pmcmc_control(
+    n_steps,
+    save_state = TRUE, 
+    save_trajectories = TRUE,
+    progress = TRUE,
+    n_chains = 4)
+det_pmcmc_run <- mcstate::pmcmc(mcmc_pars, det_filter, control = control)
+#creating a sequence of deterministic runs
+
+# function to run multiple determinstic fits in sequence
+make_det_runs_restrictedSigmas <- function(n, pre_fit){
+  
+  det_proposal_matrix <- cov(pre_fit$pars)
+  det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.5, min = 0.5, max = 1), mcstate::pmcmc_parameter("sigma_w", 0.05, min = 0, max = 0.5), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 1), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), det_proposal_matrix, transform)
+  det_proposal_matrix
+  det_fits <- c()
+  
+  
+  for (i in 1:n){
+    n_particles <- 20
+    n_steps = 1000
+    control <- mcstate::pmcmc_control(
+      n_steps,
+      save_state = TRUE,
+      save_trajectories = TRUE,
+      progress = TRUE,
+      n_chains = 4)
+    det_pmcmc_tuned_run <- mcstate::pmcmc(det_mcmc_pars, det_filter, control = control)
+  
+    # runs in 4 minutes per chain right now
+    detmcmc_curr <- coda::as.mcmc(cbind(
+    det_pmcmc_tuned_run$probabilities, det_pmcmc_tuned_run$pars))
+  
+    det_fits <- c(det_fits, det_pmcmc_tuned_run)
+    
+    det_proposal_matrix <- cov(det_pmcmc_tuned_run$pars)
+    det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", max(0.15,mean(det_pmcmc_tuned_run$pars[,"sigma_w"])), min =  mean(det_pmcmc_tuned_run$pars[,"sigma_w"]), max = 1), mcstate::pmcmc_parameter("sigma_w", min(0.05,mean(det_pmcmc_tuned_run$pars[,"sigma_f"])), min = 0, max = mean(det_pmcmc_tuned_run$pars[,"sigma_f"])), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 1), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), det_proposal_matrix, transform)
+    #det_proposal_matrix
+  }
+  return(detmcmc_curr)
+}
+
+
+det_runs <- make_det_runs_restrictedSigmas(2,det_pmcmc_run)
+
+det_run2 <- coda::as.mcmc(cbind(det_pmcmc_tuned_run$probabilities, det_pmcmc_tuned_run$pars))
+summary(det_run2)
+plot(det_run2)
+```
+
+
 ```{r}
 library(ggplot2)
 library(gridExtra)
@@ -1710,12 +2043,12 @@ library(hrbrthemes)
 # Create data
 lollipop_data_2004 <- data.frame(
   x=1:no_clusters, 
-  model2004=pmcmc_tuned_run$trajectories$state[2:63,1,2]/sum(pmcmc_tuned_run$trajectories$state[2:63,1,2]),
+  model2004=det_pmcmc_tuned_run$trajectories$state[2:63,1,2]/sum(det_pmcmc_tuned_run$trajectories$state[2:63,1,2]),
   data2004=as.numeric(true_history[1,2:63])/sum(as.numeric(true_history[1,2:63]))
 )
 lollipop_data_2007 <- data.frame(
   x=1:no_clusters, 
-  model2007=pmcmc_tuned_run$trajectories$state[2:63,1,3]/sum(pmcmc_tuned_run$trajectories$state[2:63,1,3]),
+  model2007=det_pmcmc_tuned_run$trajectories$state[2:63,1,3]/sum(det_pmcmc_tuned_run$trajectories$state[2:63,1,3]),
   data2007=as.numeric(true_history[2,2:63])/sum(as.numeric(true_history[2,2:63]))
 )
 # Change baseline
