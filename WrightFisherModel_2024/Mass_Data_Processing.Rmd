@@ -1,0 +1,44 @@
+---
+title: "Massachusetts Data Processing for NFDS model"
+output: html_notebook
+---
+
+
+```{r}
+path_to_data <- "~/Documents/PhD_Project/Data/"
+```
+
+```{r}
+### Reading in the Accesion Codes, Population and the Sequence Clusters
+library(readxl)
+Samples_accCodes <- read_excel(paste(path_to_data, "Massachusetts_data_NickCroucher/SupplementaryDataPaper/Samples_accCodes.xlsx", sep = ""))
+Mass_Samples_accCodes <- Samples_accCodes[Samples_accCodes$Population=="Massachusetts",]
+Mass_Isolates <- Mass_Samples_accCodes$`Isolate Name`
+Mass_Isolates_dict <- 1:length(Mass_Isolates)
+names(Mass_Isolates_dict) <- Mass_Isolates
+
+Isolates <- Samples_accCodes$`Isolate Name`
+Isolates_dict <- 1:length(Isolates)
+names(Isolates_dict) <- Isolates
+```
+
+```{r}
+### Reading in the Gene Cluster information
+#gene_cluster <- read.delim(paste(path_to_data, "v2_Massachusetts_data_NickCroucher/gCOG_sequences/CLS00005.out", sep = ""))
+gene_cluster <- read.table(paste(path_to_data, "v2_Massachusetts_data_NickCroucher/gCOG_sequences/CLS00005.out", sep = ""), quote="\"", comment.char="")[ c(TRUE,FALSE), ]
+
+
+split_isolate_name <- function(text_line){
+  strsplit(strsplit(text_line,">")[[1]][2],"_")[[1]][1]
+}
+isolates_gene_cluster <- unlist(lapply(gene_cluster, split_isolate_name))
+return_isolate_index <- function(name){
+  print(name)
+  Isolates_dict[[name]]
+}
+indices_gene_clusters <- lapply(isolates_gene_cluster, return_isolate_index)
+
+# error: NT_110_58
+# splitting by underscore does not work :-(
+```
+
