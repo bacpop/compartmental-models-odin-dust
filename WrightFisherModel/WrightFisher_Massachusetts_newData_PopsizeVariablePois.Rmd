@@ -450,21 +450,21 @@ make_lollipop_plot(data1 = mass_cluster_freq_1, data2 = mass_cluster_freq_2, dat
 ```
 
 ```{r}
-make_lollipop_plot_VTtogether <- function(data1, data2, data3, model1, model2, model3){
+make_lollipop_plot_VTtogether <- function(clusters,data1, data2, data3, model1, model2, model3){
   
 # Create data
           lollipop_data_2001 <- data.frame(
-            x=1:mass_clusters,
+            x=clusters,
             model2001=model1 / sum(model1),
             data2001=as.numeric(data1 / sum(data1))
           )
           lollipop_data_2004 <- data.frame(
-            x=1:mass_clusters,
+            x=clusters,
             model2004=model2 / sum(model2),
             data2004=as.numeric(data2 / sum(data2))
           )
           lollipop_data_2007 <- data.frame(
-            x=1:mass_clusters,
+            x=clusters,
             model2007=model3 / sum(model3),
             data2007=as.numeric(data3 / sum(data3))
           )
@@ -520,7 +520,106 @@ make_lollipop_plot_VTtogether <- function(data1, data2, data3, model1, model2, m
 ```
 
 ```{r}
-make_lollipop_plot_VTtogether(data1 = mass_cluster_freq_1, data2 = mass_cluster_freq_2, data3= mass_cluster_freq_3, model1 = x[,1,1], model2 = x[,1,37], model3 = x[,1,73])
+make_lollipop_plot_VTtogether(1:mass_clusters,data1 = mass_cluster_freq_1, data2 = mass_cluster_freq_2, data3= mass_cluster_freq_3, model1 = x[,1,1], model2 = x[,1,37], model3 = x[,1,73])
+```
+
+
+```{r}
+make_lollipop_plot_justOneVT <- function(VT,data1, data2, data3, model1, model2, model3){
+  
+# Create data
+  if (VT==1){
+    lollipop_data_2001 <- data.frame(
+            x=1:length(which(mass_VT==1)),
+            model2001=model1[which(mass_VT==1)] / sum(model1),
+            data2001=as.numeric(data1[which(mass_VT==1)] / sum(data1))
+          )
+          lollipop_data_2004 <- data.frame(
+            x=1:length(which(mass_VT==1)),
+            model2004=model2[which(mass_VT==1)] / sum(model2),
+            data2004=as.numeric(data2[which(mass_VT==1)] / sum(data2))
+          )
+          lollipop_data_2007 <- data.frame(
+            x=1:length(which(mass_VT==1)),
+            model2007=model3[which(mass_VT==1)] / sum(model3),
+            data2007=as.numeric(data3[which(mass_VT==1)] / sum(data3))
+          )
+  }
+  else{
+    lollipop_data_2001 <- data.frame(
+            x=1:length(which(mass_VT==0)),
+            model2001=model1[which(mass_VT==0)] / sum(model1),
+            data2001=as.numeric(data1[which(mass_VT==0)] / sum(data1))
+          )
+          lollipop_data_2004 <- data.frame(
+            x=1:length(which(mass_VT==0)),
+            model2004=model2[which(mass_VT==0)] / sum(model2),
+            data2004=as.numeric(data2[which(mass_VT==0)] / sum(data2))
+          )
+          lollipop_data_2007 <- data.frame(
+            x=1:length(which(mass_VT==0)),
+            model2007=model3[which(mass_VT==0)] / sum(model3),
+            data2007=as.numeric(data3[which(mass_VT==0)] / sum(data3))
+          )
+  }
+          
+          # Change baseline
+          lollipop_plot_2001 <- ggplot(lollipop_data_2001) +
+            geom_segment( aes(x=x, xend=x, y=model2001, yend=data2001), color="grey") +
+            geom_point( aes(x=x, y=model2001, color="Model non-VT"), size=3 ) +
+            geom_point( aes(x=x, y=data2001, color="Data non_VT"), size=3 ) +
+            scale_color_manual(values = c("#E69F00", "#56B4E9"),
+                               guide  = guide_legend(), 
+                               name   = "Group") +
+            coord_flip()+
+            #theme_ipsum() +
+            theme(legend.position = "none") +
+            ggtitle("2001") +
+            ylab("Frequency") +
+            xlab("Clusters") +
+            theme(axis.title  = element_text(size = 20), axis.text = element_text(size = 20), plot.title = element_text(size = 25,hjust = 0.5))  +
+            ylim(0, max(max(lollipop_data_2001$model2001),max(lollipop_data_2001$data2001),max(lollipop_data_2004$model2004),max(lollipop_data_2004$data2004),max(lollipop_data_2007$model2007),max(lollipop_data_2007$data2007)))
+          lollipop_plot_2004 <- ggplot(lollipop_data_2004) +
+            geom_segment( aes(x=x, xend=x, y=model2004, yend=data2004), color="grey") +
+            geom_point( aes(x=x, y=model2004, color="Model"), size=3 ) +
+            geom_point( aes(x=x, y=data2004, color="Data"), size=3 ) +
+            scale_color_manual(values = c("#E69F00", "#56B4E9"),
+                               guide  = guide_legend(), 
+                               name   = "Group") +
+            coord_flip()+
+            #theme_ipsum() +
+            theme(legend.position = "none") +
+            ggtitle("2004") +
+            ylab("Frequency") +
+            xlab("Clusters") +
+            theme(axis.title  = element_text(size = 20), axis.text = element_text(size = 20), plot.title = element_text(size = 25,hjust = 0.5))  +
+            ylim(0, max(max(lollipop_data_2001$model2001),max(lollipop_data_2001$data2001),max(lollipop_data_2004$model2004),max(lollipop_data_2004$data2004),max(lollipop_data_2007$model2007),max(lollipop_data_2007$data2007))) 
+          lollipop_plot_2007 <- ggplot(lollipop_data_2007) +
+            geom_segment( aes(x=x, xend=x, y=model2007, yend=data2007), color="grey") +
+            geom_point( aes(x=x, y=model2007, color="Model"), size=3 ) +
+            geom_point( aes(x=x, y=data2007, color="Data"), size=3 ) +
+            scale_color_manual(values = c("#E69F00", "#56B4E9"),
+                               guide  = guide_legend(), 
+                               name   = "Legend") +
+            coord_flip()+
+            #theme_ipsum() +
+            theme(legend.position = c(.8,.8),legend.text = element_text(size = 20),legend.title = element_text(size = 20)) +
+            ggtitle("2007") +
+            ylab("Frequency") +
+            xlab("Clusters") +
+            theme(axis.title  = element_text(size = 20), axis.text = element_text(size = 20), plot.title = element_text(size = 25,hjust = 0.5))  +
+            ylim(0, max(max(lollipop_data_2001$model2001),max(lollipop_data_2001$data2001),max(lollipop_data_2004$model2004),max(lollipop_data_2004$data2004),max(lollipop_data_2007$model2007),max(lollipop_data_2007$data2007)))
+
+          grid.arrange(lollipop_plot_2001 + scale_y_continuous(limits = c(NA,0.17)) + theme(plot.margin = unit(c(.5,0.5,1,0.5), "cm"),axis.text.y = element_blank()) ,lollipop_plot_2004 + scale_y_continuous(limits = c(NA,0.17)) + theme(plot.margin = unit(c(.5,0.5,1,0.5), "cm"),axis.text.y = element_blank()), lollipop_plot_2007 + scale_y_continuous(limits = c(NA,0.17)) + theme(plot.margin = unit(c(.5,0.5,1,0.5), "cm"),axis.text.y = element_blank()), ncol = 3, nrow=1)
+}
+
+```
+
+```{r}
+# plot VTs and non-VTs separately 
+make_lollipop_plot_justOneVT(VT=TRUE,data1 = mass_cluster_freq_1, data2 = mass_cluster_freq_2, data3= mass_cluster_freq_3, model1 = x[,1,1], model2 = x[,1,37], model3 = x[,1,73])
+
+make_lollipop_plot_justOneVT(VT=FALSE,data1 = mass_cluster_freq_1, data2 = mass_cluster_freq_2, data3= mass_cluster_freq_3, model1 = x[,1,1], model2 = x[,1,37], model3 = x[,1,73])
 ```
 
 
