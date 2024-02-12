@@ -20,6 +20,10 @@ names(Mass_Isolates_dict) <- Mass_Isolates
 Isolates <- Samples_accCodes$`Isolate Name`
 Isolates_dict <- 1:length(Isolates)
 names(Isolates_dict) <- Isolates
+
+Isolate_from_Mass_dict <- rep(0, length(Isolates))
+names(Isolate_from_Mass_dict) <- Isolates
+Isolate_from_Mass_dict[Mass_Isolates] <- 1
 ```
 
 ```{r}
@@ -27,18 +31,49 @@ names(Isolates_dict) <- Isolates
 #gene_cluster <- read.delim(paste(path_to_data, "v2_Massachusetts_data_NickCroucher/gCOG_sequences/CLS00005.out", sep = ""))
 gene_cluster <- read.table(paste(path_to_data, "v2_Massachusetts_data_NickCroucher/gCOG_sequences/CLS00005.out", sep = ""), quote="\"", comment.char="")[ c(TRUE,FALSE), ]
 
+read_cls_file <- function(path_to_file){
+  read.table(path_to_file, quote="\"", comment.char="")[ c(TRUE,FALSE), ]
+}
+
+
 
 split_isolate_name <- function(text_line){
-  strsplit(strsplit(text_line,">")[[1]][2],"_")[[1]][1]
+  name_vec <- strsplit(strsplit(text_line,">")[[1]][2],"_")
+  paste(head(name_vec[[1]],-1), collapse = "_")
 }
 isolates_gene_cluster <- unlist(lapply(gene_cluster, split_isolate_name))
-return_isolate_index <- function(name){
-  print(name)
-  Isolates_dict[[name]]
-}
-indices_gene_clusters <- lapply(isolates_gene_cluster, return_isolate_index)
 
-# error: NT_110_58
-# splitting by underscore does not work :-(
+Mass_isolates_gene_cluster <- isolates_gene_cluster[Isolate_from_Mass_dict[isolates_gene_cluster]==1]
+
+return_isolate_index <- function(name){
+  Mass_Isolates_dict[[name]]
+}
+indices_gene_clusters <- unlist(lapply(Mass_isolates_gene_cluster, return_isolate_index))
+gene_cl5 <- rep(0, length(Mass_Isolates))
+gene_cl5[indices_gene_clusters] <- 1
+# and then create matrix
+
+
+```
+
+```{r}
+cls_files <- list.files(paste(path_to_data, "v2_Massachusetts_data_NickCroucher/gCOG_sequences", sep = ""), full.names = TRUE, recursive = FALSE)
+
+gene_presence_absence <- data.frame(matrix(0, nrow = length(cls_files)+1, ncol = length(Mass_Isolates)+1))
+gene_presence_absence[1,-1] <- Mass_Isolates
+
+
+isolates_in_clusters <- (lapply(cls_files, read_cls_file))
+
+for (i in 1:length(isolates_in_clusters)) {
+  isolates_gene_cluster <- unlist(lapply(isolates_in_clusters[[i]], split_isolate_name))
+  Mass_isolates_gene_cluster <- isolates_gene_cluster[Isolate_from_Mass_dict[isolates_gene_cluster]==1]
+  indices_gene_clusters <- unlist(lapply(Mass_isolates_gene_cluster, return_isolate_index))
+  help_vector <- rep(0, length(Mass_Isolates))
+  help_vector[indices_gene_clusters] <- 1
+  gene_presence_absence[i+1,] <- c(strsplit(tail(strsplit(cls_files[i],"/")[[1]],1),"\\.")[[1]][1], help_vector)
+}
+
+
 ```
 
