@@ -11,7 +11,7 @@ path_to_data <- "~/Documents/PhD_Project/Data/"
 ```
 
 ```{r}
-### Reading in the Accesion Codes, Population and the Sequence Clusters
+### Reading in the Accession Codes, Population and the Sequence Clusters
 library(readxl)
 Samples_accCodes <- read_excel(paste(path_to_data, "Massachusetts_data_NickCroucher/SupplementaryDataPaper/Samples_accCodes.xlsx", sep = ""))
 Mass_Samples_accCodes <- Samples_accCodes[Samples_accCodes$Population=="Massachusetts",]
@@ -75,6 +75,11 @@ for (i in 1:length(isolates_in_clusters)) {
   gene_presence_absence[i+1,] <- c(strsplit(tail(strsplit(cls_files[i],"/")[[1]],1),"\\.")[[1]][1], help_vector)
 }
 ```
+
+```{r}
+saveRDS(gene_presence_absence, file = "gene_presence_absence.rds")
+```
+
 
 ```{r}
 # create time-point specific gene presence absence matrices
