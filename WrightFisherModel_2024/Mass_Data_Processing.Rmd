@@ -77,9 +77,14 @@ for (i in 1:length(isolates_in_clusters)) {
 ```
 
 ```{r}
-saveRDS(gene_presence_absence, file = "gene_presence_absence.rds")
+#saveRDS(gene_presence_absence, file = "gene_presence_absence.rds")
 ```
 
+
+```{r}
+# read in gene presence absence matrix
+gene_presence_absence <- readRDS(file = "gene_presence_absence.rds")
+```
 
 ```{r}
 # create time-point specific gene presence absence matrices
@@ -105,54 +110,88 @@ gene_presence_absence_2007[-1,1] <- gene_presence_absence[-1,1]
 gene_presence_absence_2007[-1,-1] <- gene_presence_absence[-1,c(FALSE,Mass_year_dict[unlist(gene_presence_absence[1,-1])]==2007)]
 ```
 
-
-
-### A bit of data exploration ---
-# Investigating the relationship of gene frequency and the change in frequency over time
-
 ```{r}
-# calculate cluster freqs per time point
-gene_cluster_freqs_1 <- rep(0, length(cls_files))
-for(i in 1:length(cls_files)){
-  gene_cluster_freqs_1[i] <- sum(as.numeric(gene_presence_absence_2001[i+1,-1]==1))/length(gene_presence_absence_2001[1,-1])
+# Find intermediate frequency genes in 2001 data set
+# compute gene frequencies
+sum_as_int <- function(x){
+  sum(as.integer(x))
 }
 
-#gene_cluster_freqs_1 <- rep(0, length(cls_files))
-#calculate_rowSum <- function(data_row){
-  #print(sum(as.numeric(data_row==1)))
-#  sum(as.numeric(data_row==1))
-#}
-#gene_cluster_freqs_1 <- apply(gene_presence_absence_2001[-1,-1],1,calculate_rowSum)
+gene_freq_2001 <- rep(0, nrow(gene_presence_absence_2001)-1)
+gene_freq_2001 <- apply(gene_presence_absence_2001[-1,-1],1, sum_as_int)
+gene_freq_2001 <- gene_freq_2001 / (length(gene_presence_absence_2001[1,-1]))
 
-gene_cluster_freqs_2 <- rep(0, length(cls_files))
-for(i in 1:length(cls_files)){
-  gene_cluster_freqs_2[i] <- sum(as.numeric(gene_presence_absence_2004[i+1,-1]==1))/length(gene_presence_absence_2004[1,-1])
-}
+cog_filter <- as.integer(gene_freq_2001<=0.95 & gene_freq_2001>=0.05)
 
-gene_cluster_freqs_3 <- rep(0, length(cls_files))
-for(i in 1:length(cls_files)){
-  gene_cluster_freqs_3[i] <- sum(as.numeric(gene_presence_absence_2007[i+1,-1]==1))/length(gene_presence_absence_2007[1,-1])
-}
+# intermediate gene presence absence matrices filtered by genes that are present at 5-95% frequency in 2001
+intermed_gene_presence_absence_2001 <- data.frame(matrix(0, nrow = sum(cog_filter)+1, ncol = length(Mass_Samples_accCodes[Mass_Samples_accCodes$`Year of Isolation`==2001,]$`Isolate Name`)+1))
+intermed_gene_presence_absence_2001 <- gene_presence_absence_2001[c(1,which(cog_filter==1)+1),]
+
+intermed_gene_presence_absence_2004 <- data.frame(matrix(0, nrow = sum(cog_filter)+1, ncol = length(Mass_Samples_accCodes[Mass_Samples_accCodes$`Year of Isolation`==2004,]$`Isolate Name`)+1))
+intermed_gene_presence_absence_2004 <- gene_presence_absence_2004[c(1,which(cog_filter==1)+1),]
+
+intermed_gene_presence_absence_2007 <- data.frame(matrix(0, nrow = sum(cog_filter)+1, ncol = length(Mass_Samples_accCodes[Mass_Samples_accCodes$`Year of Isolation`==2007,]$`Isolate Name`)+1))
+intermed_gene_presence_absence_2007 <- gene_presence_absence_2007[c(1,which(cog_filter==1)+1),]
+
+intermed_gene_presence_absence <- data.frame(matrix(0, nrow = sum(cog_filter)+1, ncol = length(Mass_Samples_accCodes$`Isolate Name`)+1))
+intermed_gene_presence_absence <- gene_presence_absence[c(1,which(cog_filter==1)+1),]
 ```
 
 ```{r}
-plot(1:1500, gene_cluster_freqs_1[sort.list(gene_cluster_freqs_1)[1:1500]],type = "b", lty = 1)
-lines(1:1500, gene_cluster_freqs_2[sort.list(gene_cluster_freqs_1)[1:1500]], col = "#E69F00",type = "b")
-lines(1:1500, gene_cluster_freqs_3[sort.list(gene_cluster_freqs_1)[1:1500]], col = "#56B4E9", type = "b")
-
-#plot(1:length(gene_cluster_freqs_1), gene_cluster_freqs_3[sort.list(gene_cluster_freqs_1)])
+#save intermed gene presence absence matrices
+#saveRDS(intermed_gene_presence_absence, file = "intermed_gene_presence_absence.rds")
+#saveRDS(intermed_gene_presence_absence_2001, file = "intermed_gene_presence_absence_2001.rds")
+#saveRDS(intermed_gene_presence_absence_2004, file = "intermed_gene_presence_absence_2004.rds")
+#saveRDS(intermed_gene_presence_absence_2007, file = "intermed_gene_presence_absence_2007.rds")
 ```
 
 ```{r}
-# Plotting the changes in gene cluster frequencies between the 1st time point and the 2nd and 3rd, respectively, including a rolling mean
-# I thought maybe there would be a correlation between the gene frequency and it variability. Well, there isn't.
+#Compute consensus genomes for sequence clusters
+Mass_seq_clusters_dict <- Mass_Samples_accCodes$SequenceCluster
+names(Mass_seq_clusters_dict) <- Mass_Samples_accCodes$`Isolate Name`
 
-library(zoo)
-plot(1:1500, (gene_cluster_freqs_1-gene_cluster_freqs_2)[sort.list(gene_cluster_freqs_1)[1:1500]],type = "b", lty = 1)
-lines(rollmean((gene_cluster_freqs_1-gene_cluster_freqs_2), 50), col = "#E69F00", lwd = 5)
+intermed_gene_presence_absence_consensus <- data.frame(matrix(0, nrow = sum(cog_filter)+1, ncol = length(unique(Mass_Samples_accCodes$SequenceCluster))+1))
+intermed_gene_presence_absence_consensus[1,-1] <- paste("SeqCl_",unique(Mass_Samples_accCodes$SequenceCluster),sep = "")
 
-plot(1:1500, (gene_cluster_freqs_1-gene_cluster_freqs_3)[sort.list(gene_cluster_freqs_1)[1:1500]],type = "b", lty = 1)
-lines(rollmean((gene_cluster_freqs_1-gene_cluster_freqs_3), 50), col = "#E69F00", lwd = 5)
+intermed_gene_presence_absence_consensus_2001 <- data.frame(matrix(0, nrow = sum(cog_filter)+1, ncol = length(unique(Mass_Samples_accCodes$SequenceCluster))+1))
+intermed_gene_presence_absence_consensus_2001[1,-1] <- paste("SeqCl_",unique(Mass_Samples_accCodes$SequenceCluster),sep = "")
+
+intermed_gene_presence_absence_consensus_2004 <- data.frame(matrix(0, nrow = sum(cog_filter)+1, ncol = length(unique(Mass_Samples_accCodes$SequenceCluster))+1))
+intermed_gene_presence_absence_consensus_2004[1,-1] <- paste("SeqCl_",unique(Mass_Samples_accCodes$SequenceCluster),sep = "")
+
+intermed_gene_presence_absence_consensus_2007 <- data.frame(matrix(0, nrow = sum(cog_filter)+1, ncol = length(unique(Mass_Samples_accCodes$SequenceCluster))+1))
+intermed_gene_presence_absence_consensus_2007[1,-1] <- paste("SeqCl_",unique(Mass_Samples_accCodes$SequenceCluster),sep = "")
+
+
+cons_genomes <- function(x){
+  as.double(median(as.integer(x)))
+}
+
+for (i in unique(Mass_Samples_accCodes$SequenceCluster)) {
+  intermed_gene_presence_absence_consensus[-1,i+2] <- apply(as.matrix(intermed_gene_presence_absence[-1,c(FALSE,Mass_seq_clusters_dict[unlist(intermed_gene_presence_absence[1,-1])]==i)]), 1, cons_genomes)
+  intermed_gene_presence_absence_consensus_2001[-1,i+2] <- apply(as.matrix(intermed_gene_presence_absence_2001[-1,c(FALSE,Mass_seq_clusters_dict[unlist(intermed_gene_presence_absence_2001[1,-1])]==i)]), 1, cons_genomes)
+    intermed_gene_presence_absence_consensus_2004[-1,i+2] <- apply(as.matrix(intermed_gene_presence_absence_2004[-1,c(FALSE,Mass_seq_clusters_dict[unlist(intermed_gene_presence_absence_2004[1,-1])]==i)]), 1, cons_genomes)
+    intermed_gene_presence_absence_consensus_2007[-1,i+2] <- apply(as.matrix(intermed_gene_presence_absence_2007[-1,c(FALSE,Mass_seq_clusters_dict[unlist(intermed_gene_presence_absence_2007[1,-1])]==i)]), 1, cons_genomes)
+}
+
+intermed_gene_presence_absence_consensus[-1,1] <- intermed_gene_presence_absence[-1,1]
+intermed_gene_presence_absence_consensus_2001[-1,1] <- intermed_gene_presence_absence[-1,1]
+intermed_gene_presence_absence_consensus_2004[-1,1] <- intermed_gene_presence_absence[-1,1]
+intermed_gene_presence_absence_consensus_2007[-1,1] <- intermed_gene_presence_absence[-1,1]
 ```
 
-###
+```{r}
+#save intermed gene presence absence matrices
+#saveRDS(intermed_gene_presence_absence_consensus, file = "intermed_gene_presence_absence_consensus.rds")
+#saveRDS(intermed_gene_presence_absence_consensus_2001, file = "intermed_gene_presence_absence_consensus_2001.rds")
+#saveRDS(intermed_gene_presence_absence_consensus_2004, file = "intermed_gene_presence_absence_consensus_2004.rds")
+#saveRDS(intermed_gene_presence_absence_consensus_2007, file = "intermed_gene_presence_absence_consensus_2007.rds")
+```
+
+```{r}
+# read in gene presence absence matrix
+intermed_gene_presence_absence_consensus <- readRDS(file = "intermed_gene_presence_absence_consensus.rds")
+intermed_gene_presence_absence_consensus_2001 <- readRDS(file = "intermed_gene_presence_absence_consensus_2001.rds")
+intermed_gene_presence_absence_consensus_2004 <- readRDS(file = "intermed_gene_presence_absence_consensus_2004.rds")
+intermed_gene_presence_absence_consensus_2007 <- readRDS(file = "intermed_gene_presence_absence_consensus_2007.rds")
+```
