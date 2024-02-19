@@ -1,6 +1,5 @@
 Data/
 .Rproj.user
-WrightFisherModel_2024/.RData
 WrightFisherModel_2024/gene_presence_absence.rds
 WrightFisherModel_2024/intermed_gene_presence_absence.rds
 WrightFisherModel_2024/intermed_gene_presence_absence_2001.rds
