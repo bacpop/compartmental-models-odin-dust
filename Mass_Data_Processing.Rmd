@@ -146,6 +146,14 @@ intermed_gene_presence_absence <- gene_presence_absence[c(1,which(cog_filter==1)
 ```
 
 ```{r}
+intermed_gene_presence_absence <- readRDS(file = "intermed_gene_presence_absence.rds")
+intermed_gene_presence_absence_2001 <- readRDS(file = "intermed_gene_presence_absence_2001.rds")
+intermed_gene_presence_absence_2004 <- readRDS(file = "intermed_gene_presence_absence_2004.rds")
+intermed_gene_presence_absence_2007 <- readRDS(file = "intermed_gene_presence_absence_2007.rds")
+```
+
+
+```{r}
 #Compute consensus genomes for sequence clusters
 Mass_seq_clusters_dict <- Mass_Samples_accCodes$SequenceCluster
 names(Mass_seq_clusters_dict) <- Mass_Samples_accCodes$`Isolate Name`
@@ -164,7 +172,7 @@ intermed_gene_presence_absence_consensus_2007[1,-1] <- paste("SeqCl_",unique(Mas
 
 
 cons_genomes <- function(x){
-  as.double(median(as.integer(x)))
+  as.double(ceiling(median(as.integer(x))))
 }
 
 for (i in unique(Mass_Samples_accCodes$SequenceCluster)) {
@@ -194,4 +202,17 @@ intermed_gene_presence_absence_consensus <- readRDS(file = "intermed_gene_presen
 intermed_gene_presence_absence_consensus_2001 <- readRDS(file = "intermed_gene_presence_absence_consensus_2001.rds")
 intermed_gene_presence_absence_consensus_2004 <- readRDS(file = "intermed_gene_presence_absence_consensus_2004.rds")
 intermed_gene_presence_absence_consensus_2007 <- readRDS(file = "intermed_gene_presence_absence_consensus_2007.rds")
+```
+
+```{r}
+# calculate Vaccine Type consensus for clusters
+mass_clusters <- length(unique(Mass_Samples_accCodes$SequenceCluster))
+mass_VT <- rep(0, mass_clusters)
+
+for (i in 1:mass_clusters){
+  mass_VT[i] <- ceiling(median(as.integer(Mass_Samples_accCodes[Mass_Samples_accCodes$SequenceCluster == i-1,"Vaccine Type"]=="VT")))
+}
+# 1 means VT
+# 0 means NVT
+# if cluster is 50/50 it will count as VT
 ```
