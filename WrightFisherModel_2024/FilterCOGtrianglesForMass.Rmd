@@ -1,0 +1,75 @@
+---
+title: "Read in all COGtriangle gene clusters and output all Mass clusters in one fasta file"
+output: html_notebook
+---
+```{r}
+### Reading in the Accession Codes, Population and the Sequence Clusters
+library(readxl)
+Samples_accCodes <- read_excel(paste(path_to_data, "Massachusetts_data_NickCroucher/SupplementaryDataPaper/Samples_accCodes.xlsx", sep = ""))
+Mass_Samples_accCodes <- Samples_accCodes[Samples_accCodes$Population=="Massachusetts",]
+
+Isolates <- Samples_accCodes$`Isolate Name`
+Isolates_dict <- 1:length(Isolates)
+names(Isolates_dict) <- Isolates
+
+Isolate_from_Mass_dict <- rep(0, length(Isolates))
+names(Isolate_from_Mass_dict) <- Isolates
+Isolate_from_Mass_dict[Mass_Isolates] <- 1
+```
+
+```{r}
+#function for reading cluster files
+read_cls_file_all <- function(path_to_file){
+  read.table(path_to_file, quote="\"", comment.char="")[,]
+}
+#function for splitting the COG from the gene start
+split_isolate_name <- function(text_line){
+  name_vec <- strsplit(strsplit(text_line,">")[[1]][2],"_")
+  paste(head(name_vec[[1]],-1), collapse = "_")
+}
+
+gene_cluster <- read.table(paste(path_to_data, "v2_Massachusetts_data_NickCroucher/gCOG_sequences/CLS00005.out", sep = ""), quote="\"", comment.char="")[ c(TRUE,FALSE), ]
+
+test_df <- data.frame(matrix(data = c(read.table(paste(path_to_data, "v2_Massachusetts_data_NickCroucher/gCOG_sequences/CLS00005.out", sep = ""), quote="\"", comment.char="")[ c(TRUE,FALSE), ], read.table(paste(path_to_data, "v2_Massachusetts_data_NickCroucher/gCOG_sequences/CLS00005.out", sep = ""), quote="\"", comment.char="")[ c(FALSE,TRUE), ]), ncol = 2))
+
+cls_lines <- read.table(paste(path_to_data, "v2_Massachusetts_data_NickCroucher/gCOG_sequences/CLS00005.out", sep = ""), quote="\"", comment.char="")[,]
+cls_names <- unlist(lapply(cls_lines[seq(1,length(cls_lines),by=2)], split_isolate_name))
+cls_seqs <- cls_lines[seq(2,length(cls_lines),by=2)]
+
+
+cls_names_Mass <- cls_names[Isolate_from_Mass_dict[cls_names]==1]
+cls_seqs_Mass <- cls_seqs[Isolate_from_Mass_dict[cls_names]==1]
+cls_names_seqs <- data.frame(matrix(data = c(cls_names_Mass, cls_seqs_Mass), ncol = 2))
+
+
+isolates_gene_cluster <- unlist(lapply(isolates_in_clusters[[i]], split_isolate_name))
+
+# list of input files
+cls_files <- list.files(paste(path_to_data, "v2_Massachusetts_data_NickCroucher/gCOG_sequences", sep = ""), full.names = TRUE, recursive = FALSE)
+
+# reads in all input files (takes a while, around 2000 files)
+isolates_in_clusters <- (lapply(cls_files, read_cls_file))
+```
+
+```{r}
+### Read all fasta files, filter them for Mass data and store names and sequences in a data frame
+# list of input files
+cls_files <- list.files(paste(path_to_data, "v2_Massachusetts_data_NickCroucher/gCOG_sequences", sep = ""), full.names = TRUE, recursive = FALSE)
+
+# reads in all input files (takes a while, around 2000 files)
+cls_lines <- unlist(lapply(cls_files, read_cls_file_all))
+cls_names <- unlist(lapply(cls_lines[seq(1,length(cls_lines),by=2)], split_isolate_name))
+cls_seqs <- cls_lines[seq(2,length(cls_lines),by=2)]
+cls_fasta_headers <- cls_lines[seq(1,length(cls_lines),by=2)]
+cls_names_Mass <- cls_names[Isolate_from_Mass_dict[cls_names]==1]
+cls_seqs_Mass <- cls_seqs[Isolate_from_Mass_dict[cls_names]==1]
+cls_fasta_headers_Mass <- cls_fasta_headers[Isolate_from_Mass_dict[cls_names]==1]
+cls_names_seqs <- data.frame(matrix(data = c(cls_names_Mass, cls_fasta_headers_Mass, cls_seqs_Mass), ncol = 3))
+```
+
+```{r}
+### output Mass fasta headers and sequences into one big fasta file
+
+write.table(cls_names_seqs[,c(2,3)], paste(path_to_data, "v2_Massachusetts_data_NickCroucher/COGtriangles_allMassClusters.fasta", sep = ""), row.names = FALSE, col.names = FALSE, sep = "\n", quote = FALSE)
+```
+

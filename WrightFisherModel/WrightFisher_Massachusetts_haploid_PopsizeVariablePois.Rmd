@@ -1,0 +1,2187 @@
+---
+title: "Wright Fisher Model for Massachusetts dataset"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{sir_models}
+  %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+lang_output <- function(x, lang) {
+  cat(c(sprintf("```%s", lang), x, "```"), sep = "\n")
+}
+cc_output <- function(x) lang_output(x, "cc")
+r_output <- function(x) lang_output(x, "r")
+plain_output <- function(x) lang_output(x, "plain")
+```
+
+# Stochastic Lotka Volterra model definition
+
+
+$$\begin{align*}
+\frac{dR}{dt} &= \alpha R -\beta RC \\
+\frac{dC}{dt} &= \delta \beta RC - \gamma C \\
+\end{align*}$$
+
+$R$ is the number of prey, $C$ is the number of predators.$\alpha$ is the birth rate of the prey, $\beta$ is the kill rate, $\gamma$ is the death rate of the predators and $\delta$ describes how much a predator benefits from killing prey.
+
+Discretising this model in time steps of width $dt$ gives the following update equations for each time step:
+
+$$\begin{align*}
+R_{t+1} &= R_t - n_{RC} + n_R \\
+C_{t+1} &= C_t + \delta n_{RC}  - n_C
+\end{align*}$$
+
+where
+$$\begin{align*}
+n_{R} &\sim B(R, 1 - e^{-\alpha \cdot dt}) \\
+n_{RC} &\sim B(R, 1 - e^{-\beta C \cdot dt}) \\
+n_{C} &\sim B(C, 1 - e^{-\gamma \cdot dt})
+\end{align*}$$
+
+## Implementing the SIR model using [`odin.dust`](https://mrc-ide.github.io/odin.dust/)
+
+The above equations can straightforwardly be written out using the odin DSL:
+
+```{r odin_sir, echo = FALSE, results = "asis"}
+r_output(readLines(file.path("WrightFisher_nGenotypes_haploid_PopsizeVariablePois.R")))
+```
+
+This is converted to a C++ dust model, and compiled into a library in a single step, using [`odin.dust`](https://mrc-ide.github.io/odin.dust/). Save the above code as a file named `sir.R`. File names must not contain special characters.
+
+```{r}
+# install.packages("drat") # -- if you don't have drat installed
+# drat:::add("ncov-ic")
+# install.packages("odin.dust")
+library(odin.dust)
+```
+
+```{r}
+WF_nG_h_vP <- odin.dust::odin_dust("WrightFisher_nGenotypes_haploid_PopsizeVariablePois.R")
+```
+
+### READING IN DATA
+### 1) Cluster information from PopPUNK
+### 2) Gene presence absence matrix from ggCaller
+
+```{r}
+# reading in the cluster produced by PopPUNK
+clusters <- read.csv("~/Documents/PhD_Project/Code/1st_project/odin-dust-examples/Data/refined_modelfitk3_clusters.csv")
+no_clusters <- max(clusters[,2]) # number of clusters in dataset
+```
+
+```{r}
+# reading in the gene presence absence matrix produced by ggCaller
+gene_presence_absence <- read.csv("~/Documents/PhD_Project/Code/1st_project/odin-dust-examples/Data/gene_presence_absence.csv", header=FALSE)
+
+# converting the gene presence absence matrix into a boolean df (0 = gene not present, 1 = gene present)
+convert_to_bool <- function(x){
+  if (x=="") 0 else 1
+}
+#bool_gene_presence_absence <- gene_presence_absence
+
+#for (i in 4:length(bool_gene_presence_absence[1,])) {
+#  bool_gene_presence_absence[,i] <- unlist(lapply(bool_gene_presence_absence[,i], FUN =  convert_to_bool))
+#}
+#bool_gene_presence_absence[1,] <- gene_presence_absence[1,]
+
+bool_gene_presence_absence <- gene_presence_absence
+bool_gene_presence_absence[2:nrow(bool_gene_presence_absence),4:ncol(bool_gene_presence_absence)] <- apply(gene_presence_absence[2:nrow(gene_presence_absence),4:ncol(gene_presence_absence)],c(1,2), convert_to_bool)
+
+```
+
+```{r}
+# calculate frequency of genes to only keep those which appear in 5-95% of the genomes
+#gene_freq <- rep(0, nrow(bool_gene_presence_absence)-1)
+#for (i in 1:length(gene_freq)) {
+#  gene_freq[i] <- sum(as.integer(bool_gene_presence_absence[i+1,4:ncol(bool_gene_presence_absence)]))
+#}
+# gene_freq <- gene_freq / (length(bool_gene_presence_absence[2,])-3)
+
+sum_as_int <- function(x){
+  sum(as.integer(x))
+}
+
+gene_freq <- rep(0, nrow(bool_gene_presence_absence)-1)
+gf_bool_gene_presence_absence <- bool_gene_presence_absence[2:nrow(bool_gene_presence_absence),4:ncol(bool_gene_presence_absence)]
+
+gene_freq <- apply(gf_bool_gene_presence_absence,1, sum_as_int)
+gene_freq <- as.vector(gene_freq / (length(bool_gene_presence_absence[2,])-3))
+
+
+
+# create a dataframe that only contains the genes that appear in 5-95% of the genomes
+#filtered_bool_gene_presence_absence <- data.frame(matrix(nrow = 0, ncol = length(bool_gene_presence_absence[1,])))
+
+#for (i in 1:length(gene_freq)){
+#  if (0.05 <= gene_freq[i] & gene_freq[i] <= 0.95 ){
+#    filtered_bool_gene_presence_absence[nrow(filtered_bool_gene_presence_absence)+1,] <- bool_gene_presence_absence[i+1,]
+#  }
+#}
+#colnames(filtered_bool_gene_presence_absence) <- bool_gene_presence_absence[1,]
+#rownames(filtered_bool_gene_presence_absence) <- 1:nrow(filtered_bool_gene_presence_absence)
+
+filtered_bool_gene_presence_absence <- data.frame(matrix(nrow = sum(gene_freq <= 0.95 & gene_freq >= 0.05), ncol = length(bool_gene_presence_absence[1,])))
+counter <- 1
+for (i in 1:length(gene_freq)){
+  if (0.05 <= gene_freq[i] & gene_freq[i] <= 0.95 ){
+    filtered_bool_gene_presence_absence[counter,] <- bool_gene_presence_absence[i+1,]
+    counter <- counter + 1
+  }
+}
+colnames(filtered_bool_gene_presence_absence) <- bool_gene_presence_absence[1,]
+rownames(filtered_bool_gene_presence_absence) <- 1:nrow(filtered_bool_gene_presence_absence)
+
+# this is a bit better but still slow
+# but atm I do not know how to use the apply function for this
+# this is what I have tried so far:
+#calc_freq <- function(x){
+#  if (0.05 <= gene_freq[i] & gene_freq[i] <= 0.95) {return(x)}
+#}
+
+#filtered_test <- apply(bool_gene_presence_absence[2:nrow(bool_gene_presence_absence),], 1, calc_freq)
+
+```
+
+```{r}
+### make consensus genome for clusters
+# attempt 1: always let majority decide (if more than 50% in the cluster don't have gene then 0, else 1)
+# should be easy to do with median
+
+cluster_gene_presence_absence <- data.frame(matrix(nrow = nrow(filtered_bool_gene_presence_absence), ncol = no_clusters+3))
+colnames(cluster_gene_presence_absence)[1:3] <- colnames(filtered_bool_gene_presence_absence)[1:3]
+cluster_gene_presence_absence[1:3] <- filtered_bool_gene_presence_absence[1:3]
+colnames(cluster_gene_presence_absence)[4:ncol(cluster_gene_presence_absence)] <- 1:no_clusters
+
+mean_cluster_gene_p_a <- cluster_gene_presence_absence # this is just to assess how valid it is to make consensus genomes
+
+for (i in 1:no_clusters){
+  curr_cluster <- clusters[which(clusters[,"Cluster"]==i),1] # select all genomes in cluster i
+  curr_genomes <- as.matrix(filtered_bool_gene_presence_absence[,curr_cluster])
+  for (j in 1:nrow(filtered_bool_gene_presence_absence)){
+    #cluster_gene_presence_absence[j,i+3] <- as.double(median(as.integer(curr_genomes[j,])))
+    mean_cluster_gene_p_a[j,i+3] <-(as.double(mean(as.integer(curr_genomes[j,]))))
+  }
+}
+
+cons_genomes <- function(x){
+  as.double(median(as.integer(x)))
+}
+
+for (i in 1:no_clusters){
+  curr_cluster <- clusters[which(clusters[,"Cluster"]==i),1] # select all genomes in cluster i
+  curr_genomes <- as.matrix(filtered_bool_gene_presence_absence[,curr_cluster])
+  cluster_gene_presence_absence[,i+3] <- apply(curr_genomes,1,cons_genomes)
+}
+matrix_cluster_gene_presence_absence <- as.matrix((cluster_gene_presence_absence[,4:ncol(cluster_gene_presence_absence)]))
+
+### this is just to have a look at the within-cluster diversity
+matrix_mean_cluster_gene_presence_absence <- as.matrix((mean_cluster_gene_p_a[,4:ncol(mean_cluster_gene_p_a)]))
+par(mfrow=c(1,1))
+
+plot(1:nrow(matrix_mean_cluster_gene_presence_absence), matrix_mean_cluster_gene_presence_absence[,1], pch=20, xlab = "Genes (sorted by overall frequency)", ylab = "Within-cluster Frequency",cex.lab=1.5, cex.axis = 1.5)
+for (clust in 2:length(matrix_mean_cluster_gene_presence_absence[1,])){
+  points(matrix_mean_cluster_gene_presence_absence[,clust], pch=20)
+}
+
+# calculate actual percentages of mean 0, 1 and in-between
+zero_count <- 0
+one_count <- 0
+intermed_count <- 0
+for (i in 1:nrow(matrix_mean_cluster_gene_presence_absence)){
+  for (j in 1:ncol(matrix_mean_cluster_gene_presence_absence)){
+    if(matrix_mean_cluster_gene_presence_absence[i,j]==0){
+      zero_count <- zero_count + 1
+    }
+    else if(matrix_mean_cluster_gene_presence_absence[i,j]==1){
+      one_count <- one_count + 1
+    }
+    else{
+      intermed_count <- intermed_count + 1
+    }
+  }
+}
+zero_count
+one_count
+intermed_count
+zero_frac <- zero_count / (zero_count + one_count + intermed_count)
+intermed_frac <- intermed_count / (zero_count + one_count + intermed_count)
+one_frac <- one_count / (zero_count + one_count + intermed_count)
+
+zero_frac
+intermed_frac
+one_frac
+# well, I'd say that many, many genes are still quite diversely present within the same cluster
+# that suggest that taking one consensus genome per cluster might not work
+
+
+# attempt 2: record relative frequencies. Probably not advantageous.
+# attempt 3: keep track of all existing variants. This can be done later
+```
+
+```{r}
+#calculate the frequency of the gene clusters
+cluster_freq <- rep(0,no_clusters)
+for (i in 1:no_clusters){
+cluster_freq[i] <- length(which(clusters[,"Cluster"]==i))
+}
+
+#cluster_freq <- cluster_freq / length(clusters[,1])
+# I think I don't want frequency but rather the absolute numbers?
+```
+
+```{r}
+# make simple plot of cluster sizes
+cluster_sizes <- rep(0, no_clusters)
+for (i in 1:no_clusters) {cluster_sizes[i] <- sum(as.integer(clusters$Cluster == i))}
+plot(1:no_clusters, cluster_sizes)
+df_cluster_sizes <- data.frame(cluster_sizes)
+library(ggplot2)
+ggplot(df_cluster_sizes, aes(y=cluster_sizes, x = as.integer(row.names(df_cluster_sizes)))) + 
+geom_bar(position="dodge", stat="identity", colour="black", width = 1,  fill="#009E73") +
+theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+scale_x_discrete(name ="Clusters", limits = (1:no_clusters)) +
+scale_y_continuous(name = "Size") +
+theme(text = element_text(size = 20),axis.text.x = element_text(size = 20))  
+```
+
+
+```{r}
+#need the information of when probes were taken
+accNo_to_filename <- read.delim("~/Documents/PhD_Project/Code/1st_project/odin-dust-examples/Data/filereport_read_run_PRJEB2632_tsv.txt")
+accNo_to_filename <- accNo_to_filename[,c(1,8)]
+accNo_to_filename[,3] <- matrix(unlist(strsplit(accNo_to_filename[,2],"/")), ncol=6, byrow = TRUE)[,6]
+accNo_to_filename[,3] <- matrix(unlist(strsplit(accNo_to_filename[,3],"[.]")), ncol=2, byrow = TRUE)[,1]
+accNo_to_filename <- accNo_to_filename[,c(1,3)]
+colnames(accNo_to_filename) <- c(colnames(accNo_to_filename)[1], "filenames")
+accNoToFilename <- c()
+accNoToFilename[as.character(accNo_to_filename[,2])] <- accNo_to_filename[,1]
+
+library(readxl)
+Croucher_seqYears <- read_excel("~/Documents/PhD_Project/Code/1st_project/odin-dust-examples/Data/Croucher_41588_2013_BFng2625_MOESM28_ESM.xlsx")
+Croucher_seqYears <- Croucher_seqYears[,c(1,5)]
+sequenceYear <- c()
+for (i in 1:nrow(Croucher_seqYears)){
+  sequenceYear[as.character(Croucher_seqYears[i,1])]<- Croucher_seqYears[i,2] 
+}
+```
+
+
+```{r}
+# add year to the clusters data set
+clusters$seqYear <- rep(0, nrow(clusters))
+for (i in 1:nrow(clusters)){
+  clusters$seqYear[i] <- sequenceYear[accNoToFilename[clusters$Taxon[i]]]
+}
+```
+
+```{r}
+#calculate the frequency of the gene clusters and year
+cluster_freq_1 <- rep(0,no_clusters)
+cluster_freq_2 <- rep(0,no_clusters)
+cluster_freq_3 <- rep(0,no_clusters)
+for (i in 1:no_clusters){
+  cluster_freq_1[i] <- length(which(clusters[which(clusters[,"Cluster"]==i),]$seqYear == 2001))
+  cluster_freq_2[i] <- length(which(clusters[which(clusters[,"Cluster"]==i),]$seqYear == 2004))
+  cluster_freq_3[i] <- length(which(clusters[which(clusters[,"Cluster"]==i),]$seqYear == 2007))
+}
+
+# make a data frame that contains this information
+library(dplyr)
+
+fitting_cluster_freq_df <- data.frame("year" = c(2001, 2004, 2007), rbind(cluster_freq_1, cluster_freq_2, cluster_freq_3))
+names(fitting_cluster_freq_df) <- c("year", as.character(1:62))
+
+```
+
+```{r}
+#plot gene freqs
+data_gene_freq_1_m <-  matrix_cluster_gene_presence_absence * cluster_freq_1
+#data_gene_freq_1 <- rep(0, length(data_gene_freq_1_m[,1]))
+data_gene_freq_1 <- apply(data_gene_freq_1_m[,1:62], 1, sum)
+
+data_gene_freq_2_m <-  matrix_cluster_gene_presence_absence * cluster_freq_2
+data_gene_freq_2 <- apply(data_gene_freq_2_m[,1:62], 1, sum)
+
+data_gene_freq_3_m <-  matrix_cluster_gene_presence_absence * cluster_freq_3
+data_gene_freq_3 <- apply(data_gene_freq_3_m[,1:62], 1, sum)
+
+par(mfrow=c(1,3))
+plot(data_gene_freq_1 / nrow(subset(clusters,clusters$seqYear==2001)), data_gene_freq_2 / nrow(subset(clusters,clusters$seqYear==2004)))
+plot(data_gene_freq_1 / nrow(subset(clusters,clusters$seqYear==2001)), data_gene_freq_3 / nrow(subset(clusters,clusters$seqYear==2007)))
+plot(data_gene_freq_2 / nrow(subset(clusters,clusters$seqYear==2004)), data_gene_freq_3 / nrow(subset(clusters,clusters$seqYear==2007)))
+# very strong correlation between gene frequencies before and after vaccination
+# especially second plot looks a lot like figure 2 d, the first, in Corander et al. (though they only did pre vs. post vacc)
+par(mfrow=c(1,1))
+plot((data_gene_freq_1 + data_gene_freq_2) / (nrow(subset(clusters,clusters$seqYear==2001)) + nrow(subset(clusters,clusters$seqYear==2004))), data_gene_freq_3 / nrow(subset(clusters,clusters$seqYear==2007)))
+
+
+plot((data_gene_freq_1) / (nrow(subset(clusters,clusters$seqYear==2001))), data_gene_freq_3 / nrow(subset(clusters,clusters$seqYear==2007)), xlab = "Pre-vaccine COG frequency", ylab = "Post-vaccine COG frequency",cex.lab=1.5, cex.axis = 1.5)
+
+plot((data_gene_freq_1) / (nrow(subset(clusters,clusters$seqYear==2001))), data_gene_freq_3 / nrow(subset(clusters,clusters$seqYear==2007)), pch = 19, xlab = "Pre-vaccine COG frequency", ylab = "Post-vaccine COG frequency",cex.lab=1.5, cex.axis = 1.5)
+```
+
+```{r}
+# correlation of clusters
+par(mfrow=c(1,3))
+plot(cluster_freq_1 / sum(cluster_freq_1), cluster_freq_2 / sum(cluster_freq_2))
+plot(cluster_freq_1 / sum(cluster_freq_1), cluster_freq_3 / sum(cluster_freq_3))
+plot(cluster_freq_2 / sum(cluster_freq_2), cluster_freq_3 / sum(cluster_freq_3))
+# the second plot (2001 vs. 2007) looks a lot like figure 2 c, the first, in Corander et al.
+
+par(mfrow=c(1,1))
+plot((cluster_freq_1 + cluster_freq_2)/ (sum(cluster_freq_1) + sum(cluster_freq_2)), cluster_freq_3 / sum(cluster_freq_3))
+#Polished version of the plot:
+op <- par(mar = c(5,7,4,2) + 0.1,mgp=c(3,1,0))
+plot(cluster_freq_1 / sum(cluster_freq_1), cluster_freq_2 / sum(cluster_freq_2), axes = FALSE, ann = FALSE)
+axis(1,cex.axis = 1.5)
+axis(2, cex.axis = 1.5)
+title(xlab = "Pre-vaccine cluster frequency", cex.lab=1.5)
+title(ylab = "Post-vaccine cluster frequency", cex.lab = 1.5,
+      line = 4.5)
+box()
+par(op)
+```
+
+```{r}
+# read in information on vaccine types
+library(readxl)
+vaccine_types <- read_excel("~/Documents/PhD_Project/Code/1st_project/odin-dust-examples/Data/Corander_suppData3.xlsx")
+vaccine_types <- vaccine_types[,c(2,3,4,5,6)]
+vaccine_types_mass <- vaccine_types[which(vaccine_types$Population == "Massachusetts"),]
+isVT <- c()
+for (i in 1:nrow(vaccine_types_mass)){
+  isVT[vaccine_types_mass$`Accession Code`[i]] <- if (vaccine_types_mass$`Vaccine Type`[i] == "VT") {1} else {0}
+}
+vaccine_types_mass$cluster <- rep(0, nrow(vaccine_types_mass))
+# 1 is VT, 0 is nonVT
+# I want to create a simple vector instead of a dictionary because this will be easier to use when modelling
+# and I also want a consensus for the clusters...
+isVT_vec <- rep(0, no_clusters)
+isVT_vecMean <- rep(0, no_clusters)
+for (i in 1:no_clusters){
+  curr_cluster <- subset(clusters, clusters$Cluster == i)[,1] # select all genomes in cluster i
+  curr_vacc <- accNoToFilename[curr_cluster]
+  isVT_vec[i] <- median(isVT[curr_vacc])
+  isVT_vecMean[i] <- mean(isVT[curr_vacc])
+  #print(mean(isVT[curr_vacc])) #calculate mean as check for consensus
+  for (j in curr_vacc) {
+    vaccine_types_mass$cluster[which(vaccine_types_mass$`Accession Code`==j)] <- i
+  }
+}
+```
+
+```{r}
+# plot cluster freq coloured by vacc type, non VT and mixed
+#create colour-vector based on VT mean info
+VT_colours <- rep("black",no_clusters)
+for (i in 1:no_clusters){
+  if(isVT_vecMean[i] ==1){
+    VT_colours[i] <- "#E69F00"
+  }
+  else if(isVT_vecMean[i] ==0){
+    VT_colours[i] <- "#56B4E9"
+  }
+}
+
+op <- par(mar = c(5,7,4,2) + 0.1,mgp=c(3,1,0))
+plot(cluster_freq_1 / sum(cluster_freq_1), cluster_freq_3 / sum(cluster_freq_3), axes = FALSE, ann = FALSE, pch = 19, col = VT_colours)
+legend("topleft", title = "Clusters", c("VT", "Non-VT", "mixed"),fill = c("#E69F00", "#56B4E9", "black" ))
+axis(1,cex.axis = 1.5)
+axis(2, cex.axis = 1.5)
+title(xlab = "Pre-vaccine cluster frequency", cex.lab=1.5)
+title(ylab = "Post-vaccine cluster frequency", cex.lab = 1.5,
+      line = 4.5)
+box()
+par(op)
+```
+
+
+```{r}
+# make a grouped bar plot similar to Croucher et al.
+library(ggplot2)
+
+cluster_names <- rep(1:no_clusters, 3)
+cluster_names <- sort(cluster_names)
+#cluster_names <- as.character(cluster_names)
+seqTimes <- rep(c("2001", "2004", "2007"), no_clusters)
+cluster_freq_all_times <- rep(0, no_clusters *3)
+for (i in 1:no_clusters) {
+  cluster_freq_all_times[3*(i-1) + 1 ] <- cluster_freq_1[i]/sum(cluster_freq_1)
+  cluster_freq_all_times[3 * (i-1) + 2] <- cluster_freq_2[i]/sum(cluster_freq_2)
+  cluster_freq_all_times[3 * (i-1) + 3] <- cluster_freq_3[i]/sum(cluster_freq_3)
+}
+cluster_freq_df <- data.frame(cluster_names, seqTimes, cluster_freq_all_times)
+
+ggplot(cluster_freq_df, aes(fill=seqTimes, y=cluster_freq_all_times, x=cluster_names)) +   geom_bar(position="dodge", stat="identity") +
+scale_fill_manual("legend", values = c("2001" = "#E69F00", "2004" = "#56B4E9", "2007" = "#009E73")) +
+scale_x_continuous(breaks = 1:no_clusters)
+```
+
+```{r}
+#Create new version of this plot that includes VT infos
+#filter data set so that I only have clusters that are present in at least one cluster with at least 2.5%
+common_clusters <- c()
+for (i in 1:no_clusters){
+  if(cluster_freq_all_times[3*(i-1) + 1] >= 0.025 | cluster_freq_all_times[3*(i-1) + 2] >= 0.025 | cluster_freq_all_times[3*(i-1) + 3] >= 0.025){
+    common_clusters <- c(common_clusters, i)
+  }
+}
+common_cluster_names <- rep(common_clusters, 3)
+common_cluster_names <- sort(common_cluster_names)
+common_cluster_freq_all_times <- rep(0, length(common_clusters) *3)
+for (i in 1:length(common_clusters)) {
+  common_cluster_freq_all_times[3*(i-1) + 1 ] <- cluster_freq_1[common_clusters[i]]/sum(cluster_freq_1)
+  common_cluster_freq_all_times[3 * (i-1) + 2] <- cluster_freq_2[common_clusters[i]]/sum(cluster_freq_2)
+  common_cluster_freq_all_times[3 * (i-1) + 3] <- cluster_freq_3[common_clusters[i]]/sum(cluster_freq_3)
+}
+common_cluster_freq_df <- data.frame(common_cluster_names, seqTimes[1:(3*length(common_clusters))], common_cluster_freq_all_times)
+#create VT colour vector that fits this data structure (essentially repeating the vaccine info three times)
+VT_colours_allTimes <- rep("mixed",3*no_clusters)
+for (i in 1:length(common_clusters)) {
+  VT_colours_allTimes[3*(i-1) + 1 ] <- VT_colours[i]
+  VT_colours_allTimes[3 * (i-1) + 2] <- VT_colours[i]
+  VT_colours_allTimes[3 * (i-1) + 3] <-VT_colours[i]
+}
+common_VT_colours <- VT_colours[common_clusters]
+common_VT_colours_all_times <- VT_colours[common_cluster_names]
+common_VT_group_names <- rep("mixed",length(common_VT_colours_all_times))
+for (i in 1:length(common_VT_colours_all_times)){
+  if (common_VT_colours_all_times[i]=="#E69F00"){
+    common_VT_group_names[i] <- "VT"
+  }
+  else if(common_VT_colours_all_times[i]=="#56B4E9"){
+    common_VT_group_names[i] <- "Non-VT"
+  }
+}
+
+#install.packages("ggpattern")
+library(ggpattern)
+
+VT_info <- data.frame(group = common_VT_colours, 
+                   VTx = 1:length(common_clusters), 
+                   VTy_start = rep(0,length(common_clusters)), 
+                   VTy_end = rep(max(cluster_freq_all_times) ,length(common_clusters))
+                   ,color = rep("car",21))
+
+
+
+annotate_func <- function(x){
+  annotate("rect", xmin = x - 0.5, xmax = x + 0.5, ymin = 0, ymax = max(cluster_freq_all_times), fill = common_VT_colours[x])
+}
+annotate_sep_func <- function(x){
+  annotate("rect", xmin = x + 0.49, xmax = x + 0.51, ymin = 0, ymax = max(cluster_freq_all_times), alpha = 1, fill = "black")
+}
+ggplot(common_cluster_freq_df, aes(fill=seqTimes[1:(3*length(common_clusters))], y=common_cluster_freq_all_times, x=factor(common_cluster_names))) + 
+#annotate_func(1:length(common_clusters)) +
+geom_segment(aes(x=factor(common_cluster_names),y=0,xend=factor(common_cluster_names),yend=max(cluster_freq_all_times),colour=common_VT_group_names),linewidth = 5) +
+annotate_func(1:length(common_clusters)) +
+#geom_segment(aes(x = 1, y = 0, xend = 1, yend = max(cluster_freq_all_times), colour = "black"),linewidth = 10) +
+scale_colour_manual("Clusters",values = c("mixed"="#000000", "VT"="#E69F00", "Non-VT" = "#56B4E9"))+
+#scale_fill_manual("Sequence year", values = c("2001" = "#009E73", "2004" = "#009E7370", "2007" = "#009E7320")) +
+scale_fill_manual("Sequence year", values = c("2001" =  "#20BF9F", "2004" = "#54E2C6"	, "2007" = "#9FEFDF")) +  
+annotate_sep_func(1:length(common_clusters)) +
+#scale_colour_manual(values = c("car" = "black"))
+#for (i in 1:length(common_clusters)) {geomseg_func(i)} +
+#geomseg_func(1:2) +
+#scale_colour_manual(values = common_VT_colours) +
+scale_x_discrete(name ="Clusters", limits=factor(common_clusters)) +
+scale_y_continuous(name = "Frequency") +
+#scale_x_continuous(breaks = 1:max(common_clusters)) +
+geom_bar(position="dodge", stat="identity", colour="black", width = 1) +
+theme(text = element_text(size = 20))  
+#geom_segment(aes(x = VT_info$VTx, y = VT_info$VTy_start, xend = VT_info$VTx, yend = VT_info$VTy_end, colour = common_VT_colours))
+#scale_fill_manual("legend", values = c("VT" = "#E69F00", "Non-VT" = "#56B4E9", "mixed" = "#009E73")) +
+# annotate("rect", xmin = 0.5, xmax = 1.5, ymin = 0, ymax = max(cluster_freq_all_times), alpha = .3, fill = "#E69F00")
+```
+
+```{r}
+# try the same plot but change where the vaccine type is stored
+VT_info <- data.frame(group = common_VT_colours, 
+                   VTx = 1:length(common_clusters), 
+                   VTy_start = rep(0,length(common_clusters)), 
+                   VTy_end = rep(max(cluster_freq_all_times) ,length(common_clusters))
+                   ,color = rep("car",21))
+
+
+
+annotate_func <- function(x){
+  annotate("rect", xmin = x - 0.5, xmax = x + 0.5, ymin = 0, ymax = max(cluster_freq_all_times), fill = common_VT_colours[x])
+}
+annotate_sep_func <- function(x){
+  annotate("rect", xmin = x + 0.49, xmax = x + 0.51, ymin = 0, ymax = max(cluster_freq_all_times), alpha = 1, fill = "black")
+}
+ggplot(common_cluster_freq_df, aes(fill=seqTimes[1:(3*length(common_clusters))], y=common_cluster_freq_all_times, x=factor(common_cluster_names))) + 
+#annotate_func(1:length(common_clusters)) +
+#geom_segment(aes(x=factor(common_cluster_names),y=0,xend=factor(common_cluster_names),yend=max(cluster_freq_all_times),colour=common_VT_group_names),linewidth = 5) +
+#annotate_func(1:length(common_clusters)) +
+#geom_segment(aes(x = 1, y = 0, xend = 1, yend = max(cluster_freq_all_times), colour = "black"),linewidth = 10) +
+#scale_colour_manual("Clusters",values = c("mixed"="#000000", "VT"="#E69F00", "Non-VT" = "#56B4E9"))+
+#scale_fill_manual("Sequence year", values = c("2001" = "#009E73", "2004" = "#009E7370", "2007" = "#009E7320")) +
+scale_fill_manual("Sequence year", values = c("2001" =  "#20BF9F", "2004" = "#54E2C6"	, "2007" = "#9FEFDF")) +  
+#annotate_sep_func(1:length(common_clusters)) +
+#scale_colour_manual(values = c("car" = "black"))
+#for (i in 1:length(common_clusters)) {geomseg_func(i)} +
+#geomseg_func(1:2) +
+#scale_colour_manual(values = common_VT_colours) +
+scale_x_discrete(name ="Clusters", limits=factor(common_clusters)) +
+scale_y_continuous(name = "Frequency") +
+#scale_x_continuous(breaks = 1:max(common_clusters)) +
+#geom_bar(width = 0.7, stat="identity") +
+geom_bar(position="dodge", stat="identity", colour="black", width = .7) +
+theme(text = element_text(size = 20))  
+#geom_segment(aes(x = VT_info$VTx, y = VT_info$VTy_start, xend = VT_info$VTx, yend = VT_info$VTy_end, colour = common_VT_colours))
+#scale_fill_manual("legend", values = c("VT" = "#E69F00", "Non-VT" = "#56B4E9", "mixed" = "#009E73")) +
+# annotate("rect", xmin = 0.5, xmax = 1.5, ymin = 0, ymax = max(cluster_freq_all_times), alpha = .3, fill = "#E69F00")
+```
+
+
+
+```{r}
+# I want to add low and high levels of selection to the model.
+# for that I need to calculate the beta statistics
+
+# first, calculate pre/peri and post vacc frequencies of genes:
+pre_peri_vacc_gene_freq <- (data_gene_freq_1 + data_gene_freq_2) / (nrow(subset(clusters,clusters$seqYear==2001)) + nrow(subset(clusters,clusters$seqYear==2004)))
+pre_vacc_gene_freq <- (data_gene_freq_1) / (nrow(subset(clusters,clusters$seqYear==2001)))
+post_vacc_gene_freq <- data_gene_freq_3 / nrow(subset(clusters,clusters$seqYear==2007))
+peri_post <- (data_gene_freq_2 + data_gene_freq_3) / (nrow(subset(clusters,clusters$seqYear==2004)) + nrow(subset(clusters,clusters$seqYear==2007)))
+
+# calculate delta statistic (refer to Corander et al. for more info)
+delta_data <- (post_vacc_gene_freq - pre_peri_vacc_gene_freq) ^ 2 / (1 - pre_peri_vacc_gene_freq * (1 - pre_peri_vacc_gene_freq))
+delta_ranking <- rank(delta_data)
+#try with just pre vs post
+#delta_data <- (post_vacc_gene_freq - pre_vacc_gene_freq) ^ 2 / (1 - pre_vacc_gene_freq * (1 - pre_vacc_gene_freq))
+#delta_ranking <- rank(delta_data)
+#<- sort(delta_data, index.return = TRUE)
+# access the indexes of the corresponding genes through sorted_delta$ix, access the values through sorted_delta$x
+
+
+delta_data3 <- (peri_post - pre_vacc_gene_freq) ^ 2 / (1 - pre_vacc_gene_freq * (1 - pre_vacc_gene_freq))
+delta_ranking3 <- rank(delta_data3)
+delta_ranking <- delta_ranking3
+
+```
+
+```{r}
+# implement sampling from pre vaccination population instead of directly using the 2001 population as input
+# would it be better to do the sampling in the modelling frame work? maybe.
+
+# okay, I want to sample 50,000 individuals from the 2001 population with replacement
+#option 1:
+#start_time <- Sys.time()
+#ex <- rowSums(rmultinom(50000,1,prob = cluster_freq_1/sum(cluster_freq_1)))
+#end_time <- Sys.time()
+#end_time - start_time
+# Time difference of 0.49172 secs
+
+# option 2:
+#start_time <- Sys.time()
+#ex2 <- rmultinom(1,50000,prob = cluster_freq_1/sum(cluster_freq_1))
+#end_time <- Sys.time()
+#end_time - start_time
+# Time difference of 0.0009939671 secs
+
+#start_time <- Sys.time()
+#end_time <- Sys.time()
+#end_time - start_time
+# Time difference of 0.0004160404 secs
+# wow, 50% of the second method seem to be taken up by measuring the time!
+
+# So I will go with option 2, but maybe should double check that this actually the same (I think it is though).
+#start_pop <- as.vector(as.double(rmultinom(1,50000,prob = cluster_freq_1/sum(cluster_freq_1))))
+# or sample
+
+### create initial population that is based on the 2001 data set but not an exact sampling from it
+# but a Poisson process
+expand_factor <- 15000 / sum(cluster_freq_1)
+exp_noise <- 10
+start_pop <- (sapply((cluster_freq_1 + rexp(n = length(cluster_freq_1), rate = exp_noise)) * expand_factor, rpois, n=1))
+
+
+```
+
+
+######################################################
+### Define model parameters according to the datasets
+```{r}
+params_n_vP <- list(dt = 1/36, species_no = no_clusters,  gene_no = nrow(cluster_gene_presence_absence), Pop_ini = start_pop, Pop_eq = start_pop, capacity = sum(start_pop), Genotypes = matrix_cluster_gene_presence_absence, sigma_f = 0.14, sigma_w = 0.002, prop_f = 0.25, delta = delta_ranking, m = 0.03, vaccTypes = isVT_vec, v = 0.2, vacc_time = 100) 
+start_pop_small <- as.vector(as.double(rmultinom(1,1000,prob = cluster_freq_1/sum(cluster_freq_1))))
+params_n_vP <- list(dt = 1/36, species_no = no_clusters,  gene_no = nrow(cluster_gene_presence_absence), Pop_ini = start_pop_small, Pop_eq = start_pop_small, capacity = sum(start_pop_small), Genotypes = matrix_cluster_gene_presence_absence, sigma_f = 0.14, sigma_w = 0.002, prop_f = 0.25, delta = delta_ranking, m = 0.03, vaccTypes = isVT_vec, v = 0.08, vacc_time = 2) 
+
+params_n_vP <- list(dt = 1/36, species_no = no_clusters,  gene_no = nrow(cluster_gene_presence_absence), Pop_ini = start_pop_small, Pop_eq = start_pop_small, capacity = sum(start_pop_small), Genotypes = matrix_cluster_gene_presence_absence, sigma_f = 0.14, sigma_w = 0.002, prop_f = 0.25, delta = delta_ranking, m = 0.03, vaccTypes = isVT_vec, v = 0.7, vacc_time = 1) 
+
+# trying to create a nice looking plot
+params_n_vP <- list(dt = 1/36, species_no = no_clusters,  gene_no = nrow(cluster_gene_presence_absence), Pop_ini = cluster_freq_1, Pop_eq = cluster_freq_1, capacity = sum(cluster_freq_1), Genotypes = matrix_cluster_gene_presence_absence, sigma_f = 0.14, sigma_w = 0.02, prop_f = 0.25, delta = delta_ranking, m = 0.0, vaccTypes = isVT_vec, v = 0.35, vacc_time = 10)
+
+params_n_vP <- list(dt = 1/36, species_no = no_clusters,  gene_no = nrow(cluster_gene_presence_absence), Pop_ini = start_pop_small, Pop_eq = start_pop_small, capacity = sum(start_pop_small), Genotypes = matrix_cluster_gene_presence_absence, sigma_f = 0.1, sigma_w = 0.02, prop_f = 0.25, delta = delta_ranking, m = 0.07, vaccTypes = isVT_vec, v = 0.4, vacc_time = 12)
+```
+
+
+### Running the model:
+```{r}
+WFmodel_nG_h_vP <- WF_nG_h_vP$new(pars = params_n_vP,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+# this is expecting doubles. I need to work on that.
+```
+
+# initial state: 
+```{r}
+WFmodel_nG_h_vP$state()
+```
+
+
+# running the model for 10, 20, 30 time steps:
+```{r}
+#WFmodel_nG_h_vP$run(1)
+#WFmodel_nG_h_vP$run(2)
+#WFmodel_nG_h_vP$run(3)
+```
+
+
+
+```{r fig.height=5, fig.width=7}
+par(mfrow=c(1,1))
+# dt <- 1
+dt <- 1/36
+n_particles <- 10L
+#WFmodel_nG_h_vP$update_state(pars = params_n_vP, time = 0)
+WFmodel_nG_h_vP <- WF_nG_h_vP$new(pars = params_n_vP,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+
+
+n_times <- 180
+n_times <- 72
+x <- array(NA, dim = c(WFmodel_nG_h_vP$info()$len, n_particles, n_times))
+
+for (t in seq_len(n_times)) {
+  x[ , , t] <- WFmodel_nG_h_vP$run(t)
+}
+time <- x[1, 1, ]
+x <- x[-1, , ]
+
+
+
+par(mar = c(4.1, 5.1, 0.5, 0.5), las = 1)
+if (length(x[,1,1]) <= 8){
+  cols <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7") #8 colorblind friendly colors
+} else {
+  cols <- rainbow(length(x[,1,1]))
+}
+
+
+library(dplyr)
+library(zoo)
+par(ask = FALSE)
+matplot(time, rollmean(x[1,1 , ], k=36, fill=NA), type = "l",
+         xlab = "Time", ylab = "Number of individuals",
+         col = cols[1], lty = 1, ylim = range(x))
+for (species in 2:length(x[,1,1])) {
+  matlines(time, rollmean(x[species,1 , ], k=36, fill=NA), col = cols[species], lty = 1)
+}
+# or 
+ matplot(time,(x[1,1 , ]), type = "l",
+         xlab = "Time", ylab = "Number of individuals",
+         col = cols[1], lty = 1, ylim = range(x))
+for (species in 2:length(x[,1,1])) {
+  matlines(time, (x[species,1 , ]), col = cols[species], lty = 1)
+}
+#if you want to see all single values, not the monthly rolling mean
+
+
+legend("bottomright", lwd = 1, col = cols[1:length(x[,1,1])], legend = 1:length(x[,1,1]), bty = "n")
+```
+
+
+```{r}
+# create plot colored by whether clusters are vaccine types or not
+
+par(mar = c(4.1, 5.1, 0.5, 0.5), las = 1)
+cols <- rep("#000000", length(x[,1,1]))
+for (i in 1:length(cols)){
+  cols[i] <- if(isVT_vec[i]==0){"#E69F00"} else {"#000000"}
+}
+
+
+# probably should find a more dynamic way for models with >8 species?
+matplot(time, rollmean(x[1,1 , ], k=30, fill=NA), type = "l",
+         xlab = "Time", ylab = "Number of individuals",
+         col = cols[1], lty = 1, ylim = range(x))
+for (species in 2:length(x[,1,1])) {
+  matlines(time, rollmean(x[species,1 , ], k=30, fill=NA), col = cols[species], lty = 1)
+}
+
+# or 
+ matplot(time,(x[1,1 , ]), type = "l",
+         xlab = "Time", ylab = "Number of individuals",
+         col = cols[1], lty = 1, lwd = 3, ylim = range(x), cex.lab=1.5, cex.axis = 1.5)
+for (species in 2:length(x[,1,1])) {
+  matlines(time, (x[species,1 , ]), col = cols[species], lty = 1, lwd = 3)
+}
+legend(-5, 215, lwd = 3, col = c("#000000","#E69F00"), legend = c("Vaccine Types", "Non-Vaccine Types"), bty = "n",cex=1.5, lty=1:1)
+ 
+#matplot(time,(x[1,1 , ])/colSums(x[,1,], dims = 1), type = "l",
+#         xlab = "Time", ylab = "Number of individuals",
+#         col = cols[1], lty = 1, ylim = c(0,0.25))
+#for (species in 2:length(x[,1,1])) {
+#  matlines(time, (x[species,1 , ])/colSums(x[,1,], dims = 1), col = cols[species], lty = 1)
+#}
+#if you want to see all single values, not the monthly rolling mean
+
+
+legend("topright", lwd = 1, col = c("#000000","#E69F00"), legend = c("Vaccine Types", "Non-Vaccine Types"), bty = "n")
+
+# vaccine types seem to be less successful, yeah!
+```
+
+```{r}
+# make a grouped bar plot similar to Croucher et al.
+library(ggplot2)
+
+cluster_names <- rep(1:no_clusters, 3)
+cluster_names <- sort(cluster_names)
+#cluster_names <- as.character(cluster_names)
+simTimes <- rep(c("pt 1", "pt 2", "pt 3"), no_clusters)
+sim_cluster_freq_all_times <- rep(0, no_clusters *3)
+for (i in 1:no_clusters) {
+  sim_cluster_freq_all_times[3*(i-1) + 1 ] <- x[i,1,1]/sum(x[,1,1])
+  sim_cluster_freq_all_times[3 * (i-1) + 2] <- x[i,1,n_times/2]/sum(x[,1,n_times/2])
+  sim_cluster_freq_all_times[3 * (i-1) + 3] <- x[i,1,n_times]/sum(x[,1,n_times])
+}
+sim_cluster_freq_df <- data.frame(cluster_names, simTimes, sim_cluster_freq_all_times)
+
+
+library(gridExtra)
+
+
+sim_plot <- ggplot(sim_cluster_freq_df, aes(fill=simTimes, y=sim_cluster_freq_all_times, x=cluster_names)) +   geom_bar(position="dodge", stat="identity") +
+scale_fill_manual("legend", values = c("pt 1" = "#E69F00", "pt 2" = "#56B4E9", "pt 3" = "#009E73")) +
+scale_x_continuous(breaks = 1:no_clusters)
+
+data_plot <- ggplot(cluster_freq_df, aes(fill=seqTimes, y=cluster_freq_all_times, x=cluster_names)) +   geom_bar(position="dodge", stat="identity") +
+scale_fill_manual("legend", values = c("2001" = "#E69F00", "2004" = "#56B4E9", "2007" = "#009E73")) +
+scale_x_continuous(breaks = 1:no_clusters)
+
+grid.arrange(data_plot, sim_plot, nrow = 2)
+# this is obviously not great at the moment. However, this is no surprise because the model parameters were not fitted against the data yet.
+
+# this can be used to compare the simulated data to the real data
+# 2001 should be the same because this is a deterministic start state
+# the other times n_times/2 and n_times are chosen quite arbitrarily at the moment. not sure how to choose them?
+```
+
+### run the model with Corander parameters from heterogeneous-rate multilocus NFDS
+```{r}
+### create initial population that is based on the 2001 data set but not an exact sampling from it
+# but a Poisson process
+expand_factor <- 15000 / sum(cluster_freq_1)
+exp_noise <- 10
+model_start_pop <- as.double(sapply((cluster_freq_1 + rexp(n = length(cluster_freq_1), rate = exp_noise)) * expand_factor, rpois, n=1))
+
+# visual check for the "sampling"
+#plot(cluster_freq_1/sum(cluster_freq_1))
+#points(model_start_pop/sum(model_start_pop), col = "red")
+# looks similar enough, I would say
+```
+
+
+```{r}
+#quick fix for population size: currently sum(clusters_2001) = 133
+# I want 50,000, so I'll take an integer approx of 50000/133 = 375.94, which is 400 :D
+#cluster_freq_ini_expanded <- cluster_freq_1 *400
+Corander_params <- list(dt = 1/36, species_no = no_clusters,  gene_no = nrow(cluster_gene_presence_absence), Pop_ini = model_start_pop, Pop_eq = model_start_pop, capacity = sum(model_start_pop), Genotypes = matrix_cluster_gene_presence_absence, sigma_f = 0.1363, sigma_w = 0.0023, prop_f = 0.2483, delta = delta_ranking, m = 0.0044, vaccTypes = isVT_vec, v = 0.0812, vacc_time = 1) 
+params_n_vP <- Corander_params
+# now, adjusting the values and seeing whether I get closer to the data
+#params_n_vP <- list(dt = 1/36, species_no = no_clusters,  gene_no = nrow(cluster_gene_presence_absence), Pop_ini = start_pop, Pop_eq = start_pop, capacity = sum(start_pop), Genotypes = matrix_cluster_gene_presence_absence, sigma_f = 0.5363, sigma_w = 0.023, prop_f = 0.2483, delta = delta_ranking, m = 0.00044, vaccTypes = isVT_vec, v = 0.7812, vacc_time = 6) 
+adap_Corander_params <- list(dt = 1/36, species_no = no_clusters,  gene_no = nrow(cluster_gene_presence_absence), Pop_ini = model_start_pop, Pop_eq = model_start_pop, capacity = sum(model_start_pop), Genotypes = matrix_cluster_gene_presence_absence, sigma_f = 0.1363, sigma_w = 0.0023, prop_f = 0.2483, delta = delta_ranking, m = 0.0044, vaccTypes = isVT_vec, v = 0.1812, vacc_time = 1) 
+params_n_vP <- adap_Corander_params
+```
+
+
+```{r fig.height=5, fig.width=7}
+par(mfrow=c(1,1))
+dt <- 1
+n_particles <- 10L
+#WFmodel_nG_h_vP$update_state(pars = params_n_vP, time = 0)
+WFmodel_nG_h_vP_expanded <- WF_nG_h_vP$new(pars = params_n_vP,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+
+
+n_times <- 180
+x <- array(NA, dim = c(WFmodel_nG_h_vP_expanded$info()$len, n_particles, n_times))
+
+for (t in seq_len(n_times)) {
+  x[ , , t] <- WFmodel_nG_h_vP_expanded$run(t)
+}
+time <- x[1, 1, ]
+x <- x[-1, , ]
+
+
+
+par(mar = c(4.1, 5.1, 0.5, 0.5), las = 1)
+if (length(x[,1,1]) <= 8){
+  cols <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7") #8 colorblind friendly colors
+} else {
+  cols <- rainbow(length(x[,1,1]))
+}
+
+
+library(dplyr)
+library(zoo)
+
+#matplot(time, rollmean(x[1,1 , ], k=30, fill=NA), type = "l",
+#         xlab = "Time", ylab = "Number of individuals",
+#         col = cols[1], lty = 1, ylim = range(x))
+#for (species in 2:length(x[,1,1])) {
+#  matlines(time, rollmean(x[species,1 , ], k=30, fill=NA), col = cols[species], lty = 1)
+#}
+# or 
+ matplot(time,(x[1,1 , ]), type = "l",
+         xlab = "Time", ylab = "Number of individuals",
+         col = cols[1], lty = 1, ylim = range(x))
+for (species in 2:length(x[,1,1])) {
+  matlines(time, (x[species,1 , ]), col = cols[species], lty = 1)
+}
+#if you want to see all single values, not the monthly rolling mean
+
+
+legend("bottomright", lwd = 1, col = cols[1:length(x[,1,1])], legend = 1:length(x[,1,1]), bty = "n")
+
+### this looks sooo wrong :-(
+```
+
+```{r}
+# make a grouped bar plot similar to Croucher et al.
+library(ggplot2)
+
+cluster_names <- rep(1:no_clusters, 3)
+cluster_names <- sort(cluster_names)
+#cluster_names <- as.character(cluster_names)
+simTimes <- rep(c("pt 1", "pt 2", "pt 3"), no_clusters)
+sim_cluster_freq_all_times <- rep(0, no_clusters *3)
+for (i in 1:no_clusters) {
+  sim_cluster_freq_all_times[3*(i-1) + 1 ] <- x[i,1,1]/sum(x[,1,1])
+  sim_cluster_freq_all_times[3 * (i-1) + 2] <- x[i,1,37]/sum(x[,1,37])
+  sim_cluster_freq_all_times[3 * (i-1) + 3] <- x[i,1,73]/sum(x[,1,73])
+}
+sim_cluster_freq_df <- data.frame(cluster_names, simTimes, sim_cluster_freq_all_times)
+
+
+library(gridExtra)
+
+
+sim_plot <- ggplot(sim_cluster_freq_df, aes(fill=simTimes, y=sim_cluster_freq_all_times, x=cluster_names)) +   geom_bar(position="dodge", stat="identity") +
+scale_fill_manual("legend", values = c("pt 1" = "#E69F00", "pt 2" = "#56B4E9", "pt 3" = "#009E73")) +
+scale_x_continuous(breaks = 1:no_clusters)
+
+data_plot <- ggplot(cluster_freq_df, aes(fill=seqTimes, y=cluster_freq_all_times, x=cluster_names)) +   geom_bar(position="dodge", stat="identity") +
+scale_fill_manual("legend", values = c("2001" = "#E69F00", "2004" = "#56B4E9", "2007" = "#009E73")) +
+scale_x_continuous(breaks = 1:no_clusters)
+
+grid.arrange(data_plot, sim_plot, nrow = 2)
+# this is obviously not great at the moment. However, this is no surprise because the model parameters were not fitted against the data yet.
+
+# this can be used to compare the simulated data to the real data
+# 2001 should be the same because this is a deterministic start state
+```
+
+
+# create lollipop plot for testing different parameter values manually
+```{r}
+x_mean <- apply(x, c(1,3), mean)
+# Create data
+          lollipop_data_2001_nVT <- data.frame(
+            x=which(isVT_vec==0),
+            model2001=x_mean[which(isVT_vec==0),1] / sum(x_mean[,1]),
+            data2001=as.numeric(cluster_freq_1[which(isVT_vec==0)] / sum(cluster_freq_1))
+          )
+          lollipop_data_2001_VT <- data.frame(
+            x=which(isVT_vec==1),
+            model2001=x_mean[which(isVT_vec==1),1] / sum(x_mean[,1]),
+            data2001=as.numeric(cluster_freq_1[which(isVT_vec==1)] / sum(cluster_freq_1))
+          )
+          lollipop_data_2004_nVT <- data.frame(
+            x=which(isVT_vec==0),
+            model2004=x_mean[which(isVT_vec==0),37] / sum(x_mean[,37]),
+            data2004=as.numeric(cluster_freq_2[which(isVT_vec==0)] / sum(cluster_freq_2))
+          )
+          lollipop_data_2004_VT <- data.frame(
+            x=which(isVT_vec==1),
+            model2004=x_mean[which(isVT_vec==1),37] / sum(x_mean[,37]),
+            data2004=as.numeric(cluster_freq_2[which(isVT_vec==1)] / sum(cluster_freq_2))
+          )
+          lollipop_data_2007_nVT <- data.frame(
+            x=which(isVT_vec==0),
+            model2007=x_mean[which(isVT_vec==0),73] / sum(x_mean[,73]),
+            data2007=as.numeric(cluster_freq_3[which(isVT_vec==0)] / sum(cluster_freq_3))
+          )
+          lollipop_data_2007_VT <- data.frame(
+            x=which(isVT_vec==1),
+            model2007=x_mean[which(isVT_vec==1),73] / sum(x_mean[,73]),
+            data2007=as.numeric(cluster_freq_3[which(isVT_vec==1)] / sum(cluster_freq_3))
+          )
+          # Change baseline
+          lollipop_plot_2001_nVT <- ggplot(lollipop_data_2001_nVT) +
+            geom_segment( aes(x=x, xend=x, y=model2001, yend=data2001), color="grey") +
+            geom_point( aes(x=x, y=model2001, color="Model non-VT"), size=3 ) +
+            geom_point( aes(x=x, y=data2001, color="Data non_VT"), size=3 ) +
+            scale_color_manual(values = c("#E69F00", "#56B4E9"),
+                               guide  = guide_legend(), 
+                               name   = "Group") +
+            coord_flip()+
+            #theme_ipsum() +
+            theme(legend.position = "none") +
+            ggtitle("2001 Non-Vaccine Types") +
+            ylab("Frequency") +
+            xlab("Clusters") +
+            theme(axis.title  = element_text(size = 20), axis.text = element_text(size = 20), plot.title = element_text(size = 25,hjust = 0.5))  +
+            ylim(0, max(max(lollipop_data_2001_nVT$model2001),max(lollipop_data_2001_nVT$data2001),max(lollipop_data_2004_VT$model2004),max(lollipop_data_2004_VT$data2004),max(lollipop_data_2007_nVT$model2007),max(lollipop_data_2007_nVT$data2007)))
+          lollipop_plot_2001_VT <- ggplot(lollipop_data_2001_VT) +
+            geom_segment( aes(x=x, xend=x, y=model2001, yend=data2001), color="grey") +
+            geom_point( aes(x=x, y=model2001, color="Model non-VT"), size=3 ) +
+            geom_point( aes(x=x, y=data2001, color="Data non_VT"), size=3 ) +
+            scale_color_manual(values = c("#E69F00", "#56B4E9"),
+                               guide  = guide_legend(), 
+                               name   = "Group") +
+            coord_flip()+
+            #theme_ipsum() +
+            theme(legend.position = "none") +
+            ggtitle("2001 Vaccine Types") +
+            ylab("Frequency") +
+            xlab("Clusters") +
+            theme(axis.title  = element_text(size = 20), axis.text = element_text(size = 20), plot.title = element_text(size = 25,hjust = 0.5))  +
+            ylim(0, max(max(lollipop_data_2001_nVT$model2001),max(lollipop_data_2001_nVT$data2001),max(lollipop_data_2004_VT$model2004),max(lollipop_data_2004_VT$data2004),max(lollipop_data_2007_nVT$model2007),max(lollipop_data_2007_nVT$data2007)))
+          lollipop_plot_2004_nVT <- ggplot(lollipop_data_2004_nVT) +
+            geom_segment( aes(x=x, xend=x, y=model2004, yend=data2004), color="grey") +
+            geom_point( aes(x=x, y=model2004, color="Model"), size=3 ) +
+            geom_point( aes(x=x, y=data2004, color="Data"), size=3 ) +
+            scale_color_manual(values = c("#E69F00", "#56B4E9"),
+                               guide  = guide_legend(), 
+                               name   = "Group") +
+            coord_flip()+
+            #theme_ipsum() +
+            theme(legend.position = "none") +
+            ggtitle("2004 Non-Vaccine Types") +
+            ylab("Frequency") +
+            xlab("Clusters") +
+            theme(axis.title  = element_text(size = 20), axis.text = element_text(size = 20), plot.title = element_text(size = 25,hjust = 0.5))  +
+ylim(0, max(max(lollipop_data_2001_nVT$model2001),max(lollipop_data_2001_nVT$data2001),max(lollipop_data_2004_VT$model2004),max(lollipop_data_2004_VT$data2004),max(lollipop_data_2007_nVT$model2007),max(lollipop_data_2007_nVT$data2007)))          
+          lollipop_plot_2004_VT <- ggplot(lollipop_data_2004_VT) +
+            geom_segment( aes(x=x, xend=x, y=model2004, yend=data2004), color="grey") +
+            geom_point( aes(x=x, y=model2004, color="Model"), size=3 ) +
+            geom_point( aes(x=x, y=data2004, color="Data"), size=3 ) +
+            scale_color_manual(values = c("#E69F00", "#56B4E9"),
+                               guide  = guide_legend(), 
+                               name   = "Group") +
+            coord_flip()+
+            #theme_ipsum() +
+            theme(legend.position = "none") +
+            ggtitle("2004 Vaccine Types") +
+            ylab("Frequency") +
+            xlab("Clusters") +
+            theme(axis.title  = element_text(size = 20), axis.text = element_text(size = 20), plot.title = element_text(size = 25,hjust = 0.5))  +
+            ylim(0, max(max(lollipop_data_2001_nVT$model2001),max(lollipop_data_2001_nVT$data2001),max(lollipop_data_2004_VT$model2004),max(lollipop_data_2004_VT$data2004),max(lollipop_data_2007_nVT$model2007),max(lollipop_data_2007_nVT$data2007))) 
+          lollipop_plot_2007_nVT <- ggplot(lollipop_data_2007_nVT) +
+            geom_segment( aes(x=x, xend=x, y=model2007, yend=data2007), color="grey") +
+            geom_point( aes(x=x, y=model2007, color="Model"), size=3 ) +
+            geom_point( aes(x=x, y=data2007, color="Data"), size=3 ) +
+            scale_color_manual(values = c("#E69F00", "#56B4E9"),
+                               guide  = guide_legend(), 
+                               name   = "Group") +
+            coord_flip()+
+            #theme_ipsum() +
+            theme(legend.position = "none") +
+            ggtitle("2007 Non-Vaccine Types") +
+            ylab("Frequency") +
+            xlab("Clusters") +
+            theme(axis.title  = element_text(size = 20), axis.text = element_text(size = 20), plot.title = element_text(size = 25,hjust = 0.5))  +
+            ylim(0, max(max(lollipop_data_2001_nVT$model2001),max(lollipop_data_2001_nVT$data2001),max(lollipop_data_2004_VT$model2004),max(lollipop_data_2004_VT$data2004),max(lollipop_data_2007_nVT$model2007),max(lollipop_data_2007_nVT$data2007)))          
+          lollipop_plot_2007_VT <- ggplot(lollipop_data_2007_VT) +
+            geom_segment( aes(x=x, xend=x, y=model2007, yend=data2007), color="grey") +
+            geom_point( aes(x=x, y=model2007, color="Model"), size=3 ) +
+            geom_point( aes(x=x, y=data2007, color="Data"), size=3 ) +
+            scale_color_manual(values = c("#E69F00", "#56B4E9"),
+                               guide  = guide_legend(), 
+                               name   = "Legend") +
+            coord_flip()+
+            #theme_ipsum() +
+            theme(legend.position = c(.8,.8),legend.text = element_text(size = 20),legend.title = element_text(size = 20)) +
+            ggtitle("2007 Vaccine Types") +
+            ylab("Frequency") +
+            xlab("Clusters") +
+            theme(axis.title  = element_text(size = 20), axis.text = element_text(size = 20), plot.title = element_text(size = 25,hjust = 0.5))  +
+            ylim(0, max(max(lollipop_data_2001_nVT$model2001),max(lollipop_data_2001_nVT$data2001),max(lollipop_data_2004_VT$model2004),max(lollipop_data_2004_VT$data2004),max(lollipop_data_2007_nVT$model2007),max(lollipop_data_2007_nVT$data2007)))
+          #save plot as a png
+          #g <- arrangeGrob(lollipop_plot_2001,lollipop_plot_2004, lollipop_plot_2007, ncol =3) #generates g
+          #ggsave(file=paste(paste("plot",as.character(counter), sep=""), ".png", sep=""), g, width = 16, height = 16) #saves g
+          grid.arrange(lollipop_plot_2001_nVT + theme(plot.margin = unit(c(.5,0.5,1,0.5), "cm")),lollipop_plot_2004_nVT+ theme(plot.margin = unit(c(.5,0.5,1,0.5), "cm")), lollipop_plot_2007_nVT + theme(plot.margin = unit(c(.5,0.5,1,0.5), "cm")),lollipop_plot_2001_VT + theme(plot.margin = unit(c(.5,0.5,.5,0.5), "cm")), lollipop_plot_2004_VT + theme(plot.margin = unit(c(.5,0.5,.5,0.5), "cm")), lollipop_plot_2007_VT + theme(plot.margin = unit(c(.5,0.5,.5,0.5), "cm")), ncol = 3, nrow=2)
+          #grid.arrange(lollipop_plot_2001_VT,lollipop_plot_2004_VT, lollipop_plot_2007_VT, ncol = 3)
+          #          grid.arrange(lollipop_plot_2004_nVT+ theme(plot.margin = unit(c(.5,0.5,1,0.5), "cm")), lollipop_plot_2007_nVT + theme(plot.margin = unit(c(.5,0.5,1,0.5), "cm")), lollipop_plot_2004_VT + theme(plot.margin = unit(c(.5,0.5,.5,0.5), "cm")), lollipop_plot_2007_VT + theme(plot.margin = unit(c(.5,0.5,.5,0.5), "cm")), ncol = 2, nrow=2)
+```
+
+
+
+
+
+### now, the fitting can begin! :-)
+```{r}
+#install.packages("drat") # -- if you don't have drat installed
+drat:::add("ncov-ic")
+#install.packages("mcstate")
+library(mcstate)
+```
+
+```{r}
+# process data with particle filter:
+dt <- 1/36 # we assume that the generation time of Strep. pneumo is 1 month
+# we have data from 2001, 2004, 2007, so we want 3 (years) * 12 (months) = 36 updates in-between
+
+# adding additional times to df, filled with NAs
+#vecNA <- rep(NA, 62)
+#pfd_fitting_cluster_freq_df <- fitting_cluster_freq_df
+#pfd_fitting_cluster_freq_df[4,] <- pfd_fitting_cluster_freq_df[2,]
+#pfd_fitting_cluster_freq_df[5,] <- c(2005, vecNA)
+#pfd_fitting_cluster_freq_df[6,] <- c(2006, vecNA)
+#pfd_fitting_cluster_freq_df[7,] <- pfd_fitting_cluster_freq_df[3,]
+#pfd_fitting_cluster_freq_df[2,] <- c(2002, vecNA)
+#pfd_fitting_cluster_freq_df[3,] <- c(2003, vecNA)
+
+#pfd_simpleInts_fitting_cluster_freq_df <- pfd_fitting_cluster_freq_df
+#pfd_simpleInts_fitting_cluster_freq_df$year <- c(1,2,3,4,5,6,7) # this is a test
+# I have all years from 2001-2007 now, but the some are NAs obviously
+# and I renamed the years to 1-7, to not cause weird effects of the model running 2000 years before already
+
+# No! This is unnecessary because it means more work for the fitting algorithm where we actually do not have data
+
+#instead, I want to excluded 2001 data from fitting, since that is just the start (and the start population is sampled from that)
+
+peripost_fitting_cluster_freq_df <- fitting_cluster_freq_df[2:3,]
+### testing this whether it helps with the fitting:
+peripost_fitting_cluster_freq_df$year <- c(1,2)
+# (until now I had 2004 and 2007 there and then in the model that resulted in times 72144 and 72252. does not make sense)
+# when changing this back, also change initial_time back to 2001
+
+mass_data <- mcstate::particle_filter_data(data = peripost_fitting_cluster_freq_df,
+                                          time = "year",
+                                          rate = 1 / dt,
+                                          initial_time = 0)
+#the original:
+# dt <- 1/36
+###maybe I do need the 2001 data for fitting? Because what do I do otherwise with the first model point?
+#all_fitting_freq_df <- fitting_cluster_freq_df
+#all_fitting_freq_df$year <- c(1,2,3)
+#mass_data <- mcstate::particle_filter_data(data = all_fitting_freq_df,
+#                                          time = "year",
+#                                          rate = 1 / dt,
+#                                          initial_time = 0)
+```
+
+```{r}
+# Defining the comparison function
+# state is the model state at some point in time
+# observed is the real data 
+#cluster_compare <- function(state, observed, pars = NULL) {
+#  exp_noise <- 1e6
+  #print(dim(state))
+  
+  #state_x[ , ] <- state
+#  state <- state[-1, ]
+#  clusters_modelled <- state[,1]
+#  clusters_observed <- observed$"1"
+#  lambda <- clusters_modelled +
+#    rexp(n = length(clusters_modelled), rate = exp_noise)
+#  dpois(x = clusters_observed, lambda = lambda, log = TRUE)
+#}
+
+### this is an old version of the compare function that only fitted the first cluster
+```
+
+```{r}
+# log-likelihood of with negative Binomial distribution
+ll_dnbinom <- function(obs, model) {
+  exp_noise <- 1e6
+  if (is.na(obs)) {
+    # Creates vector of zeros in ll with same length, if no data
+    ll_obs <- numeric(length(model))
+  } else {
+    mu <- model + rexp(n = length(model), rate = exp_noise)
+    #ll_obs <- dpois(x = obs, lambda = lambda, log = TRUE) # this is the simplest version possible
+    ll_obs <- dnbinom(x = obs, size = capacity, mu = mu, log = TRUE)
+  }
+  ll_obs
+}
+
+combined_compare <- function(state, observed, pars = NULL) {
+  result <- 0
+  for (i in 1:62){
+    #print(observed[as.character(ind)])
+    #print(state[1+i, , drop = TRUE])
+    result <- result + ll_dnbinom(observed[[as.character(i)]], state[1+i, , drop = TRUE])
+  }
+  result
+}
+```
+
+
+```{r}
+# log-likelihood of with Poisson distribution
+ll_pois <- function(obs, model) {
+  exp_noise <- 1e6
+  #browser()
+  if (is.na(obs)) {
+    # Creates vector of zeros in ll with same length, if no data
+    ll_obs <- numeric(length(model))
+  } else {
+    lambda <- model + rexp(n = length(model), rate = exp_noise)
+    ll_obs <- dpois(x = obs, lambda = lambda, log = TRUE)
+  }
+  ll_obs
+}
+
+combined_compare <- function(state, observed, pars = NULL) {
+  result <- 0
+  #data_size <- sum(observed[as.character(1:62)])
+  # cannot get this to work for now
+  # instead I will use this:
+  data_size <- sum(cluster_freq_1)
+  #model_size <- sum(state[, , drop = TRUE])
+  model_size = 15000
+  
+  for (i in 1:62){
+    #print(observed[as.character(ind)])
+    #print(state[1+i, , drop = TRUE])
+    # just checking one particle
+    #result <- result + ll_pois(observed[[as.character(i)]], state[1+i,1 , drop = TRUE])
+    #used to be this:
+    result <- result + ll_pois(observed[[as.character(i)]], state[1+i, , drop = TRUE]/model_size * data_size)
+    #but I don't really want to look at all the particles, or do I?
+  }
+  result
+}
+
+#manual usage: combined_compare(WFmodel_nG_h_vP$state(), observed = mass_data[1,])
+```
+
+```{r}
+#index <- function(info) {
+#  list(run = 5L, state = 2:63)
+#}
+### trying out deterministic particle filter
+det_filter <- particle_deterministic$new(data = mass_data,
+                                       model = WF_nG_h_vP,
+                                       compare = combined_compare)
+```
+
+```{r}
+# run determinstic filter
+det_filter$run(save_history = TRUE, pars = params_n_vP)
+```
+
+
+
+```{r}
+### Inferring parameters
+
+n_particles <- 100
+# n_particles <- 100 nicer but takes about 35 minutes atm
+
+filter <- mcstate::particle_filter$new(data = mass_data,
+                                       model = WF_nG_h_vP,
+                                       n_particles = n_particles,
+                                       compare = combined_compare,
+                                       seed = 1L)
+```
+
+```{r}
+#original:
+params_n_vP$dt <- 1/36
+#params_n_vP$dt <- 1/12
+filter$run(save_history = TRUE, pars = params_n_vP)
+```
+
+```{r}
+# plot particle filter
+
+plot_particle_filter <- function(history, true_history, times, obs_end = NULL) {
+  if (is.null(obs_end)) {
+    obs_end <- max(times)
+  }
+
+
+  par(mar = c(4.1, 5.1, 0.5, 0.5), las = 1)
+  cols <- rainbow(62)
+  
+  matplot(times, t(history[2, , -1]), type = "l",
+          xlab = "Time", ylab = "Number of individuals",
+          col = cols[1], lty = 1, ylim = range(history[2:5, , -1]))
+  for (species in 3:length(history[,1,1])) {
+    matlines(times, t(history[species, , -1]), col = cols[species], lty = 1)
+  }  
+  for (species in 2:length(history[,1,1])) {
+    matpoints(times[1:obs_end], (true_history[1:2,species , -1]), pch = 19, col = cols[species-1])
+  }
+  legend("left", lwd = 1, col = cols, legend = 1:62, bty = "n")
+  
+  
+  #par(mar = c(4.1, 5.1, 0.5, 0.5), las = 1)
+  #cols <- c(S = "#8c8cd9", I = "#cc0044", R = "#999966")
+  #matplot(times, t(history[1, , -1]), type = "l",
+  #        xlab = "Time", ylab = "Number of individuals",
+  #        col = cols[["S"]], lty = 1, ylim = range(history))
+  #matlines(times, t(history[2, , -1]), col = cols[["I"]], lty = 1)
+  #matlines(times, t(history[3, , -1]), col = cols[["R"]], lty = 1)
+  #matpoints(times[1:obs_end], t(true_history[1:3, , -1]), pch = 19,
+  #          col = cols)
+  #legend("left", lwd = 1, col = cols, legend = names(cols), bty = "n")
+}
+par(mfrow = c(1,1))
+true_history <- peripost_fitting_cluster_freq_df
+plot_particle_filter(filter$history(), true_history, 1:2)
+```
+
+```{r}
+start_pop_small <- as.vector(as.double(rmultinom(1,15000,prob = cluster_freq_1/sum(cluster_freq_1))))
+Corander_params_adapted <- list(dt = 1/36, species_no = no_clusters,  gene_no = nrow(cluster_gene_presence_absence), Pop_ini = start_pop_small, Pop_eq = start_pop_small, capacity = sum(start_pop_small), Genotypes = matrix_cluster_gene_presence_absence, sigma_f = 0.1363, sigma_w = 0.0023, prop_f = 0.2483, delta = delta_ranking, m = 0.0044, vaccTypes = isVT_vec, v = 0.1812, vacc_time = 18) 
+
+start_pop <- as.vector(as.double(rmultinom(1,50000,prob = cluster_freq_1/sum(cluster_freq_1))))
+Corander_params_adapted <- list(dt = 1/36, species_no = no_clusters,  gene_no = nrow(cluster_gene_presence_absence), Pop_ini = start_pop, Pop_eq = start_pop, capacity = sum(start_pop), Genotypes = matrix_cluster_gene_presence_absence, sigma_f = 0.1363, sigma_w = 0.0023, prop_f = 0.2483, delta = delta_ranking, m = 0.0044, vaccTypes = isVT_vec, v = 0.1812, vacc_time = 18) 
+params_n_vP <- Corander_params_adapted
+
+par(mfrow=c(1,1))
+dt <- 1
+n_particles <- 10L
+#WFmodel_nG_h_vP$update_state(pars = params_n_vP, time = 0)
+WFmodel_nG_h_vP_expanded <- WF_nG_h_vP$new(pars = params_n_vP,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+
+
+n_times <- 180
+x <- array(NA, dim = c(WFmodel_nG_h_vP_expanded$info()$len, n_particles, n_times))
+
+for (t in seq_len(n_times)) {
+  x[ , , t] <- WFmodel_nG_h_vP_expanded$run(t)
+}
+time <- x[1, 1, ]
+x <- x[-1, , ]
+
+# vaccine types seem to be less successful
+#x_mean <- x
+library(hrbrthemes)
+x_mean <- apply(x, c(1,3), mean)
+
+#plot_title <- paste(paste(paste(paste(paste("sigma_f", as.character(swsf)), paste(", sigma_w", as.character(swsw))), paste(", prop_f", as.character(swpf))), paste(", m", as.character(swm))), paste(", v", as.character(swv)))
+# sigma_f = 0.1363, sigma_w = 0.0023, prop_f = 0.2483, delta = delta_ranking, m = 0.0044, vaccTypes = isVT_vec, v = 0.0812, vacc_time = 1
+#"#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7"
+
+# Create data
+          lollipop_data_2001_nVT <- data.frame(
+            x=which(isVT_vec==0),
+            model2001=x_mean[which(isVT_vec==0),1] / sum(x_mean[,1]),
+            data2001=as.numeric(cluster_freq_1[which(isVT_vec==0)] / sum(cluster_freq_1))
+          )
+          lollipop_data_2001_VT <- data.frame(
+            x=which(isVT_vec==1),
+            model2001=x_mean[which(isVT_vec==1),1] / sum(x_mean[,1]),
+            data2001=as.numeric(cluster_freq_1[which(isVT_vec==1)] / sum(cluster_freq_1))
+          )
+          lollipop_data_2004_nVT <- data.frame(
+            x=which(isVT_vec==0),
+            model2004=x_mean[which(isVT_vec==0),37] / sum(x_mean[,37]),
+            data2004=as.numeric(cluster_freq_2[which(isVT_vec==0)] / sum(cluster_freq_2))
+          )
+          lollipop_data_2004_VT <- data.frame(
+            x=which(isVT_vec==1),
+            model2004=x_mean[which(isVT_vec==1),37] / sum(x_mean[,37]),
+            data2004=as.numeric(cluster_freq_2[which(isVT_vec==1)] / sum(cluster_freq_2))
+          )
+          lollipop_data_2007_nVT <- data.frame(
+            x=which(isVT_vec==0),
+            model2007=x_mean[which(isVT_vec==0),73] / sum(x_mean[,73]),
+            data2007=as.numeric(cluster_freq_3[which(isVT_vec==0)] / sum(cluster_freq_3))
+          )
+          lollipop_data_2007_VT <- data.frame(
+            x=which(isVT_vec==1),
+            model2007=x_mean[which(isVT_vec==1),73] / sum(x_mean[,73]),
+            data2007=as.numeric(cluster_freq_3[which(isVT_vec==1)] / sum(cluster_freq_3))
+          )
+          # Change baseline
+          lollipop_plot_2001_nVT <- ggplot(lollipop_data_2001_nVT) +
+            geom_segment( aes(x=x, xend=x, y=model2001, yend=data2001), color="grey") +
+            geom_point( aes(x=x, y=model2001, color="Model non-VT"), size=3 ) +
+            geom_point( aes(x=x, y=data2001, color="Data non_VT"), size=3 ) +
+            scale_color_manual(values = c("#E69F00", "#56B4E9"),
+                               guide  = guide_legend(), 
+                               name   = "Group") +
+            coord_flip()+
+            #theme_ipsum() +
+            theme(legend.position = "none") +
+            ggtitle("2001 Non-Vaccine Types") +
+            ylab("Frequency") +
+            xlab("Clusters") +
+            theme(axis.title  = element_text(size = 20), axis.text = element_text(size = 20), plot.title = element_text(size = 25,hjust = 0.5))  +
+            ylim(0, max(max(lollipop_data_2001_nVT$model2001),max(lollipop_data_2001_nVT$data2001),max(lollipop_data_2004_VT$model2004),max(lollipop_data_2004_VT$data2004),max(lollipop_data_2007_nVT$model2007),max(lollipop_data_2007_nVT$data2007)))
+          lollipop_plot_2001_VT <- ggplot(lollipop_data_2001_VT) +
+            geom_segment( aes(x=x, xend=x, y=model2001, yend=data2001), color="grey") +
+            geom_point( aes(x=x, y=model2001, color="Model non-VT"), size=3 ) +
+            geom_point( aes(x=x, y=data2001, color="Data non_VT"), size=3 ) +
+            scale_color_manual(values = c("#E69F00", "#56B4E9"),
+                               guide  = guide_legend(), 
+                               name   = "Group") +
+            coord_flip()+
+            #theme_ipsum() +
+            theme(legend.position = "none") +
+            ggtitle("2001 Vaccine Types") +
+            ylab("Frequency") +
+            xlab("Clusters") +
+            theme(axis.title  = element_text(size = 20), axis.text = element_text(size = 20), plot.title = element_text(size = 25,hjust = 0.5))  +
+            ylim(0, max(max(lollipop_data_2001_nVT$model2001),max(lollipop_data_2001_nVT$data2001),max(lollipop_data_2004_VT$model2004),max(lollipop_data_2004_VT$data2004),max(lollipop_data_2007_nVT$model2007),max(lollipop_data_2007_nVT$data2007)))
+          lollipop_plot_2004_nVT <- ggplot(lollipop_data_2004_nVT) +
+            geom_segment( aes(x=x, xend=x, y=model2004, yend=data2004), color="grey") +
+            geom_point( aes(x=x, y=model2004, color="Model"), size=3 ) +
+            geom_point( aes(x=x, y=data2004, color="Data"), size=3 ) +
+            scale_color_manual(values = c("#E69F00", "#56B4E9"),
+                               guide  = guide_legend(), 
+                               name   = "Group") +
+            coord_flip()+
+            #theme_ipsum() +
+            theme(legend.position = "none") +
+            ggtitle("2004 Non-Vaccine Types") +
+            ylab("Frequency") +
+            xlab("Clusters") +
+            theme(axis.title  = element_text(size = 20), axis.text = element_text(size = 20), plot.title = element_text(size = 25,hjust = 0.5))  +
+ylim(0, max(max(lollipop_data_2001_nVT$model2001),max(lollipop_data_2001_nVT$data2001),max(lollipop_data_2004_VT$model2004),max(lollipop_data_2004_VT$data2004),max(lollipop_data_2007_nVT$model2007),max(lollipop_data_2007_nVT$data2007)))          
+          lollipop_plot_2004_VT <- ggplot(lollipop_data_2004_VT) +
+            geom_segment( aes(x=x, xend=x, y=model2004, yend=data2004), color="grey") +
+            geom_point( aes(x=x, y=model2004, color="Model"), size=3 ) +
+            geom_point( aes(x=x, y=data2004, color="Data"), size=3 ) +
+            scale_color_manual(values = c("#E69F00", "#56B4E9"),
+                               guide  = guide_legend(), 
+                               name   = "Group") +
+            coord_flip()+
+            #theme_ipsum() +
+            theme(legend.position = "none") +
+            ggtitle("2004 Vaccine Types") +
+            ylab("Frequency") +
+            xlab("Clusters") +
+            theme(axis.title  = element_text(size = 20), axis.text = element_text(size = 20), plot.title = element_text(size = 25,hjust = 0.5))  +
+            ylim(0, max(max(lollipop_data_2001_nVT$model2001),max(lollipop_data_2001_nVT$data2001),max(lollipop_data_2004_VT$model2004),max(lollipop_data_2004_VT$data2004),max(lollipop_data_2007_nVT$model2007),max(lollipop_data_2007_nVT$data2007))) 
+          lollipop_plot_2007_nVT <- ggplot(lollipop_data_2007_nVT) +
+            geom_segment( aes(x=x, xend=x, y=model2007, yend=data2007), color="grey") +
+            geom_point( aes(x=x, y=model2007, color="Model"), size=3 ) +
+            geom_point( aes(x=x, y=data2007, color="Data"), size=3 ) +
+            scale_color_manual(values = c("#E69F00", "#56B4E9"),
+                               guide  = guide_legend(), 
+                               name   = "Group") +
+            coord_flip()+
+            #theme_ipsum() +
+            theme(legend.position = "none") +
+            ggtitle("2007 Non-Vaccine Types") +
+            ylab("Frequency") +
+            xlab("Clusters") +
+            theme(axis.title  = element_text(size = 20), axis.text = element_text(size = 20), plot.title = element_text(size = 25,hjust = 0.5))  +
+            ylim(0, max(max(lollipop_data_2001_nVT$model2001),max(lollipop_data_2001_nVT$data2001),max(lollipop_data_2004_VT$model2004),max(lollipop_data_2004_VT$data2004),max(lollipop_data_2007_nVT$model2007),max(lollipop_data_2007_nVT$data2007)))          
+          lollipop_plot_2007_VT <- ggplot(lollipop_data_2007_VT) +
+            geom_segment( aes(x=x, xend=x, y=model2007, yend=data2007), color="grey") +
+            geom_point( aes(x=x, y=model2007, color="Model"), size=3 ) +
+            geom_point( aes(x=x, y=data2007, color="Data"), size=3 ) +
+            scale_color_manual(values = c("#E69F00", "#56B4E9"),
+                               guide  = guide_legend(), 
+                               name   = "Legend") +
+            coord_flip()+
+            #theme_ipsum() +
+            theme(legend.position = c(.8,.8),legend.text = element_text(size = 20),legend.title = element_text(size = 20)) +
+            ggtitle("2007 Vaccine Types") +
+            ylab("Frequency") +
+            xlab("Clusters") +
+            theme(axis.title  = element_text(size = 20), axis.text = element_text(size = 20), plot.title = element_text(size = 25,hjust = 0.5))  +
+            ylim(0, max(max(lollipop_data_2001_nVT$model2001),max(lollipop_data_2001_nVT$data2001),max(lollipop_data_2004_VT$model2004),max(lollipop_data_2004_VT$data2004),max(lollipop_data_2007_nVT$model2007),max(lollipop_data_2007_nVT$data2007)))
+          #save plot as a png
+          #g <- arrangeGrob(lollipop_plot_2001,lollipop_plot_2004, lollipop_plot_2007, ncol =3) #generates g
+          #ggsave(file=paste(paste("plot",as.character(counter), sep=""), ".png", sep=""), g, width = 16, height = 16) #saves g
+          grid.arrange(lollipop_plot_2001_nVT + theme(plot.margin = unit(c(.5,0.5,1,0.5), "cm")),lollipop_plot_2004_nVT+ theme(plot.margin = unit(c(.5,0.5,1,0.5), "cm")), lollipop_plot_2007_nVT + theme(plot.margin = unit(c(.5,0.5,1,0.5), "cm")),lollipop_plot_2001_VT + theme(plot.margin = unit(c(.5,0.5,.5,0.5), "cm")), lollipop_plot_2004_VT + theme(plot.margin = unit(c(.5,0.5,.5,0.5), "cm")), lollipop_plot_2007_VT + theme(plot.margin = unit(c(.5,0.5,.5,0.5), "cm")), ncol = 3, nrow=2)
+          #grid.arrange(lollipop_plot_2001_VT,lollipop_plot_2004_VT, lollipop_plot_2007_VT, ncol = 3)
+                    grid.arrange(lollipop_plot_2004_nVT+ theme(plot.margin = unit(c(.5,0.5,1,0.5), "cm")), lollipop_plot_2007_nVT + theme(plot.margin = unit(c(.5,0.5,1,0.5), "cm")), lollipop_plot_2004_VT + theme(plot.margin = unit(c(.5,0.5,.5,0.5), "cm")), lollipop_plot_2007_VT + theme(plot.margin = unit(c(.5,0.5,.5,0.5), "cm")), ncol = 2, nrow=2)
+```
+
+```{r}
+### create initial population that is based on the 2001 data set but not an exact sampling from it
+# but a Poisson process
+expand_factor <- 15000 / sum(cluster_freq_1)
+exp_noise <- 10
+model_start_pop <- (sapply((cluster_freq_1 + rexp(n = length(cluster_freq_1), rate = exp_noise)) * expand_factor, rpois, n=1))
+
+# visual check for the "sampling"
+plot(cluster_freq_1/sum(cluster_freq_1))
+points(model_start_pop/sum(model_start_pop), col = "red")
+# looks similar enough, I would say
+```
+
+
+```{r}
+# Using MCMC to infer parameters
+#pmcmc_sigma_f <- mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0)
+#pmcmc_sigma_w <- mcstate::pmcmc_parameter("sigma_w", 0.05, min = 0)
+pmcmc_sigma_f <- mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0, max = 1)
+pmcmc_sigma_w <- mcstate::pmcmc_parameter("sigma_w", 0.05, min = 0, max = 1)
+pmcmc_prop_f <- mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1)
+pmcmc_m <- mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 1)
+pmcmc_v <- mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)
+species_no <- no_clusters
+gene_no <- nrow(cluster_gene_presence_absence)
+#Pop_ini <- cluster_freq_1
+#Pop_eq <- cluster_freq_1
+Pop_ini <- model_start_pop
+Pop_eq <- model_start_pop
+Genotypes <-matrix_cluster_gene_presence_absence
+#capacity <- sum(cluster_freq_1)
+capacity <- sum(model_start_pop)
+delta <- delta_ranking
+vaccTypes <- isVT_vec
+vacc_time <- 0
+dt <- 1/36
+
+
+complex_params <- c(Pop_ini, Pop_eq, Genotypes, capacity, delta, vaccTypes, species_no, gene_no, vacc_time, dt)
+
+#transform <- set_names(lapply(complex_params, make_transform), complex_params)
+make_transform <- function(p) {
+  function(theta){
+    c(list(Pop_ini = p[1:62],
+         Pop_eq = p[63 : 124],
+         Genotypes = matrix(p[125 : (125 + (nrow(matrix_cluster_gene_presence_absence) * ncol(matrix_cluster_gene_presence_absence))-1)], nrow = gene_no, ncol = no_clusters),
+         capacity = p[(125 + (nrow(matrix_cluster_gene_presence_absence) * ncol(matrix_cluster_gene_presence_absence))-1) +1],
+         delta = p[((125 + (nrow(matrix_cluster_gene_presence_absence) * ncol(matrix_cluster_gene_presence_absence))-1) + 2) : (((125 + (nrow(matrix_cluster_gene_presence_absence) * ncol(matrix_cluster_gene_presence_absence))-1) + 2) + gene_no -1)],
+         vaccTypes = p[(((125 + (nrow(matrix_cluster_gene_presence_absence) * ncol(matrix_cluster_gene_presence_absence))-1) + 2) + gene_no) : (((125 + (nrow(matrix_cluster_gene_presence_absence) * ncol(matrix_cluster_gene_presence_absence))-1) + 2) + gene_no + 1 + no_clusters -2)],
+         species_no = p[(((125 + (nrow(matrix_cluster_gene_presence_absence) * ncol(matrix_cluster_gene_presence_absence))-1) + 2) + gene_no + 1 + no_clusters -1)],
+         gene_no = p[(((125 + (nrow(matrix_cluster_gene_presence_absence) * ncol(matrix_cluster_gene_presence_absence))-1) + 2) + gene_no + 1 + no_clusters)],
+         vacc_time = p[(((125 + (nrow(matrix_cluster_gene_presence_absence) * ncol(matrix_cluster_gene_presence_absence))-1) + 2) + gene_no + 1 + no_clusters) + 1],
+         dt = p[(((125 + (nrow(matrix_cluster_gene_presence_absence) * ncol(matrix_cluster_gene_presence_absence))-1) + 2) + gene_no + 1 + no_clusters) + 2]), as.list(theta))
+  }
+}
+transform <- function(x) {
+  make_transform(complex_params)}
+proposal_matrix <- diag(0.1, 5) # the proposal matrix defines the covariance-variance matrix for a mult normal dist
+# here, all parameters are proposed independently. 
+# think about this, this might not actually be true
+#mcmc_pars <- mcstate::pmcmc_parameters$new(list(pmcmc_sigma_f, pmcmc_sigma_w, pmcmc_prop_f, pmcmc_m, pmcmc_v), proposal_matrix, transform)
+mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0, max = 1), mcstate::pmcmc_parameter("sigma_w", 0.05, min = 0, max = 1), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 1), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), proposal_matrix, make_transform(complex_params))
+#= make_transform(c(Pop_ini, Pop_eq, Genotypes, capacity, delta, vaccTypes, species_no, gene_no, vacc_time)))
+#mcmc_pars$names()
+#mcmc_pars$model(mcmc_pars$initial())
+mcmc_pars$initial()
+# read this: https://mrc-ide.github.io/mcstate/reference/pmcmc_parameters.html
+# it explains how to not fit all parameters but just the ones I want
+# non-scalar parameters have to be transformed for this.
+```
+
+```{r}
+n_steps <- 1000
+n_burnin <- 200
+```
+
+
+### DETERMINISTIC FITTING
+
+```{r}
+# do fitting with deterministic particle filter
+#n_particles <- 20
+#processed_chains <- mcstate::pmcmc_thin(pmcmc_tuned_run, burnin = 200)
+#parameter_mean_hpd <- apply(processed_chains$pars, 2, mean)
+#parameter_mean_hpd
+
+#mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", parameter_mean_hpd[1], min = 0.075, max = 0.22), mcstate::pmcmc_parameter("sigma_w", parameter_mean_hpd[2], min = 0, max = 0.0749), mcstate::pmcmc_parameter("prop_f", parameter_mean_hpd[3], min = 0, max = 1), mcstate::pmcmc_parameter("m", parameter_mean_hpd[4], min = 0, max = 0.2), mcstate::pmcmc_parameter("v", parameter_mean_hpd[5], min = 0, max = 0.5)), proposal_matrix, make_transform(complex_params))
+
+det_filter <- particle_deterministic$new(data = mass_data,
+                                       model = WF_nG_h_vP,
+                                       compare = combined_compare)
+
+n_steps <- 5000
+n_burnin <- 0
+
+proposal_matrix <- diag(x=c(0.001, 0.001, 0.01, 0.001, 0.01), nrow = 5, ncol = 5)
+mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0.1, max = 0.5), mcstate::pmcmc_parameter("sigma_w", 0.005, min = 0, max = 0.0749), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 0.1), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), proposal_matrix, transform)
+mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0, max = 1), mcstate::pmcmc_parameter("sigma_w", 0.005, min = 0, max = 1), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 0.1), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), proposal_matrix, transform)
+
+control <- mcstate::pmcmc_control(
+    n_steps,
+    save_state = TRUE, 
+    save_trajectories = TRUE,
+    progress = TRUE,
+    adaptive_proposal = TRUE,
+    n_chains = 4)
+det_pmcmc_run <- mcstate::pmcmc(mcmc_pars, det_filter, control = control)
+par(mfrow = c(1,1))
+true_history <- peripost_fitting_cluster_freq_df
+plot_particle_filter(det_pmcmc_run$trajectories$state/15000*300, true_history, 1:2)
+```
+
+```{r}
+library(coda)
+det_mcmc1 <- coda::as.mcmc(cbind(det_pmcmc_run$probabilities, det_pmcmc_run$pars))
+
+
+plot(det_mcmc1)
+1 - coda::rejectionRate(det_mcmc1)
+# I currently have an acceptance rate of 1. WHY?!
+# my acceptance rate is way too high
+# the values of my likelihood do not really change.
+processed_chains <- mcstate::pmcmc_thin(det_pmcmc_run, burnin = 200)
+parameter_mean <- apply(processed_chains$pars, 2, mean)
+parameter_mean
+
+# in det_pmcmc_run$trajectories$state[,i,j] for each j and all i the vectors are exactly the same! 
+# Why?! where is the same in storing that information then? I though those are supposed to be the 
+```
+
+
+```{r}
+det_proposal_matrix <- cov(det_pmcmc_run$pars)
+mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", parameter_mean[1], min = 0.075, max = 1), mcstate::pmcmc_parameter("sigma_w", parameter_mean[2], min = 0, max = 0.0749), mcstate::pmcmc_parameter("prop_f", parameter_mean[3], min = 0, max = 1), mcstate::pmcmc_parameter("m", parameter_mean[4], min = 0, max = 0.2), mcstate::pmcmc_parameter("v", parameter_mean[5], min = 0, max = 0.5)), proposal_matrix, make_transform(complex_params))
+det_proposal_matrix
+```
+
+```{r}
+# do fitting with deterministic particle filter
+
+det_filter <- particle_deterministic$new(data = mass_data,
+                                       model = WF_nG_h_vP,
+                                       compare = combined_compare)
+
+n_steps <- 20000
+n_burnin <- 0
+
+control <- mcstate::pmcmc_control(
+    n_steps,
+    save_state = TRUE, 
+    save_trajectories = TRUE,
+    progress = TRUE,
+    adaptive_proposal = TRUE,
+    n_chains = 4)
+det_pmcmc_run2 <- mcstate::pmcmc(mcmc_pars, det_filter, control = control)
+par(mfrow = c(1,1))
+
+```
+
+```{r}
+det_mcmc2 <- coda::as.mcmc(cbind(det_pmcmc_run2$probabilities, det_pmcmc_run2$pars))
+summary(det_mcmc2)
+
+plot(det_mcmc2)
+```
+
+```{r}
+1 - coda::rejectionRate(det_mcmc2)
+
+processed_chains <- mcstate::pmcmc_thin(det_pmcmc_run2, burnin = 200)
+parameter_mean <- apply(processed_chains$pars, 2, mean)
+parameter_mean
+```
+
+
+```{r}
+#try doing a stochastic fit with these parameters now
+#det_mcmc_pars
+
+n_particles <- 100
+n_steps <- 500
+n_burnin <- 0
+control <- mcstate::pmcmc_control(
+    n_steps,
+    save_state = TRUE, 
+    save_trajectories = TRUE,
+    progress = TRUE,
+    n_chains = 1)
+pmcmc_run <- mcstate::pmcmc(mcmc_pars, filter, control = control)
+
+par(mfrow = c(1,1))
+plot_particle_filter(pmcmc_run$trajectories$state, true_history, 1:2)
+```
+
+```{r}
+stoch_mcmc1 <- coda::as.mcmc(cbind(pmcmc_run$probabilities, pmcmc_run$pars))
+
+processed_chains <- mcstate::pmcmc_thin(pmcmc_run, burnin = 200)
+parameter_mean <- apply(processed_chains$pars, 2, mean)
+parameter_mean
+
+summary(stoch_mcmc1)
+plot(stoch_mcmc1)
+1 - coda::rejectionRate(stoch_mcmc1)
+```
+
+```{r}
+stoch_proposal_matrix <- cov(pmcmc_run$pars)
+stoch_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", parameter_mean[1], min = 0.075, max = 1), mcstate::pmcmc_parameter("sigma_w", parameter_mean[2], min = 0, max = 0.0749), mcstate::pmcmc_parameter("prop_f", parameter_mean[3], min = 0, max = 1), mcstate::pmcmc_parameter("m", parameter_mean[4], min = 0, max = 0.2), mcstate::pmcmc_parameter("v", parameter_mean[5], min = 0, max = 0.5)), stoch_proposal_matrix, make_transform(complex_params))
+stoch_proposal_matrix
+```
+
+```{r}
+#second stoch run
+
+
+mcmc_pars <- stoch_mcmc_pars
+n_particles <- 100
+n_steps <- 500
+n_burnin <- 200
+control <- mcstate::pmcmc_control(
+    n_steps,
+    save_state = TRUE, 
+    save_trajectories = TRUE,
+    progress = TRUE,
+    n_chains = 2)
+pmcmc_run2 <- mcstate::pmcmc(mcmc_pars, filter, control = control)
+```
+
+```{r}
+stoch_mcmc2 <- coda::as.mcmc(cbind(pmcmc_run2$probabilities, pmcmc_run2$pars))
+
+summary(stoch_mcmc2)
+plot(stoch_mcmc2)
+1 - coda::rejectionRate(stoch_mcmc2)
+
+parameter_mean <- apply(pmcmc_run2$pars, 2, mean)
+parameter_mean
+```
+
+```{r}
+stoch_proposal_matrix2 <- cov(pmcmc_run2$pars)
+stoch_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0.1, max = 0.5), mcstate::pmcmc_parameter("sigma_w", 0.005, min = 0, max = 0.05), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 0.1), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 0.5)), stoch_proposal_matrix, transform)
+stoch_proposal_matrix2
+```
+
+```{r}
+#second stoch run
+
+
+mcmc_pars <- stoch_mcmc_pars
+n_particles <- 100
+n_steps <- 500
+n_burnin <- 200
+control <- mcstate::pmcmc_control(
+    n_steps,
+    save_state = TRUE, 
+    save_trajectories = TRUE,
+    progress = TRUE,
+    n_chains = 1)
+pmcmc_run3 <- mcstate::pmcmc(mcmc_pars, filter, control = control)
+```
+
+```{r}
+stoch_mcmc3 <- coda::as.mcmc(cbind(pmcmc_run3$probabilities, pmcmc_run3$pars))
+
+summary(stoch_mcmc3)
+plot(stoch_mcmc3)
+1 - coda::rejectionRate(stoch_mcmc3)
+
+parameter_mean <- apply(pmcmc_run3$pars, 2, mean)
+parameter_mean
+```
+
+```{r}
+library(ggplot2)
+library(gridExtra)
+library(dplyr)
+library(hrbrthemes)
+# Create data
+lollipop_data_2001 <- data.frame(
+  x=1:no_clusters, 
+  model2001=pmcmc_run3$trajectories$state[2:63,1,1]/sum(pmcmc_run3$trajectories$state[2:63,1,1]),
+  data2001=as.numeric(cluster_freq_1)/sum(as.numeric(cluster_freq_1))
+)
+lollipop_data_2004 <- data.frame(
+  x=1:no_clusters, 
+  model2004=pmcmc_run3$trajectories$state[2:63,1,2]/sum(pmcmc_run3$trajectories$state[2:63,1,2]),
+  data2004=as.numeric(true_history[1,2:63])/sum(as.numeric(true_history[1,2:63]))
+)
+lollipop_data_2007 <- data.frame(
+  x=1:no_clusters, 
+  model2007=pmcmc_run3$trajectories$state[2:63,1,3]/sum(pmcmc_run3$trajectories$state[2:63,1,3]),
+  data2007=as.numeric(true_history[2,2:63])/sum(as.numeric(true_history[2,2:63]))
+)
+# Change baseline
+lollipop_plot_2001 <- ggplot(lollipop_data_2001) +
+  geom_segment( aes(x=x, xend=x, y=model2001, yend=data2001), color="grey") +
+  geom_point( aes(x=x, y=model2001, color="Model"), size=3 ) +
+  geom_point( aes(x=x, y=data2001, color="Data"), size=3 ) +
+  scale_color_manual(values = c("#E69F00", "#56B4E9"),
+                     guide  = guide_legend(), 
+                     name   = "Group") +
+  coord_flip()+
+  theme_ipsum() +
+  theme(legend.position = "none") +
+  xlab("") +
+  ylab("Value of Y") +
+  ylim(0, max(max(lollipop_data_2004$model2004),max(lollipop_data_2004$data2004),max(lollipop_data_2007$model2007),max(lollipop_data_2007$data2007)))
+lollipop_plot_2004 <- ggplot(lollipop_data_2004) +
+  geom_segment( aes(x=x, xend=x, y=model2004, yend=data2004), color="grey") +
+  geom_point( aes(x=x, y=model2004, color="Model"), size=3 ) +
+  geom_point( aes(x=x, y=data2004, color="Data"), size=3 ) +
+  scale_color_manual(values = c("#E69F00", "#56B4E9"),
+                     guide  = guide_legend(), 
+                     name   = "Group") +
+  coord_flip()+
+  theme_ipsum() +
+  theme(legend.position = "none") +
+  xlab("") +
+  ylab("Value of Y") +
+  ylim(0, max(max(lollipop_data_2004$model2004),max(lollipop_data_2004$data2004),max(lollipop_data_2007$model2007),max(lollipop_data_2007$data2007)))
+lollipop_plot_2007 <- ggplot(lollipop_data_2007) +
+  geom_segment( aes(x=x, xend=x, y=model2007, yend=data2007), color="grey") +
+  geom_point( aes(x=x, y=model2007, color="Model"), size=3 ) +
+  geom_point( aes(x=x, y=data2007, color="Data"), size=3 ) +
+  scale_color_manual(values = c("#E69F00", "#56B4E9"),
+                     guide  = guide_legend(), 
+                     name   = "Group") +
+  coord_flip()+
+  theme_ipsum() +
+  theme(legend.position = c(.8,.8)) +
+  xlab("") +
+  ylab("Value of Y") + 
+  ylim(0, max(max(lollipop_data_2004$model2004),max(lollipop_data_2004$data2004),max(lollipop_data_2007$model2007),max(lollipop_data_2007$data2007)))
+grid.arrange(lollipop_plot_2001, lollipop_plot_2004, lollipop_plot_2007, ncol = 3)
+
+#what do I learn from this? maybe that my model is making the bigger clusters too big and the smaller ones too small? So stochastic dying of the population is an issue.
+
+#First Lollipop plot of a tuned model fit run. You can see that the model consistently overestimates the size of the big clusters and underestimates the size of the small clusters.
+```
+
+```{r}
+
+ 
+```
+
+
+
+
+
+
+
+
+```{r}
+n_steps = 1000
+control <- mcstate::pmcmc_control(
+    n_steps,
+    save_state = TRUE,
+    save_trajectories = TRUE,
+    progress = TRUE,
+    n_chains = 4)
+det_pmcmc_tuned_run <- mcstate::pmcmc(det_mcmc_pars, det_filter, control = control)
+
+# runs in 4 minutes per chain right now
+detmcmc2 <- coda::as.mcmc(cbind(
+  det_pmcmc_tuned_run$probabilities, det_pmcmc_tuned_run$pars))
+
+par(mfrow = c(1,1))
+plot_particle_filter(det_pmcmc_tuned_run$trajectories$state, true_history, 1:2)
+
+summary(detmcmc2)
+plot(detmcmc2)
+```
+
+```{r}
+det_proposal_matrix <- cov(det_pmcmc_tuned_run$pars)
+det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0, max = 1), mcstate::pmcmc_parameter("sigma_w", 0.05, min = 0, max = 1), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 1), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), det_proposal_matrix, transform)
+det_proposal_matrix
+```
+
+```{r}
+n_steps = 2000
+control <- mcstate::pmcmc_control(
+    n_steps,
+    save_state = TRUE,
+    save_trajectories = TRUE,
+    progress = TRUE,
+    n_chains = 4)
+det_pmcmc_tuned_run <- mcstate::pmcmc(det_mcmc_pars, det_filter, control = control)
+
+# runs in 4 minutes per chain right now
+detmcmc2 <- coda::as.mcmc(cbind(
+  det_pmcmc_tuned_run$probabilities, det_pmcmc_tuned_run$pars))
+
+par(mfrow = c(1,1))
+plot_particle_filter(det_pmcmc_tuned_run$trajectories$state, true_history, 1:2)
+
+summary(detmcmc2)
+plot(detmcmc2)
+```
+
+
+```{r}
+det_proposal_matrix <- cov(det_pmcmc_tuned_run$pars)
+mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0, max = 1), mcstate::pmcmc_parameter("sigma_w", 0.05, min = 0, max = 1), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 1), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), det_proposal_matrix, transform)
+det_proposal_matrix
+```
+
+```{r}
+n_particles <- 20
+n_steps = 500
+control <- mcstate::pmcmc_control(
+    n_steps,
+    save_state = TRUE,
+    save_trajectories = TRUE,
+    progress = TRUE,
+    n_chains = 2)
+pmcmc_tuned_run <- mcstate::pmcmc(mcmc_pars, filter, control = control)
+
+# runs in 4 minutes per chain right now
+mcmc2 <- coda::as.mcmc(cbind(
+  pmcmc_tuned_run$probabilities, pmcmc_tuned_run$pars))
+
+par(mfrow = c(1,1))
+plot_particle_filter(pmcmc_tuned_run$trajectories$state, true_history, 1:2)
+
+summary(mcmc2)
+plot(mcmc2)
+```
+
+
+```{r}
+# function to run multiple determinstic fits in sequence
+make_det_runs <- function(n, pre_fit){
+  
+  det_proposal_matrix <- cov(pre_fit$pars)
+  det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0, max = 1), mcstate::pmcmc_parameter("sigma_w", 0.05, min = 0, max = 1), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 1), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), det_proposal_matrix, transform)
+  det_proposal_matrix
+  det_fits <- c()
+  
+  
+  for (i in 1:n){
+    n_particles <- 20
+    n_steps = 1000
+    control <- mcstate::pmcmc_control(
+      n_steps,
+      save_state = TRUE,
+      save_trajectories = TRUE,
+      progress = TRUE,
+      n_chains = 4)
+    det_pmcmc_tuned_run <- mcstate::pmcmc(det_mcmc_pars, det_filter, control = control)
+  
+    # runs in 4 minutes per chain right now
+    detmcmc_curr <- coda::as.mcmc(cbind(
+    det_pmcmc_tuned_run$probabilities, det_pmcmc_tuned_run$pars))
+  
+    det_fits <- c(det_fits, det_pmcmc_tuned_run)
+    det_proposal_matrix <- cov(det_pmcmc_tuned_run$pars)
+    det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0, max = 1), mcstate::pmcmc_parameter("sigma_w", 0.05, min = 0, max = 1), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 1), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), det_proposal_matrix, transform)
+    #det_proposal_matrix
+  }
+  det_fits
+}
+```
+
+
+
+
+```{r}
+plot(detmcmc_curr)
+plot_particle_filter(det_pmcmc_tuned_run$trajectories$state, true_history, 1:2)
+```
+
+```{r}
+coda::effectiveSize(detmcmc_curr)
+# log_prior log_likelihood  log_posterior        sigma_f        sigma_w         prop_f              m              v 
+#     0.000000       6.211637       6.211637       2.956989       1.012543       3.381379       1.946453       1.655769 
+1 - coda::rejectionRate(detmcmc_curr)
+# log_prior log_likelihood  log_posterior        sigma_f        sigma_w         prop_f              m              v 
+#   0.00000000     0.01301301     0.01301301     0.01301301     0.01301301     0.01301301     0.01301301     0.01301301 
+autocorr.plot(detmcmc_curr)
+det_proposal_matrix
+
+# most of the above about fitting is taken from https://mrc-ide.github.io/mcstate/articles/sir_models.html
+```
+
+```{r}
+# Plot of the four chains on top of each other for the five parameters:
+# (inspired by "plot 5" in FitzJohn (plot number in actual paper:6))
+
+cols <- c("#000000","#E69F00", "#56B4E9","#009E73")
+
+# Combine chains in columns for plotting
+sigmaf <- cbind(det_pmcmc_tuned_run$pars[,'sigma_f'][1:1000], det_pmcmc_tuned_run$pars[,'sigma_f'][1001:2000], det_pmcmc_tuned_run$pars[,'sigma_f'][2001:3000], det_pmcmc_tuned_run$pars[,'sigma_f'][3001:4000])
+sigmaw <- cbind(det_pmcmc_tuned_run$pars[,'sigma_w'][1:1000], det_pmcmc_tuned_run$pars[,'sigma_w'][1001:2000], det_pmcmc_tuned_run$pars[,'sigma_w'][2001:3000], det_pmcmc_tuned_run$pars[,'sigma_w'][3001:4000])
+propf <- cbind(det_pmcmc_tuned_run$pars[,'prop_f'][1:1000], det_pmcmc_tuned_run$pars[,'prop_f'][1001:2000], det_pmcmc_tuned_run$pars[,'prop_f'][2001:3000], det_pmcmc_tuned_run$pars[,'prop_f'][3001:4000])
+mig <- cbind(det_pmcmc_tuned_run$pars[,'m'][1:1000], det_pmcmc_tuned_run$pars[,'m'][1001:2000], det_pmcmc_tuned_run$pars[,'m'][2001:3000], det_pmcmc_tuned_run$pars[,'m'][3001:4000])
+vacc <- cbind(det_pmcmc_tuned_run$pars[,'v'][1:1000], det_pmcmc_tuned_run$pars[,'v'][1001:2000], det_pmcmc_tuned_run$pars[,'v'][2001:3000], det_pmcmc_tuned_run$pars[,'v'][3001:4000])
+
+par(mfrow=c(5,1))
+matplot(sigmaf, type = "l", lty = 1, 
+        xlab = "Iteration", 
+        ylab = "sigma_f", col = cols)
+matplot(sigmaw, type = "l", lty = 1, 
+        xlab = "Iteration", 
+        ylab = "sigma_w", col = cols)
+matplot(propf, type = "l", lty = 1, 
+        xlab = "Iteration", 
+        ylab = "prop_f", col = cols)
+matplot(mig, type = "l", lty = 1, 
+        xlab = "Iteration", 
+        ylab = "m", col = cols)
+matplot(vacc, type = "l", lty = 1, 
+        xlab = "Iteration", 
+        ylab = "v", col = cols)
+
+# result: the parameter space gets very well explored but probably no convergence?!
+
+```
+
+```{r}
+n_steps = 1000
+control <- mcstate::pmcmc_control(
+    n_steps,
+    save_state = TRUE,
+    save_trajectories = TRUE,
+    progress = TRUE,
+    n_chains = 1)
+det_pmcmc_tuned_run1 <- mcstate::pmcmc(det_mcmc_pars, det_filter, control = control)
+det_pmcmc_tuned_run2 <- mcstate::pmcmc(det_mcmc_pars, det_filter, control = control)
+det_pmcmc_tuned_run3 <- mcstate::pmcmc(det_mcmc_pars, det_filter, control = control)
+det_pmcmc_tuned_run4 <- mcstate::pmcmc(det_mcmc_pars, det_filter, control = control)
+
+coda_run1 <- coda::as.mcmc(cbind(det_pmcmc_tuned_run1$probabilities, det_pmcmc_tuned_run1$pars))
+coda_run2 <- coda::as.mcmc(cbind(det_pmcmc_tuned_run2$probabilities, det_pmcmc_tuned_run2$pars))
+coda_run3 <- coda::as.mcmc(cbind(det_pmcmc_tuned_run3$probabilities, det_pmcmc_tuned_run3$pars))
+coda_run4 <- coda::as.mcmc(cbind(det_pmcmc_tuned_run4$probabilities, det_pmcmc_tuned_run4$pars))
+
+coda_list <- coda::mcmc.list(coda_run1, coda_run2,coda_run3,coda_run3)
+
+coda_run <- coda::as.mcmc(cbind(det_pmcmc_tuned_run$probabilities, det_pmcmc_tuned_run$pars))
+
+# use coda to compute r hat
+library(coda)
+gelman.diag(coda_list, confidence = 0.95, transform=FALSE, autoburnin=TRUE,multivariate=FALSE)
+
+# I had to set multivariate=FALSE otherwise I had an issue with the covariance matrix not being positive definite
+# here probably because of the non-changing prior
+
+# I read that you should only trust values that have an R hat of below 1.05 (or <=1.05) which is true here
+# but probably you can see that m and v are less good than the other values. possibly not converged yet?
+```
+
+
+```{r}
+#I also still have the issue that sigma_f and sigma_w do not always behave as sigma_f > sigma_w because the algorithm does not know that I want that.
+# How can I solve that?
+# I could, for each iteration, enforce sigma_w < former sigma_f value estimate?
+# I am sure thre are better ways, but I can try that now
+
+n_particles <- 1
+control <- mcstate::pmcmc_control(
+    n_steps,
+    save_state = TRUE, 
+    save_trajectories = TRUE,
+    progress = TRUE,
+    n_chains = 4)
+det_pmcmc_run <- mcstate::pmcmc(mcmc_pars, det_filter, control = control)
+#creating a sequence of deterministic runs
+
+# function to run multiple determinstic fits in sequence
+make_det_runs_restrictedSigmas <- function(n, pre_fit){
+  
+  det_proposal_matrix <- cov(pre_fit$pars)
+  det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.5, min = 0.5, max = 1), mcstate::pmcmc_parameter("sigma_w", 0.05, min = 0, max = 0.5), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 1), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), det_proposal_matrix, transform)
+  det_proposal_matrix
+  det_fits <- c()
+  
+  
+  for (i in 1:n){
+    n_particles <- 20
+    n_steps = 1000
+    control <- mcstate::pmcmc_control(
+      n_steps,
+      save_state = TRUE,
+      save_trajectories = TRUE,
+      progress = TRUE,
+      n_chains = 4)
+    det_pmcmc_tuned_run <- mcstate::pmcmc(det_mcmc_pars, det_filter, control = control)
+  
+    # runs in 4 minutes per chain right now
+    detmcmc_curr <- coda::as.mcmc(cbind(
+    det_pmcmc_tuned_run$probabilities, det_pmcmc_tuned_run$pars))
+  
+    det_fits <- c(det_fits, det_pmcmc_tuned_run)
+    
+    det_proposal_matrix <- cov(det_pmcmc_tuned_run$pars)
+    det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", max(0.15,mean(det_pmcmc_tuned_run$pars[,"sigma_w"])), min =  mean(det_pmcmc_tuned_run$pars[,"sigma_w"]), max = 1), mcstate::pmcmc_parameter("sigma_w", min(0.05,mean(det_pmcmc_tuned_run$pars[,"sigma_f"])), min = 0, max = mean(det_pmcmc_tuned_run$pars[,"sigma_f"])), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 1), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), det_proposal_matrix, transform)
+    #det_proposal_matrix
+  }
+  return(detmcmc_curr)
+}
+
+
+det_runs <- make_det_runs_restrictedSigmas(2,det_pmcmc_run)
+
+det_run2 <- coda::as.mcmc(cbind(det_pmcmc_tuned_run$probabilities, det_pmcmc_tuned_run$pars))
+summary(det_run2)
+plot(det_run2)
+```
+
+
+```{r}
+library(ggplot2)
+library(gridExtra)
+library(dplyr)
+library(hrbrthemes)
+# Create data
+lollipop_data_2004 <- data.frame(
+  x=1:no_clusters, 
+  model2004=det_pmcmc_tuned_run$trajectories$state[2:63,1,2]/sum(det_pmcmc_tuned_run$trajectories$state[2:63,1,2]),
+  data2004=as.numeric(true_history[1,2:63])/sum(as.numeric(true_history[1,2:63]))
+)
+lollipop_data_2007 <- data.frame(
+  x=1:no_clusters, 
+  model2007=det_pmcmc_tuned_run$trajectories$state[2:63,1,3]/sum(det_pmcmc_tuned_run$trajectories$state[2:63,1,3]),
+  data2007=as.numeric(true_history[2,2:63])/sum(as.numeric(true_history[2,2:63]))
+)
+# Change baseline
+lollipop_plot_2004 <- ggplot(lollipop_data_2004) +
+  geom_segment( aes(x=x, xend=x, y=model2004, yend=data2004), color="grey") +
+  geom_point( aes(x=x, y=model2004, color="Model"), size=3 ) +
+  geom_point( aes(x=x, y=data2004, color="Data"), size=3 ) +
+  scale_color_manual(values = c("#E69F00", "#56B4E9"),
+                     guide  = guide_legend(), 
+                     name   = "Group") +
+  coord_flip()+
+  theme_ipsum() +
+  theme(legend.position = "none") +
+  xlab("") +
+  ylab("Value of Y") +
+  ylim(0, max(max(lollipop_data_2004$model2004),max(lollipop_data_2004$data2004),max(lollipop_data_2007$model2007),max(lollipop_data_2007$data2007)))
+lollipop_plot_2007 <- ggplot(lollipop_data_2007) +
+  geom_segment( aes(x=x, xend=x, y=model2007, yend=data2007), color="grey") +
+  geom_point( aes(x=x, y=model2007, color="Model"), size=3 ) +
+  geom_point( aes(x=x, y=data2007, color="Data"), size=3 ) +
+  scale_color_manual(values = c("#E69F00", "#56B4E9"),
+                     guide  = guide_legend(), 
+                     name   = "Group") +
+  coord_flip()+
+  theme_ipsum() +
+  theme(legend.position = c(.8,.8)) +
+  xlab("") +
+  ylab("Value of Y") + 
+  ylim(0, max(max(lollipop_data_2004$model2004),max(lollipop_data_2004$data2004),max(lollipop_data_2007$model2007),max(lollipop_data_2007$data2007)))
+grid.arrange(lollipop_plot_2004, lollipop_plot_2007, ncol = 2)
+
+#what do I learn from this? maybe that my model is making the bigger clusters too big and the smaller ones too small? So stochastic dying of the population is an issue.
+
+#First Lollipop plot of a tuned model fit run. You can see that the model consistently overestimates the size of the big clusters and underestimates the size of the small clusters.
+```
+
+```{r}
+
+          # Change baseline
+          lollipop_plot_2001_nVT <- ggplot(lollipop_data_2001_nVT) +
+            geom_segment( aes(x=x, xend=x, y=model2001, yend=data2001), color="grey") +
+            geom_point( aes(x=x, y=model2001, color="Model non-VT"), size=3 ) +
+            geom_point( aes(x=x, y=data2001, color="Data non_VT"), size=3 ) +
+            scale_color_manual(values = c("#E69F00", "#56B4E9"),
+                               guide  = guide_legend(), 
+                               name   = "Group") +
+            coord_flip()+
+            #theme_ipsum() +
+            theme(legend.position = "none") +
+            ggtitle("2001 Non-Vaccine Types") +
+            ylab("Frequency") +
+            xlab("Clusters") +
+            theme(axis.title  = element_text(size = 20), axis.text = element_text(size = 20), plot.title = element_text(size = 25,hjust = 0.5))  +
+            ylim(0, max(max(lollipop_data_2001_nVT$model2001),max(lollipop_data_2001_nVT$data2001),max(lollipop_data_2004_VT$model2004),max(lollipop_data_2004_VT$data2004),max(lollipop_data_2007_nVT$model2007),max(lollipop_data_2007_nVT$data2007)))
+          lollipop_plot_2001_VT <- ggplot(lollipop_data_2001_VT) +
+            geom_segment( aes(x=x, xend=x, y=model2001, yend=data2001), color="grey") +
+            geom_point( aes(x=x, y=model2001, color="Model non-VT"), size=3 ) +
+            geom_point( aes(x=x, y=data2001, color="Data non_VT"), size=3 ) +
+            scale_color_manual(values = c("#E69F00", "#56B4E9"),
+                               guide  = guide_legend(), 
+                               name   = "Group") +
+            coord_flip()+
+            #theme_ipsum() +
+            theme(legend.position = "none") +
+            ggtitle("2001 Vaccine Types") +
+            ylab("Frequency") +
+            xlab("Clusters") +
+            theme(axis.title  = element_text(size = 20), axis.text = element_text(size = 20), plot.title = element_text(size = 25,hjust = 0.5))  +
+            ylim(0, max(max(lollipop_data_2001_nVT$model2001),max(lollipop_data_2001_nVT$data2001),max(lollipop_data_2004_VT$model2004),max(lollipop_data_2004_VT$data2004),max(lollipop_data_2007_nVT$model2007),max(lollipop_data_2007_nVT$data2007)))
+          lollipop_plot_2004_nVT <- ggplot(lollipop_data_2004_nVT) +
+            geom_segment( aes(x=x, xend=x, y=model2004, yend=data2004), color="grey") +
+            geom_point( aes(x=x, y=model2004, color="Model"), size=3 ) +
+            geom_point( aes(x=x, y=data2004, color="Data"), size=3 ) +
+            scale_color_manual(values = c("#E69F00", "#56B4E9"),
+                               guide  = guide_legend(), 
+                               name   = "Group") +
+            coord_flip()+
+            #theme_ipsum() +
+            theme(legend.position = "none") +
+            ggtitle("2004 Non-Vaccine Types") +
+            ylab("Frequency") +
+            xlab("Clusters") +
+            theme(axis.title  = element_text(size = 20), axis.text = element_text(size = 20), plot.title = element_text(size = 25,hjust = 0.5))  +
+ylim(0, max(max(lollipop_data_2001_nVT$model2001),max(lollipop_data_2001_nVT$data2001),max(lollipop_data_2004_VT$model2004),max(lollipop_data_2004_VT$data2004),max(lollipop_data_2007_nVT$model2007),max(lollipop_data_2007_nVT$data2007)))          
+          lollipop_plot_2004_VT <- ggplot(lollipop_data_2004_VT) +
+            geom_segment( aes(x=x, xend=x, y=model2004, yend=data2004), color="grey") +
+            geom_point( aes(x=x, y=model2004, color="Model"), size=3 ) +
+            geom_point( aes(x=x, y=data2004, color="Data"), size=3 ) +
+            scale_color_manual(values = c("#E69F00", "#56B4E9"),
+                               guide  = guide_legend(), 
+                               name   = "Group") +
+            coord_flip()+
+            #theme_ipsum() +
+            theme(legend.position = "none") +
+            ggtitle("2004 Vaccine Types") +
+            ylab("Frequency") +
+            xlab("Clusters") +
+            theme(axis.title  = element_text(size = 20), axis.text = element_text(size = 20), plot.title = element_text(size = 25,hjust = 0.5))  +
+            ylim(0, max(max(lollipop_data_2001_nVT$model2001),max(lollipop_data_2001_nVT$data2001),max(lollipop_data_2004_VT$model2004),max(lollipop_data_2004_VT$data2004),max(lollipop_data_2007_nVT$model2007),max(lollipop_data_2007_nVT$data2007))) 
+          lollipop_plot_2007_nVT <- ggplot(lollipop_data_2007_nVT) +
+            geom_segment( aes(x=x, xend=x, y=model2007, yend=data2007), color="grey") +
+            geom_point( aes(x=x, y=model2007, color="Model"), size=3 ) +
+            geom_point( aes(x=x, y=data2007, color="Data"), size=3 ) +
+            scale_color_manual(values = c("#E69F00", "#56B4E9"),
+                               guide  = guide_legend(), 
+                               name   = "Group") +
+            coord_flip()+
+            #theme_ipsum() +
+            theme(legend.position = "none") +
+            ggtitle("2007 Non-Vaccine Types") +
+            ylab("Frequency") +
+            xlab("Clusters") +
+            theme(axis.title  = element_text(size = 20), axis.text = element_text(size = 20), plot.title = element_text(size = 25,hjust = 0.5))  +
+            ylim(0, max(max(lollipop_data_2001_nVT$model2001),max(lollipop_data_2001_nVT$data2001),max(lollipop_data_2004_VT$model2004),max(lollipop_data_2004_VT$data2004),max(lollipop_data_2007_nVT$model2007),max(lollipop_data_2007_nVT$data2007)))          
+          lollipop_plot_2007_VT <- ggplot(lollipop_data_2007_VT) +
+            geom_segment( aes(x=x, xend=x, y=model2007, yend=data2007), color="grey") +
+            geom_point( aes(x=x, y=model2007, color="Model"), size=3 ) +
+            geom_point( aes(x=x, y=data2007, color="Data"), size=3 ) +
+            scale_color_manual(values = c("#E69F00", "#56B4E9"),
+                               guide  = guide_legend(), 
+                               name   = "Legend") +
+            coord_flip()+
+            #theme_ipsum() +
+            theme(legend.position = c(.8,.8),legend.text = element_text(size = 20),legend.title = element_text(size = 20)) +
+            ggtitle("2007 Vaccine Types") +
+            ylab("Frequency") +
+            xlab("Clusters") +
+            theme(axis.title  = element_text(size = 20), axis.text = element_text(size = 20), plot.title = element_text(size = 25,hjust = 0.5))  +
+            ylim(0, max(max(lollipop_data_2001_nVT$model2001),max(lollipop_data_2001_nVT$data2001),max(lollipop_data_2004_VT$model2004),max(lollipop_data_2004_VT$data2004),max(lollipop_data_2007_nVT$model2007),max(lollipop_data_2007_nVT$data2007)))
+          #save plot as a png
+          #g <- arrangeGrob(lollipop_plot_2001,lollipop_plot_2004, lollipop_plot_2007, ncol =3) #generates g
+          #ggsave(file=paste(paste("plot",as.character(counter), sep=""), ".png", sep=""), g, width = 16, height = 16) #saves g
+          grid.arrange(lollipop_plot_2001_nVT + theme(plot.margin = unit(c(.5,0.5,1,0.5), "cm")),lollipop_plot_2004_nVT+ theme(plot.margin = unit(c(.5,0.5,1,0.5), "cm")), lollipop_plot_2007_nVT + theme(plot.margin = unit(c(.5,0.5,1,0.5), "cm")),lollipop_plot_2001_VT + theme(plot.margin = unit(c(.5,0.5,.5,0.5), "cm")), lollipop_plot_2004_VT + theme(plot.margin = unit(c(.5,0.5,.5,0.5), "cm")), lollipop_plot_2007_VT + theme(plot.margin = unit(c(.5,0.5,.5,0.5), "cm")), ncol = 3, nrow=2)
+          #grid.arrange(lollipop_plot_2001_VT,lollipop_plot_2004_VT, lollipop_plot_2007_VT, ncol = 3)
+                    grid.arrange(lollipop_plot_2004_nVT+ theme(plot.margin = unit(c(.5,0.5,1,0.5), "cm")), lollipop_plot_2007_nVT + theme(plot.margin = unit(c(.5,0.5,1,0.5), "cm")), lollipop_plot_2004_VT + theme(plot.margin = unit(c(.5,0.5,.5,0.5), "cm")), lollipop_plot_2007_VT + theme(plot.margin = unit(c(.5,0.5,.5,0.5), "cm")), ncol = 2, nrow=2)
+```

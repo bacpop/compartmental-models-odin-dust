@@ -1,0 +1,149 @@
+---
+title: "try_params_systematically"
+output: html_document
+date: "2023-08-09"
+---
+
+### this requires running WrightFisher_Massachusetts_MeanVTnewData_PopsizeVariablePois.Rmd (or similar) first, in order to have all variables in the environment
+
+```{r}
+sw_sigma_f <- c(0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4)
+sw_sigma_w <- c(0.001, 0.005, 0.0075, 0.01, 0.0125, 0.015, 0.0175, 0.02)
+sw_prop_f <- c(0.1, 0.15, 0.2, 0.25, 0.3, 0.35)
+#sw_m <- c(0, 0.025, 0.05, 0.75, 0.1, 0.125, 0.15)
+#sw_v <- c(0.005, 0.01, 0.25, 0.05, 0.1)
+```
+
+
+```{r}
+counter <- 1
+
+likelihood_vec <- rep(0, length(sw_sigma_f) * length(sw_sigma_w) * length(sw_prop_f))
+param_values <- matrix(rep(0, 3* length(sw_sigma_f) * length(sw_sigma_w) * length(sw_prop_f)), nrow = length(sw_sigma_f) * length(sw_sigma_w) * length(sw_prop_f), ncol = 3) 
+
+for (sf in sw_sigma_f) {
+  for (sw in sw_sigma_w) {
+    for (pf in sw_prop_f) {
+      params_n_vP <- list(dt = 1/36, species_no = mass_clusters,  gene_no = nrow(mass_consensus_presence_absence), Pop_ini = as.double(model_start_pop), Pop_eq = as.double(model_start_pop), capacity = sum(model_start_pop), Genotypes = as.matrix(mean_mass_cluster_freq[,-1]), sigma_f = sf, sigma_w = sw, prop_f = pf, delta = delta_ranking, m = 0.0044, migVec = avg_cluster_freq, vaccTypes = mass_VT_mean, v = 0.1, vacc_time = 0)
+    
+      dt <- 1/36
+
+      WFmodel_nG_h_vP <- WF_nG_h_vP$new(pars = params_n_vP,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+
+
+      n_times <- 73
+      x <- array(NA, dim = c(WFmodel_nG_h_vP$info()$len, n_particles, n_times))
+
+      for (t in seq_len(n_times)) {
+        x[ , , t] <- WFmodel_nG_h_vP$run(t)
+      }
+      time <- x[1, 1, ]
+      x <- x[-1, , ]
+
+      
+      likelihood_vec[counter] <- det_filter$run(save_history = TRUE, pars = params_n_vP)
+      param_values[counter,] <- c(sf, sw, pf)
+          
+      counter <- counter + 1
+      }
+  }
+}
+
+
+```
+#result:
+> which.max(likelihood_vec)
+[1] 6
+> param_values[which.max(likelihood_vec),]
+[1] 0.100 0.001 0.350
+
+```{r}
+test_params <- function(sf_v, sw_v, pf_v, m_v, v_v){
+  counter <- 1
+
+  param_values <- matrix(rep(0, 6* length(sf_v) * length(sw_v) * length(pf_v) * length(m_v) * length(v_v)), nrow = length(sf_v) * length(sw_v) * length(pf_v) * length(m_v) * length(v_v), ncol = 6) 
+dt <- 1/36
+n_times <- 73
+  for (sf in sf_v) {
+    for (sw in sw_v) {
+      for (pf in pf_v) {
+        for (m in m_v) {
+          for (v in v_v) {
+            params_n_vP <- list(dt = 1/36, species_no = mass_clusters,  gene_no = nrow(mass_consensus_presence_absence), Pop_ini = as.double(model_start_pop), Pop_eq = as.double(model_start_pop), capacity = sum(model_start_pop), Genotypes = as.matrix(mean_mass_cluster_freq[,-1]), sigma_f = sf, sigma_w = sw, prop_f = pf, delta = delta_ranking, m = m, migVec = avg_cluster_freq, vaccTypes = mass_VT_mean, v = v, vacc_time = 0)
+    
+            WFmodel_nG_h_vP <- WF_nG_h_vP$new(pars = params_n_vP,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+
+
+      
+            x <- array(NA, dim = c(WFmodel_nG_h_vP$info()$len, n_particles, n_times))
+
+            for (t in seq_len(n_times)) {
+              x[ , , t] <- WFmodel_nG_h_vP$run(t)
+            }
+            time <- x[1, 1, ]
+            x <- x[-1, , ]
+
+            param_values[counter,] <- c(det_filter$run(save_history = TRUE, pars = params_n_vP),sf, sw, pf, m, v)
+          
+            counter <- counter + 1
+          }
+        }
+      }
+  }
+  }
+  return(param_values)
+}
+```
+
+```{r}
+sw_sigma_f <- c(0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4)
+sw_sigma_w <- c(0.001, 0.005, 0.0075, 0.01, 0.015, 0.02,0.1)
+sw_prop_f <- c(0.1, 0.15, 0.2, 0.25, 0.3, 0.35)
+sw_m <- c(0, 0.002, 0.004, 0.006, 0.008, 0.01)
+sw_v <- c(0, 0.04, 0.08, 0.12)
+likely_params <- test_params(sf_v = sw_sigma_f, sw_v = sw_sigma_w, pf_v = sw_prop_f, m_v = sw_m, v_v = sw_v)
+```
+#made a mistake chose same values for sigma_f and sigma_w
+# result:
+#> max(likely_params[,1])
+#[1] -228.7145
+#> which.max(likely_params[,1])
+#[1] 53
+#> likely_params[53,]
+#[1] -228.7145    0.1000    0.1000    0.1500    0.7500    0.2500
+
+#this is better than all the above parameters:
+# max(likely_params[,1])
+#[1] -244.0303
+# likely_params[which.max(likely_params[,1]),]
+#[1] -244.0303    0.1000    0.0010    0.1500    0.0100    0.0800
+
+# since I am excluding s_f = s_w for fitting at the moment,
+# I would like to investigate values for that a bit more:
+```{r}
+sw_sigma_f <- c(0, 0.005, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4)
+sw_sigma_w <- c(0.1)
+sw_prop_f <- c(1)
+sw_m <- c(0, 0.002, 0.004, 0.006, 0.008, 0.01)
+sw_v <- c(0, 0.02, 0.04, 0.06, 0.08, 0.12)
+likely_params <- test_params(sf_v = sw_sigma_f, sw_v = sw_sigma_w, pf_v = sw_prop_f, m_v = sw_m, v_v = sw_v)
+```
+#> max(likely_params[,1])
+#[1] -260.5935
+
+# for reasonable mig and vacc rates, having sigma_f = sigma_w is actually not better (not much worse either though)
+
+#likely_params[which.max(likely_params[,1]),]
+#[1] -260.5935    0.0000    0.1000    1.0000    0.0100    0.0200
+
+# but this is sigma_f = 0!!!
+#that's a weird result.
+# this means that, exploring this parameter space, having no NFDS is the best model...
