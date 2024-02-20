@@ -216,3 +216,71 @@ for (i in 1:mass_clusters){
 # 0 means NVT
 # if cluster is 50/50 it will count as VT
 ```
+
+```{r}
+#calculate the frequency of the gene clusters and year
+mass_cluster_freq_1 <- rep(0,mass_clusters)
+mass_cluster_freq_2 <- rep(0,mass_clusters)
+mass_cluster_freq_3 <- rep(0,mass_clusters)
+for (i in 1:mass_clusters){
+  mass_cluster_freq_1[i] <- length(which(Mass_Samples_accCodes[which(Mass_Samples_accCodes$SequenceCluster==i-1),]$"Year of Isolation"==2001))
+  mass_cluster_freq_2[i] <- length(which(Mass_Samples_accCodes[which(Mass_Samples_accCodes$SequenceCluster==i-1),]$"Year of Isolation"==2004))
+  mass_cluster_freq_3[i] <- length(which(Mass_Samples_accCodes[which(Mass_Samples_accCodes$SequenceCluster==i-1),]$"Year of Isolation"==2007))
+}
+```
+
+```{r}
+#save sequence cluster frequencies
+#saveRDS(mass_cluster_freq_1, file = "mass_cluster_freq_1.rds")
+#saveRDS(mass_cluster_freq_2, file = "mass_cluster_freq_2.rds")
+#saveRDS(mass_cluster_freq_3, file = "mass_cluster_freq_3.rds")
+```
+
+```{r}
+# For strong and weak selection in the model, I need to calculate the beta statistics.
+
+# calculate gene frequencies first, separate for three time points
+mass_gene_freq_1 <- apply(intermed_gene_presence_absence_2001[-1,-1], 1, sum_as_int)
+mass_gene_freq_2 <- apply(intermed_gene_presence_absence_2004[-1,-1], 1, sum_as_int)
+mass_gene_freq_3 <- apply(intermed_gene_presence_absence_2007[-1,-1], 1, sum_as_int)
+
+# first, calculate pre/peri and post vacc frequencies of genes:
+pre_peri_vacc_gene_freq <- (mass_gene_freq_1 + mass_gene_freq_2) / (sum(mass_cluster_freq_1) + sum(mass_cluster_freq_2))
+pre_vacc_gene_freq <- (mass_gene_freq_1) / sum(mass_cluster_freq_1)
+post_vacc_gene_freq <- mass_gene_freq_3 / sum(mass_cluster_freq_3)
+peri_post <- (mass_gene_freq_2 + mass_gene_freq_3) / (sum(mass_cluster_freq_2) + sum(mass_cluster_freq_3))
+
+# calculate delta statistic (refer to Corander et al. for more info)
+delta_data <- (post_vacc_gene_freq - pre_peri_vacc_gene_freq) ^ 2 / (1 - pre_peri_vacc_gene_freq * (1 - pre_peri_vacc_gene_freq))
+delta_ranking <- rank(delta_data)
+
+delta_data2 <- (post_vacc_gene_freq - pre_vacc_gene_freq) ^ 2 / (1 - pre_vacc_gene_freq * (1 - pre_vacc_gene_freq))
+delta_ranking2 <- rank(delta_data2)
+
+delta_data3 <- (peri_post - pre_vacc_gene_freq) ^ 2 / (1 - pre_vacc_gene_freq * (1 - pre_vacc_gene_freq))
+delta_ranking3 <- rank(delta_data3)
+delta_ranking <- delta_ranking3
+```
+
+```{r}
+#save delta ranking
+#saveRDS(delta_ranking, file = "delta_ranking.rds")
+```
+
+```{r}
+### create initial population that is based on the 2001 data set but not an exact sampling from it
+# but a Poisson process
+expand_factor <- 15000 / sum(mass_cluster_freq_1)
+exp_noise <- 10
+model_start_pop <- (sapply((mass_cluster_freq_1 + rexp(n = length(mass_cluster_freq_1), rate = exp_noise)) * expand_factor, rpois, n=1))
+
+# visual check for the "sampling"
+plot(mass_cluster_freq_1/sum(mass_cluster_freq_1))
+points(model_start_pop/sum(model_start_pop), col = "red")
+# looks similar enough, I would say
+```
+
+```{r}
+#save model start population
+#saveRDS(model_start_pop, file = "model_start_pop.rds")
+```
