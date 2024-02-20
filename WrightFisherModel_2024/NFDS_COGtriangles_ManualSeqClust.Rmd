@@ -1,0 +1,101 @@
+---
+title: "NFDS model with COGtriangles and manual sequence clusters"
+output: html_notebook
+---
+
+```{r}
+# install.packages("drat") # -- if you don't have drat installed
+# drat:::add("ncov-ic")
+# install.packages("odin.dust")
+library(odin.dust)
+#install.packages("mcstate")
+library(mcstate)
+```
+
+# import data sets from data processing:
+```{r}
+Mass_Samples_accCodes <- readRDS(file = "Mass_Samples_accCodes.rds")
+intermed_gene_presence_absence_consensus <- readRDS(file = "intermed_gene_presence_absence_consensus.rds")
+intermed_gene_presence_absence_consensus_matrix <- sapply(intermed_gene_presence_absence_consensus[-1,-1],as.double)
+model_start_pop <- readRDS(file = "model_start_pop.rds")
+delta_ranking <- readRDS(file = "delta_ranking.rds")
+mass_cluster_freq_1 <- readRDS(file = "mass_cluster_freq_1.rds")
+mass_cluster_freq_2 <- readRDS(file = "mass_cluster_freq_2.rds")
+mass_cluster_freq_3 <- readRDS(file = "mass_cluster_freq_3.rds")
+mass_VT <- readRDS(file = "mass_VT.rds")
+```
+
+
+```{r}
+WF_nG_h_vP <- odin.dust::odin_dust("NFDS_Model.R")
+# copy of WrightFisherModel/WrightFisher_newData_nGenotypes_haploid_PopsizeVariablePois.R
+```
+
+#define parameters for the model:
+```{r}
+mass_clusters <- length(unique(Mass_Samples_accCodes$SequenceCluster))
+avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
+
+params_n_vP <- list(dt = 1/36, species_no = mass_clusters,  gene_no = nrow(intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(model_start_pop), Pop_eq = as.double(model_start_pop), capacity = sum(model_start_pop), Genotypes = intermed_gene_presence_absence_consensus_matrix, sigma_f = 0.2193191513, sigma_w = 0.0007111157, prop_f = 0.3735531590, delta = delta_ranking, m = 0.0052207254, migVec = avg_cluster_freq, vaccTypes = mass_VT, v = 0.1321567425, vacc_time = 0)
+```
+
+### Running the model:
+```{r}
+WFmodel_nG_h_vP <- WF_nG_h_vP$new(pars = params_n_vP,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+# this is expecting doubles. I need to work on that.
+```
+
+
+```{r}
+model_squaredError <- function(params){
+  all_params <- list(dt = 1/36, species_no = mass_clusters,  gene_no = nrow(intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(model_start_pop), Pop_eq = as.double(model_start_pop), capacity = sum(model_start_pop), Genotypes = intermed_gene_presence_absence_consensus_matrix, sigma_f = params[1], sigma_w = params[2], prop_f = params[3], delta = delta_ranking, m = params[4], migVec = avg_cluster_freq, vaccTypes = mass_VT, v = params[5], vacc_time = 0)
+  WFmodel <- WF_nG_h_vP$new(pars = all_params,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+  n_particles <- 10L
+  n_times <- 73
+  x <- array(NA, dim = c(WFmodel$info()$len, n_particles, n_times))
+
+  for (t in seq_len(n_times)) {
+    x[ , , t] <- WFmodel$run(t)
+  }
+  time <- x[1, 1, ]
+  x <- x[-1, , ]
+  sum((x[,1,37]/sum(x[,1,37]) - (mass_cluster_freq_2/sum(mass_cluster_freq_2)))^2) + sum((x[,1,73]/sum(x[,1,73]) - (mass_cluster_freq_3/sum(mass_cluster_freq_3)))^2)
+}
+
+#pmcmc_sigma_f <- mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0, max = 1)
+#pmcmc_sigma_w <- mcstate::pmcmc_parameter("sigma_w", 0.05, min = 0, max = 1)
+#pmcmc_prop_f <- mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1)
+#pmcmc_m <- mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 1)
+#pmcmc_v <- mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)
+
+optim_params <- c(0.2193191513, 0.0007111157, 0.3735531590, 0.0052207254, 0.1321567425)
+model_squaredError(optim_params)
+```
+
+
+# Try fitting with optim R function
+```{r}
+#optim(par = c(0.15, 0.05, 0.25, 0.03, 0.05), fn = model_squaredError, method = "L-BFGS-B", lower = c(0,0,0,0,0), upper = c(1,1,1,1,1))
+### does not work --> problem with convergence I think
+```
+```{r}
+library(dfoptim)
+nmkb(c(0.15, 0.05, 0.25, 0.03, 0.05), model_squaredError, lower=c(0,0,0,0,0), upper=c(1,1,1,1,1))
+### this one is working: converges
+# Parameters:
+# order: sigma_f, sigma_w, prop_f, migration, vaccination
+# [1] 2.400584e-01 9.981659e-05 2.948024e-01 7.317635e-03 9.683020e-02
+# error: 0.01071532
+
+# alternatively, starting with the MCMC result:
+#nmkb(c(0.2193191513, 0.0007111157, 0.3735531590, 0.0052207254, 0.1321567425), model_squaredError, lower=c(0,0,0,0,0), upper=c(1,1,1,1,1))
+```
+

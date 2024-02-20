@@ -221,7 +221,8 @@ WF_nG_h_vP <- odin.dust::odin_dust("WrightFisher_newData_nGenotypes_haploid_Pops
 
 #define parameters for the model:
 ```{r}
-avg_cluster_freq <- (mass_cluster_freq_1 + mass_cluster_freq_2 + mass_cluster_freq_3)/(sum(mass_cluster_freq_1)+sum(mass_cluster_freq_2)+sum(mass_cluster_freq_3))
+#avg_cluster_freq <- (mass_cluster_freq_1 + mass_cluster_freq_2 + mass_cluster_freq_3)/(sum(mass_cluster_freq_1)+sum(mass_cluster_freq_2)+sum(mass_cluster_freq_3))
+avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
 
 params_n_vP <- list(dt = 1/36, species_no = mass_clusters,  gene_no = nrow(mass_consensus_presence_absence), Pop_ini = as.double(model_start_pop), Pop_eq = as.double(model_start_pop), capacity = sum(model_start_pop), Genotypes = as.matrix(mass_consensus_presence_absence[,-1]), sigma_f = 0.14, sigma_w = 0.002, prop_f = 0.25, delta = delta_ranking, m = 0.03, migVec = avg_cluster_freq, vaccTypes = mass_VT, v = 0.1, vacc_time = 0)
 

@@ -29,6 +29,10 @@ Isolate_from_Mass_dict[Mass_Isolates] <- 1
 ```
 
 ```{r}
+#saveRDS(Mass_Samples_accCodes, file = "Mass_Samples_accCodes.rds")
+```
+
+```{r}
 ### Reading in the Gene Cluster information
 #gene_cluster <- read.table(paste(path_to_data, "v2_Massachusetts_data_NickCroucher/gCOG_sequences/CLS00005.out", sep = ""), quote="\"", comment.char="")[ c(TRUE,FALSE), ]
 
@@ -215,6 +219,11 @@ for (i in 1:mass_clusters){
 # 1 means VT
 # 0 means NVT
 # if cluster is 50/50 it will count as VT
+```
+
+```{r}
+#save VTs
+#saveRDS(mass_VT, file = "mass_VT.rds")
 ```
 
 ```{r}
