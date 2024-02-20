@@ -99,3 +99,60 @@ nmkb(c(0.15, 0.05, 0.25, 0.03, 0.05), model_squaredError, lower=c(0,0,0,0,0), up
 #nmkb(c(0.2193191513, 0.0007111157, 0.3735531590, 0.0052207254, 0.1321567425), model_squaredError, lower=c(0,0,0,0,0), upper=c(1,1,1,1,1))
 ```
 
+### PopPUNK
+
+# import PopPUNK data sets
+
+```{r}
+PopPUNK_clusters <- readRDS("PopPUNK_clusters.rds")
+PP_intermed_gene_presence_absence_consensus <- readRDS(file = "PP_intermed_gene_presence_absence_consensus.rds")
+PP_intermed_gene_presence_absence_consensus_matrix <- sapply(PP_intermed_gene_presence_absence_consensus[-1,-1],as.double)
+PP_model_start_pop <- readRDS(file = "PP_model_start_pop.rds")
+#delta_ranking <- readRDS(file = "delta_ranking.rds")
+PP_mass_cluster_freq_1 <- readRDS(file = "PP_mass_cluster_freq_1.rds")
+PP_mass_cluster_freq_2 <- readRDS(file = "PP_mass_cluster_freq_2.rds")
+PP_mass_cluster_freq_3 <- readRDS(file = "PP_mass_cluster_freq_3.rds")
+PP_mass_VT <- readRDS(file = "PP_mass_VT.rds")
+```
+
+```{r}
+PP_mass_clusters <- length(unique(PopPUNK_clusters$Cluster))
+PP_avg_cluster_freq <- rep(1/PP_mass_clusters, PP_mass_clusters)
+```
+
+```{r}
+WF_PP <- odin.dust::odin_dust("NFDS_Model.R")
+```
+
+
+```{r}
+PP_model_squaredError <- function(params){
+  all_params <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(PP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = PP_intermed_gene_presence_absence_consensus_matrix, sigma_f = params[1], sigma_w = params[2], prop_f = params[3], delta = delta_ranking, m = params[4], migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = params[5], vacc_time = 0)
+  WFmodel <- WF_PP$new(pars = all_params,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+  n_particles <- 10L
+  n_times <- 73
+  x <- array(NA, dim = c(WFmodel$info()$len, n_particles, n_times))
+
+  for (t in seq_len(n_times)) {
+    x[ , , t] <- WFmodel$run(t)
+  }
+  time <- x[1, 1, ]
+  x <- x[-1, , ]
+  sum((x[,1,37]/sum(x[,1,37]) - (PP_mass_cluster_freq_2/sum(PP_mass_cluster_freq_2)))^2) + sum((x[,1,73]/sum(x[,1,73]) - (PP_mass_cluster_freq_3/sum(PP_mass_cluster_freq_3)))^2)
+}
+```
+
+```{r}
+#library(dfoptim)
+nmkb(c(0.15, 0.05, 0.25, 0.03, 0.05), PP_model_squaredError, lower=c(0,0,0,0,0), upper=c(1,1,1,1,1))
+# result: 
+#$par
+#[1] 0.15066986 0.01008679 0.01978237 0.01519036 0.04727967
+#$value
+#[1] 0.02361034
+```
+

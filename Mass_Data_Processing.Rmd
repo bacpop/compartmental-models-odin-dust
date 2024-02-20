@@ -367,10 +367,10 @@ cons_genomes <- function(x){
 }
 
 for (i in unique(PopPUNK_clusters$Cluster)) {
-  PP_intermed_gene_presence_absence_consensus[-1,i+2] <- apply(as.matrix(intermed_gene_presence_absence[-1,c(FALSE,PP_Mass_seq_clusters_dict[unlist(intermed_gene_presence_absence[1,-1])]==i)]), 1, cons_genomes)
-  PP_intermed_gene_presence_absence_consensus_2001[-1,i+2] <- apply(as.matrix(intermed_gene_presence_absence_2001[-1,c(FALSE,PP_Mass_seq_clusters_dict[unlist(intermed_gene_presence_absence_2001[1,-1])]==i)]), 1, cons_genomes)
-    PP_intermed_gene_presence_absence_consensus_2004[-1,i+2] <- apply(as.matrix(intermed_gene_presence_absence_2004[-1,c(FALSE,PP_Mass_seq_clusters_dict[unlist(intermed_gene_presence_absence_2004[1,-1])]==i)]), 1, cons_genomes)
-    PP_intermed_gene_presence_absence_consensus_2007[-1,i+2] <- apply(as.matrix(intermed_gene_presence_absence_2007[-1,c(FALSE,PP_Mass_seq_clusters_dict[unlist(intermed_gene_presence_absence_2007[1,-1])]==i)]), 1, cons_genomes)
+  PP_intermed_gene_presence_absence_consensus[-1,i+1] <- apply(as.matrix(intermed_gene_presence_absence[-1,c(FALSE,PP_Mass_seq_clusters_dict[unlist(intermed_gene_presence_absence[1,-1])]==i)]), 1, cons_genomes)
+  PP_intermed_gene_presence_absence_consensus_2001[-1,i+1] <- apply(as.matrix(intermed_gene_presence_absence_2001[-1,c(FALSE,PP_Mass_seq_clusters_dict[unlist(intermed_gene_presence_absence_2001[1,-1])]==i)]), 1, cons_genomes)
+    PP_intermed_gene_presence_absence_consensus_2004[-1,i+1] <- apply(as.matrix(intermed_gene_presence_absence_2004[-1,c(FALSE,PP_Mass_seq_clusters_dict[unlist(intermed_gene_presence_absence_2004[1,-1])]==i)]), 1, cons_genomes)
+    PP_intermed_gene_presence_absence_consensus_2007[-1,i+1] <- apply(as.matrix(intermed_gene_presence_absence_2007[-1,c(FALSE,PP_Mass_seq_clusters_dict[unlist(intermed_gene_presence_absence_2007[1,-1])]==i)]), 1, cons_genomes)
 }
 
 PP_intermed_gene_presence_absence_consensus[-1,1] <- intermed_gene_presence_absence[-1,1]
