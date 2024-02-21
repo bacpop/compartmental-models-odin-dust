@@ -5,18 +5,18 @@ library(grid)
 lollipop_cluster_freqs <- function(plot_title = "Generic Plot Title",data1, data2, data3, model1, model2, model3){
   lollipop_data_1 <- data.frame(
     x=1:length(data1),
-    model_1=model1 / sum(model1),
-    data_1=as.numeric(data1 / sum(data1))
+    model_1=model1,
+    data_1=as.numeric(data1)
   )
   lollipop_data_2 <- data.frame(
     x=1:length(data2),
-    model_2=model2 / sum(model2),
-    data_2=as.numeric(data2 / sum(data2))
+    model_2=model2,
+    data_2=as.numeric(data2)
   )
   lollipop_data_3 <- data.frame(
     x=1:length(data3),
-    model_3=model3 / sum(model3),
-    data_3=as.numeric(data3 / sum(data3))
+    model_3=model3,
+    data_3=as.numeric(data3)
   )
   
   # Change baseline
@@ -66,5 +66,5 @@ lollipop_cluster_freqs <- function(plot_title = "Generic Plot Title",data1, data
     theme(axis.title  = element_text(size = 20), axis.text = element_text(size = 20), plot.title = element_text(size = 25,hjust = 0.5))  +
     ylim(0, max(max(lollipop_data_1$model_1),max(lollipop_data_1$data_1),max(lollipop_data_2$model_2),max(lollipop_data_2$data_2),max(lollipop_data_3$model_3),max(lollipop_data_3$data_3)))
   
-  grid.arrange(lollipop_plot_1 + theme(plot.margin = unit(c(.5,0.5,1,0.5), "cm"),axis.text.y = element_blank()) ,lollipop_plot_2 +  theme(plot.margin = unit(c(.5,0.5,1,0.5), "cm"),axis.text.y = element_blank()), lollipop_plot_3 + theme(plot.margin = unit(c(.5,0.5,1,0.5), "cm"),axis.text.y = element_blank()), ncol = 3, nrow=1, top = textGrob(plot_title,gp=gpar(fontsize=20,font=3)))
+  grid.arrange(lollipop_plot_1 + scale_y_continuous(limits = c(NA,0.17)) + theme(plot.margin = unit(c(.5,0.5,1,0.5), "cm"),axis.text.y = element_blank()) ,lollipop_plot_2 + scale_y_continuous(limits = c(NA,0.17)) +  theme(plot.margin = unit(c(.5,0.5,1,0.5), "cm"),axis.text.y = element_blank()), lollipop_plot_3 + scale_y_continuous(limits = c(NA,0.17)) + theme(plot.margin = unit(c(.5,0.5,1,0.5), "cm"),axis.text.y = element_blank()), ncol = 3, nrow=1, top = textGrob(plot_title,gp=gpar(fontsize=20,font=3)))
 }
