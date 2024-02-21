@@ -1,6 +1,8 @@
 ---
 title: "NFDS model with COGtriangles and manual sequence clusters"
 output: html_notebook
+editor_options: 
+  chunk_output_type: console
 ---
 
 ```{r}
@@ -88,13 +90,13 @@ model_squaredError(optim_params)
 ```
 ```{r}
 library(dfoptim)
-nmkb(c(0.15, 0.05, 0.25, 0.03, 0.05), model_squaredError, lower=c(0,0,0,0,0), upper=c(1,1,1,1,1))
+optim_fit <- nmkb(c(0.15, 0.05, 0.25, 0.03, 0.05), model_squaredError, lower=c(0,0,0,0,0), upper=c(1,1,1,1,1))
 ### this one is working: converges
 # Parameters:
 # order: sigma_f, sigma_w, prop_f, migration, vaccination
 # [1] 2.400584e-01 9.981659e-05 2.948024e-01 7.317635e-03 9.683020e-02
 # error: 0.01071532
-
+print(optim_fit$value/(2*mass_clusters))
 # alternatively, starting with the MCMC result:
 #nmkb(c(0.2193191513, 0.0007111157, 0.3735531590, 0.0052207254, 0.1321567425), model_squaredError, lower=c(0,0,0,0,0), upper=c(1,1,1,1,1))
 ```
@@ -148,11 +150,89 @@ PP_model_squaredError <- function(params){
 
 ```{r}
 #library(dfoptim)
-nmkb(c(0.15, 0.05, 0.25, 0.03, 0.05), PP_model_squaredError, lower=c(0,0,0,0,0), upper=c(1,1,1,1,1))
+PP_optim_fit <- nmkb(c(0.15, 0.05, 0.25, 0.03, 0.05), PP_model_squaredError, lower=c(0,0,0,0,0), upper=c(1,1,1,1,1))
 # result: 
 #$par
 #[1] 0.15066986 0.01008679 0.01978237 0.01519036 0.04727967
 #$value
 #[1] 0.02361034
+#MSE - but not sure how good of a metric this is. I don't think it is comparable when the number of clusters varies
+print(PP_optim_fit$value/(2 * PP_mass_clusters))
+```
+
+
+### Visualise Fits:
+
+```{r}
+source("CreateLollipopPlot.R")
+```
+
+```{r}
+
+fit_params <- c(2.400584e-01, 9.981659e-05, 2.948024e-01, 7.317635e-03, 9.683020e-02)
+all_params <- list(dt = 1/36, species_no = mass_clusters,  gene_no = nrow(intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(model_start_pop), Pop_eq = as.double(model_start_pop), capacity = sum(model_start_pop), Genotypes = intermed_gene_presence_absence_consensus_matrix, sigma_f = fit_params[1], sigma_w = fit_params[2], prop_f = fit_params[3], delta = delta_ranking, m = fit_params[4], migVec = avg_cluster_freq, vaccTypes = mass_VT, v = fit_params[5], vacc_time = 0)
+WFmodel <- WF_nG_h_vP$new(pars = all_params,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+n_particles <- 10L
+n_times <- 73
+x <- array(NA, dim = c(WFmodel$info()$len, n_particles, n_times))
+for (t in seq_len(n_times)) {
+  x[ , , t] <- WFmodel$run(t)
+}
+time <- x[1, 1, ]
+x <- x[-1, , ]
+  
+model_val1 <- x[,1,1]
+model_val2 <- x[,1,37]
+model_val3 <- x[,1,73]
+
+model1_VT <- model_val1[which(mass_VT==1)]
+model1_NVT <- model_val1[which(mass_VT==0)]
+model2_VT <- model_val2[which(mass_VT==1)]
+model2_NVT <- model_val2[which(mass_VT==0)]
+model3_VT <- model_val3[which(mass_VT==1)]
+model3_NVT <- model_val3[which(mass_VT==0)]
+
+
+### COGtriangles and manual sequence clusters
+lollipop_cluster_freqs(plot_title = "Vaccine Types, manual Seq Clusters",data1 = mass_cluster_freq_1[which(mass_VT==1)], data2 = mass_cluster_freq_2[which(mass_VT==1)], data3= mass_cluster_freq_3[which(mass_VT==1)], model1 = model1_VT, model2 = model2_VT, model3 = model3_VT)
+lollipop_cluster_freqs(plot_title = "Non-Vaccine Types, manual Seq Clusters",data1 = mass_cluster_freq_1[which(mass_VT==0)], data2 = mass_cluster_freq_2[which(mass_VT==0)], data3= mass_cluster_freq_3[which(mass_VT==0)], model1 = model1_NVT, model2 = model2_NVT, model3 = model3_NVT)
+```
+
+```{r}
+### COGtriangles and PopPUNK clusters
+PP_fit_params <- c(0.15066986, 0.01008679, 0.01978237, 0.01519036, 0.04727967)
+all_params <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(PP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = PP_intermed_gene_presence_absence_consensus_matrix, sigma_f = PP_fit_params[1], sigma_w = PP_fit_params[2], prop_f = PP_fit_params[3], delta = delta_ranking, m = PP_fit_params[4], migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = PP_fit_params[5], vacc_time = 0)
+WFmodel_PP <- WF_PP$new(pars = all_params,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+n_particles <- 10L
+n_times <- 73
+x <- array(NA, dim = c(WFmodel_PP$info()$len, n_particles, n_times))
+for (t in seq_len(n_times)) {
+  x[ , , t] <- WFmodel_PP$run(t)
+}
+time <- x[1, 1, ]
+x <- x[-1, , ]
+  
+PP_model_val1 <- x[,1,1]
+PP_model_val2 <- x[,1,37]
+PP_model_val3 <- x[,1,73]
+
+PP_model1_VT <- PP_model_val1[which(PP_mass_VT==1)]
+PP_model1_NVT <- PP_model_val1[which(PP_mass_VT==0)]
+PP_model2_VT <- PP_model_val2[which(PP_mass_VT==1)]
+PP_model2_NVT <- PP_model_val2[which(PP_mass_VT==0)]
+PP_model3_VT <- PP_model_val3[which(PP_mass_VT==1)]
+PP_model3_NVT <- PP_model_val3[which(PP_mass_VT==0)]
+
+### COGtriangles and manual sequence clusters
+lollipop_cluster_freqs(plot_title = "Vaccine Types, PopPUNK Clusters", data1 = PP_mass_cluster_freq_1[which(PP_mass_VT==1)], data2 = PP_mass_cluster_freq_2[which(PP_mass_VT==1)], data3= PP_mass_cluster_freq_3[which(PP_mass_VT==1)], model1 = PP_model1_VT, model2 = PP_model2_VT, model3 = PP_model3_VT)
+lollipop_cluster_freqs(plot_title = "Non-Vaccine Types, PopPUNK Clusters",data1 = PP_mass_cluster_freq_1[which(PP_mass_VT==0)], data2 = PP_mass_cluster_freq_2[which(PP_mass_VT==0)], data3= PP_mass_cluster_freq_3[which(PP_mass_VT==0)], model1 = PP_model1_NVT, model2 = PP_model2_NVT, model3 = PP_model3_NVT)
 ```
 

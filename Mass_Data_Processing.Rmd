@@ -450,3 +450,19 @@ points(PP_model_start_pop/sum(PP_model_start_pop), col = "red")
 #saveRDS(PP_model_start_pop, file = "PP_model_start_pop.rds")
 ```
 
+
+### ggCaller
+
+```{r}
+# reading in the gene presence absence matrix produced by ggCaller
+ggCaller_gene_presence_absence <- read.csv(paste(path_to_data, "Massachusetts_ggcaller/run2/ggCaller_output/gene_presence_absence.csv", sep = ""), header=FALSE)
+
+# converting the gene presence absence matrix into a boolean df (0 = gene not present, 1 = gene present)
+convert_to_bool <- function(x){
+  if (x=="") 0 else 1
+}
+
+ggCaller_bool_gene_presence_absence <- ggCaller_gene_presence_absence[,c(-2,-3)]
+ggCaller_bool_gene_presence_absence[-1,-1] <- apply(ggCaller_bool_gene_presence_absence[-1,-1],c(1,2), convert_to_bool)
+```
+
