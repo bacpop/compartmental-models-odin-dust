@@ -12,6 +12,8 @@ editor_options:
 library(odin.dust)
 #install.packages("mcstate")
 library(mcstate)
+# Package for derivative-free fitting in R:
+library(dfoptim)
 ```
 
 # import data sets from data processing:
@@ -48,7 +50,6 @@ WFmodel_nG_h_vP <- WF_nG_h_vP$new(pars = params_n_vP,
                          n_particles = 10L,
                          n_threads = 4L,
                          seed = 1L)
-# this is expecting doubles. I need to work on that.
 ```
 
 
@@ -90,8 +91,8 @@ model_squaredError(optim_params)
 #optim(par = c(0.15, 0.05, 0.25, 0.03, 0.05), fn = model_squaredError, method = "L-BFGS-B", lower = c(0,0,0,0,0), upper = c(1,1,1,1,1))
 ### does not work --> problem with convergence I think
 ```
+
 ```{r}
-library(dfoptim)
 optim_fit <- nmkb(c(0.15, 0.05, 0.25, 0.03, 0.05), model_squaredError, lower=c(0,0,0,0,0), upper=c(1,1,1,1,1))
 optim_fit
 optim_fit <- nmkb(c(2.400584e-01, 9.981659e-05, 2.948024e-01, 7.317635e-03, 9.683020e-02), model_squaredError, lower=c(0,0,0,0,0), upper=c(1,1,1,1,1))
@@ -118,30 +119,18 @@ ll_pois <- function(obs, model) {
   } else {
     lambda <- model + rexp(n = length(model), rate = exp_noise)
     ll_obs <- dpois(x = obs, lambda = lambda, log = TRUE)
-    #print(model)
   }
   ll_obs
 }
 
 combined_compare <- function(state, observed, pars = NULL) {
   result <- 0
-  #data_size <- sum(observed[as.character(1:62)])
-  # cannot get this to work for now
-  # instead I will use this:
   data_size <- sum(mass_cluster_freq_1)
-  #model_size <- sum(state[, , drop = TRUE])
   model_size = 15000
   
   for (i in 1:mass_clusters){
-    #browser()
-    #print(observed[[as.character(i)]])
-    #print(state[1+i, , drop = TRUE]/model_size * data_size)
-    #print(state[1+i, , drop = TRUE])
     result <- result + ll_pois(observed[i], state[i]/model_size * data_size)
-    #test_likelihood <- ll_pois(observed[[as.character(i)]], state[1+i, , drop = TRUE]/model_size * data_size)
-    #print(result)
   }
-  #print(result)
   result
 }
 
@@ -169,12 +158,12 @@ fit_dfoptim <- function(params){
 ```
 
 ```{r}
-optim_fit <- nmkb(c(0.15, 0.05, 0.25, 0.03, 0.05), fit_dfoptim, lower=c(0,0,0,0,0), upper=c(1,1,1,1,1))
+optim_fit <- nmkb(c(0.15, 0.05, 0.25, 0.03, 0.05), fit_dfoptim, lower=c(0,0,0,0,0), upper=c(1,1,1,1,1), control = c(maximize = TRUE))
 #$par
-#[1] 9.980745e-01 8.600142e-02 9.987016e-01 1.813708e-06 2.953915e-02
+#[1] 0.088986864 0.014106180 0.502623721 0.009244569 0.139939554
 
 #$value
-#[1] -8363.161
+#[1] -289.7029
 ```
 
 
@@ -257,6 +246,170 @@ PP_2nd_optim_fit
 
 #print(PP_optim_fit$value/(2 * PP_mass_clusters))
 ```
+
+```{r}
+PP_fit_dfoptim <- function(params){
+  all_params <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(PP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = PP_intermed_gene_presence_absence_consensus_matrix, sigma_f = params[1], sigma_w = params[2], prop_f = params[3], delta = delta_ranking, m = params[4], migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = params[5], vacc_time = 0)
+  WFmodel <- WF_PP$new(pars = all_params,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+  n_particles <- 10L
+  n_times <- 73
+  x <- array(NA, dim = c(WFmodel$info()$len, n_particles, n_times))
+
+  for (t in seq_len(n_times)) {
+    x[ , , t] <- WFmodel$run(t)
+  }
+  time <- x[1, 1, ]
+  x <- x[-1, , ]
+  combined_compare(x[,1,37],PP_mass_cluster_freq_2) + combined_compare(x[,1,73],PP_mass_cluster_freq_3) 
+  #sum((x[,1,37]/sum(x[,1,37]) - (mass_cluster_freq_2/sum(mass_cluster_freq_2)))^2) + sum((x[,1,73]/sum(x[,1,73]) - (mass_cluster_freq_3/sum(mass_cluster_freq_3)))^2)
+  #sum(abs(x[,1,37]/sum(x[,1,37]) - (mass_cluster_freq_2/sum(mass_cluster_freq_2)))) + sum(abs(x[,1,73]/sum(x[,1,73]) - (mass_cluster_freq_3/sum(mass_cluster_freq_3))))
+}
+```
+
+```{r}
+PP_optim_fit <- nmkb(c(0.15, 0.05, 0.25, 0.03, 0.05), PP_fit_dfoptim, lower=c(0,0,0,0,0), upper=c(1,1,1,1,1), control = c(maximize = TRUE))
+#$par
+#[1] 0.706126287 0.002706832 0.203196043 0.037237185 0.116830782
+
+#$value
+#[1] -284.5025
+```
+
+
+### ggCaller with manual Sequence Clusters
+# import data sets from data processing:
+```{r}
+Mass_Samples_accCodes <- readRDS(file = "Mass_Samples_accCodes.rds")
+ggC_intermed_gene_presence_absence_consensus <- readRDS(file = "ggC_intermed_gene_presence_absence_consensus.rds")
+ggC_intermed_gene_presence_absence_consensus_matrix <- sapply(ggC_intermed_gene_presence_absence_consensus[-1,-1],as.double)
+model_start_pop <- readRDS(file = "model_start_pop.rds")
+ggC_delta_ranking <- readRDS(file = "ggC_delta_ranking.rds")
+mass_cluster_freq_1 <- readRDS(file = "mass_cluster_freq_1.rds")
+mass_cluster_freq_2 <- readRDS(file = "mass_cluster_freq_2.rds")
+mass_cluster_freq_3 <- readRDS(file = "mass_cluster_freq_3.rds")
+mass_VT <- readRDS(file = "mass_VT.rds")
+```
+
+```{r}
+WF_ggC <- odin.dust::odin_dust("NFDS_Model.R")
+# copy of WrightFisherModel/WrightFisher_newData_nGenotypes_haploid_PopsizeVariablePois.R
+```
+
+#define parameters for the model:
+```{r}
+mass_clusters <- length(unique(Mass_Samples_accCodes$SequenceCluster))
+avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
+
+params_ggC <- list(dt = 1/36, species_no = mass_clusters,  gene_no = nrow(ggC_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(model_start_pop), Pop_eq = as.double(model_start_pop), capacity = sum(model_start_pop), Genotypes = ggC_intermed_gene_presence_absence_consensus_matrix, sigma_f = 0.2193191513, sigma_w = 0.0007111157, prop_f = 0.3735531590, delta = ggC_delta_ranking, m = 0.0052207254, migVec = avg_cluster_freq, vaccTypes = mass_VT, v = 0.1321567425, vacc_time = 0)
+```
+
+### Running the model:
+```{r}
+ggC_WFmodel <- WF_ggC$new(pars = params_ggC,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+```
+
+```{r}
+ggC_fit_dfoptim <- function(params){
+  all_params <- list(dt = 1/36, species_no = mass_clusters,  gene_no = nrow(ggC_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(model_start_pop), Pop_eq = as.double(model_start_pop), capacity = sum(model_start_pop), Genotypes = ggC_intermed_gene_presence_absence_consensus_matrix, sigma_f = params[1], sigma_w = params[2], prop_f = params[3], delta = ggC_delta_ranking, m = params[4], migVec = avg_cluster_freq, vaccTypes = mass_VT, v = params[5], vacc_time = 0)
+  WFmodel <- WF_ggC$new(pars = all_params,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+  n_particles <- 10L
+  n_times <- 73
+  x <- array(NA, dim = c(WFmodel$info()$len, n_particles, n_times))
+
+  for (t in seq_len(n_times)) {
+    x[ , , t] <- WFmodel$run(t)
+  }
+  time <- x[1, 1, ]
+  x <- x[-1, , ]
+  combined_compare(x[,1,37],mass_cluster_freq_2) + combined_compare(x[,1,73],mass_cluster_freq_3) 
+  #sum((x[,1,37]/sum(x[,1,37]) - (mass_cluster_freq_2/sum(mass_cluster_freq_2)))^2) + sum((x[,1,73]/sum(x[,1,73]) - (mass_cluster_freq_3/sum(mass_cluster_freq_3)))^2)
+  #sum(abs(x[,1,37]/sum(x[,1,37]) - (mass_cluster_freq_2/sum(mass_cluster_freq_2)))) + sum(abs(x[,1,73]/sum(x[,1,73]) - (mass_cluster_freq_3/sum(mass_cluster_freq_3))))
+}
+
+```
+
+```{r}
+ggC_optim_fit <- nmkb(c(0.15, 0.05, 0.25, 0.03, 0.05), ggC_fit_dfoptim, lower=c(0,0,0,0,0), upper=c(1,1,1,1,1), control = c(maximize = TRUE))
+#$par
+#[1] 0.204007017 0.001151859 0.328471292 0.036942422 0.229539499
+
+#$value
+#[1] -258.7829
+
+#better value than COGtriangles + manual seq clusters and COGtriangles + PopPUNK clusters!
+```
+
+### ggCaller + PopPUNK
+
+```{r}
+PopPUNK_clusters <- readRDS("PopPUNK_clusters.rds")
+ggCPP_intermed_gene_presence_absence_consensus <- readRDS(file = "ggCPP_intermed_gene_presence_absence_consensus.rds")
+ggCPP_intermed_gene_presence_absence_consensus_matrix <- sapply(ggCPP_intermed_gene_presence_absence_consensus[-1,-1],as.double)
+PP_model_start_pop <- readRDS(file = "PP_model_start_pop.rds")
+ggC_delta_ranking <- readRDS(file = "ggC_delta_ranking.rds")
+PP_mass_cluster_freq_1 <- readRDS(file = "PP_mass_cluster_freq_1.rds")
+PP_mass_cluster_freq_2 <- readRDS(file = "PP_mass_cluster_freq_2.rds")
+PP_mass_cluster_freq_3 <- readRDS(file = "PP_mass_cluster_freq_3.rds")
+PP_mass_VT <- readRDS(file = "PP_mass_VT.rds")
+```
+
+```{r}
+PP_mass_clusters <- length(unique(PopPUNK_clusters$Cluster))
+PP_avg_cluster_freq <- rep(1/PP_mass_clusters, PP_mass_clusters)
+```
+
+# Fitting the model:
+
+```{r}
+ggCPP_fit_dfoptim <- function(params){
+  all_params <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = params[1], sigma_w = params[2], prop_f = params[3], delta = ggC_delta_ranking, m = params[4], migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = params[5], vacc_time = 0)
+  WFmodel <- WF_ggC$new(pars = all_params,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+  n_particles <- 10L
+  n_times <- 73
+  x <- array(NA, dim = c(WFmodel$info()$len, n_particles, n_times))
+
+  for (t in seq_len(n_times)) {
+    x[ , , t] <- WFmodel$run(t)
+  }
+  time <- x[1, 1, ]
+  x <- x[-1, , ]
+  combined_compare(x[,1,37],PP_mass_cluster_freq_2) + combined_compare(x[,1,73],PP_mass_cluster_freq_3) 
+  #sum((x[,1,37]/sum(x[,1,37]) - (mass_cluster_freq_2/sum(mass_cluster_freq_2)))^2) + sum((x[,1,73]/sum(x[,1,73]) - (mass_cluster_freq_3/sum(mass_cluster_freq_3)))^2)
+  #sum(abs(x[,1,37]/sum(x[,1,37]) - (mass_cluster_freq_2/sum(mass_cluster_freq_2)))) + sum(abs(x[,1,73]/sum(x[,1,73]) - (mass_cluster_freq_3/sum(mass_cluster_freq_3))))
+}
+```
+
+```{r}
+ggCPP_optim_fit <- nmkb(c(0.15, 0.05, 0.25, 0.03, 0.05), ggCPP_fit_dfoptim, lower=c(0,0,0,0,0), upper=c(1,1,1,1,1), control = c(maximize = TRUE))
+#$par
+#[1] 0.160103907 0.002371829 0.379362413 0.016383435 0.202929261
+
+#$value
+#[1] -269.4351
+
+# A little worse than ggCaller + manual seq clusters
+# but might not be comparable
+```
+
+
+
+
 
 
 ### Visualise Fits:
