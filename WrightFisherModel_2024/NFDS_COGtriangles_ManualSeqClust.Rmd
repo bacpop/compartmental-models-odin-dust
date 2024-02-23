@@ -607,8 +607,8 @@ lollipop_cluster_freqs_3points(year = "2007",plot_title = "Vaccine Types, manual
 ```{r}
 # Plot NVTs
 lollipop_cluster_freqs_3points(year = "2001", plot_title = "Non-Vaccine Types, PopPUNK Clusters",data1 = PP_mass_cluster_freq_1[which(PP_mass_VT==0)]/sum(PP_mass_cluster_freq_1), model_name_1 = "COGtriangles",model1 = PP_model1_NVT/sum(PP_model_val1), model_name_2 = "ggCaller", model2 = ggCPP_model1_NVT/sum(ggCPP_model_val1))
-lollipop_cluster_freqs_3points(year = "2004",plot_title = "Non-Vaccine Types, manual Seq Clusters",data1 = PP_mass_cluster_freq_2[which(PP_mass_VT==0)]/sum(PP_mass_cluster_freq_2), model_name_1 = "COGtriangles", model1 = PP_model2_NVT/sum(PP_model_val2), model_name_2 = "ggCaller", model2 = ggCPP_model2_NVT/sum(ggCPP_model_val2))
-lollipop_cluster_freqs_3points(year = "2007",plot_title = "Non-Vaccine Types, manual Seq Clusters",data1 = PP_mass_cluster_freq_2[which(PP_mass_VT==0)]/sum(PP_mass_cluster_freq_2), model_name_1 = "COGtriangles", model1 = PP_model3_NVT/sum(PP_model_val3), model_name_2 = "ggCaller", model2 = ggCPP_model3_NVT/sum(ggCPP_model_val3))
+lollipop_cluster_freqs_3points(year = "2004",plot_title = "Non-Vaccine Types, PopPUNK  Clusters",data1 = PP_mass_cluster_freq_2[which(PP_mass_VT==0)]/sum(PP_mass_cluster_freq_2), model_name_1 = "COGtriangles", model1 = PP_model2_NVT/sum(PP_model_val2), model_name_2 = "ggCaller", model2 = ggCPP_model2_NVT/sum(ggCPP_model_val2))
+lollipop_cluster_freqs_3points(year = "2007",plot_title = "Non-Vaccine Types, PopPUNK  Clusters",data1 = PP_mass_cluster_freq_2[which(PP_mass_VT==0)]/sum(PP_mass_cluster_freq_2), model_name_1 = "COGtriangles", model1 = PP_model3_NVT/sum(PP_model_val3), model_name_2 = "ggCaller", model2 = ggCPP_model3_NVT/sum(ggCPP_model_val3))
 ```
 
 ```{r}
@@ -616,4 +616,170 @@ lollipop_cluster_freqs_3points(year = "2007",plot_title = "Non-Vaccine Types, ma
 lollipop_cluster_freqs_3points(year = "2001", plot_title = "Vaccine Types, PopPUNK Clusters",data1 = PP_mass_cluster_freq_1[which(PP_mass_VT==1)]/sum(PP_mass_cluster_freq_1), model_name_1 = "COGtriangles",model1 = PP_model1_VT/sum(PP_model_val1), model_name_2 = "ggCaller", model2 = ggCPP_model1_VT/sum(ggCPP_model_val1))
 lollipop_cluster_freqs_3points(year = "2004",plot_title = "Vaccine Types, PopPUNK Clusters",data1 = PP_mass_cluster_freq_2[which(PP_mass_VT==1)]/sum(PP_mass_cluster_freq_2), model_name_1 = "COGtriangles", model1 = PP_model2_VT/sum(PP_model_val2), model_name_2 = "ggCaller", model2 = ggCPP_model2_VT/sum(ggCPP_model_val2))
 lollipop_cluster_freqs_3points(year = "2007",plot_title = "Vaccine Types, PopPUNK Clusters",data1 = PP_mass_cluster_freq_2[which(PP_mass_VT==1)]/sum(PP_mass_cluster_freq_2), model_name_1 = "COGtriangles", model1 = PP_model3_VT/sum(PP_model_val3), model_name_2 = "ggCaller", model2 = ggCPP_model3_VT/sum(ggCPP_model_val3))
+```
+
+
+### filter PopPUNK clusters for max(size(cluster))>1
+```{r}
+filt_PP_mass_cluster_freq_1 <- readRDS(file = "filt_PP_mass_cluster_freq_1.rds")
+filt_PP_mass_cluster_freq_2 <- readRDS(file = "filt_PP_mass_cluster_freq_2.rds")
+filt_PP_mass_cluster_freq_3 <- readRDS(file = "filt_PP_mass_cluster_freq_3.rds")
+filt_PP_intermed_gene_presence_absence_consensus <- readRDS(file = "filt_PP_intermed_gene_presence_absence_consensus.rds")
+filt_PP_intermed_gene_presence_absence_consensus_matrix <-sapply(filt_PP_intermed_gene_presence_absence_consensus[-1,-1],as.double)
+filt_PP_mass_VT <- readRDS( file = "filt_PP_mass_VT.rds")
+filt_PP_model_start_pop <- readRDS(file = "filt_PP_model_start_pop.rds")
+filt_PP_mass_clusters <- length(filt_PP_mass_cluster_freq_1)
+filt_PP_avg_cluster_freq <- PP_avg_cluster_freq[apply(matrix(c(PP_mass_cluster_freq_1,PP_mass_cluster_freq_2, PP_mass_cluster_freq_3),nrow=3,ncol=length(PP_mass_cluster_freq_1),byrow = TRUE),2,max)>1]
+```
+
+```{r}
+filt_PP_fit_dfoptim <- function(params){
+  all_params <- list(dt = 1/36, species_no = filt_PP_mass_clusters,  gene_no = nrow(filt_PP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(filt_PP_model_start_pop), Pop_eq = as.double(filt_PP_model_start_pop), capacity = sum(filt_PP_model_start_pop), Genotypes = filt_PP_intermed_gene_presence_absence_consensus_matrix, sigma_f = params[1], sigma_w = params[2], prop_f = params[3], delta = delta_ranking, m = params[4], migVec = filt_PP_avg_cluster_freq, vaccTypes = filt_PP_mass_VT, v = params[5], vacc_time = 0)
+  WFmodel <- WF_PP$new(pars = all_params,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+  n_particles <- 10L
+  n_times <- 73
+  x <- array(NA, dim = c(WFmodel$info()$len, n_particles, n_times))
+
+  for (t in seq_len(n_times)) {
+    x[ , , t] <- WFmodel$run(t)
+  }
+  time <- x[1, 1, ]
+  x <- x[-1, , ]
+  combined_compare(x[,1,37],PP_mass_cluster_freq_2) + combined_compare(x[,1,73],PP_mass_cluster_freq_3) 
+  #sum((x[,1,37]/sum(x[,1,37]) - (mass_cluster_freq_2/sum(mass_cluster_freq_2)))^2) + sum((x[,1,73]/sum(x[,1,73]) - (mass_cluster_freq_3/sum(mass_cluster_freq_3)))^2)
+  #sum(abs(x[,1,37]/sum(x[,1,37]) - (mass_cluster_freq_2/sum(mass_cluster_freq_2)))) + sum(abs(x[,1,73]/sum(x[,1,73]) - (mass_cluster_freq_3/sum(mass_cluster_freq_3))))
+}
+```
+
+```{r}
+PP_optim_fit <- nmkb(c(0.15, 0.05, 0.25, 0.03, 0.05), filt_PP_fit_dfoptim, lower=c(0,0,0,0,0), upper=c(1,1,1,1,1), control = c(maximize = TRUE))
+#$par
+#[1] 0.299432553 0.002611058 0.410155291 0.131020909 0.216579505
+
+#$value
+#[1] -276.0369
+
+# slight improvement over unfiltered PopPUNK + COGtriangles
+```
+
+# ggCaller with filtered PopPUNK
+```{r}
+filt_ggCPP_intermed_gene_presence_absence_consensus <-readRDS(file = "filt_ggCPP_intermed_gene_presence_absence_consensus.rds")
+filt_ggCPP_intermed_gene_presence_absence_consensus_matrix <-sapply(filt_ggCPP_intermed_gene_presence_absence_consensus[-1,-1],as.double)
+```
+
+```{r}
+filt_ggCPP_fit_dfoptim <- function(params){
+  all_params <- list(dt = 1/36, species_no = filt_PP_mass_clusters,  gene_no = nrow(filt_ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(filt_PP_model_start_pop), Pop_eq = as.double(filt_PP_model_start_pop), capacity = sum(filt_PP_model_start_pop), Genotypes = filt_ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = params[1], sigma_w = params[2], prop_f = params[3], delta = ggC_delta_ranking, m = params[4], migVec = filt_PP_avg_cluster_freq, vaccTypes = filt_PP_mass_VT, v = params[5], vacc_time = 0)
+  WFmodel <- WF_PP$new(pars = all_params,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+  n_particles <- 10L
+  n_times <- 73
+  x <- array(NA, dim = c(WFmodel$info()$len, n_particles, n_times))
+
+  for (t in seq_len(n_times)) {
+    x[ , , t] <- WFmodel$run(t)
+  }
+  time <- x[1, 1, ]
+  x <- x[-1, , ]
+  combined_compare(x[,1,37],PP_mass_cluster_freq_2) + combined_compare(x[,1,73],PP_mass_cluster_freq_3) 
+  #sum((x[,1,37]/sum(x[,1,37]) - (mass_cluster_freq_2/sum(mass_cluster_freq_2)))^2) + sum((x[,1,73]/sum(x[,1,73]) - (mass_cluster_freq_3/sum(mass_cluster_freq_3)))^2)
+  #sum(abs(x[,1,37]/sum(x[,1,37]) - (mass_cluster_freq_2/sum(mass_cluster_freq_2)))) + sum(abs(x[,1,73]/sum(x[,1,73]) - (mass_cluster_freq_3/sum(mass_cluster_freq_3))))
+}
+```
+
+```{r}
+PP_optim_fit <- nmkb(c(0.15, 0.05, 0.25, 0.03, 0.05), filt_ggCPP_fit_dfoptim, lower=c(0,0,0,0,0), upper=c(1,1,1,1,1), control = c(maximize = TRUE))
+#$par
+#[1] 0.052109427 0.001694954 0.497849841 0.069497537 0.148361001
+
+#$value
+#[1] -278.0763
+
+# not an improvement compared to unfiltered PopPUNK + ggCaller
+```
+
+```{r}
+### COGtriangles and PopPUNK clusters
+filt_PP_fit_params <- c(0.299432553, 0.002611058, 0.410155291, 0.131020909, 0.216579505)
+all_params <- list(dt = 1/36, species_no = filt_PP_mass_clusters,  gene_no = nrow(filt_PP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(filt_PP_model_start_pop), Pop_eq = as.double(filt_PP_model_start_pop), capacity = sum(filt_PP_model_start_pop), Genotypes = filt_PP_intermed_gene_presence_absence_consensus_matrix, sigma_f = filt_PP_fit_params[1], sigma_w = filt_PP_fit_params[2], prop_f = filt_PP_fit_params[3], delta = delta_ranking, m = filt_PP_fit_params[4], migVec = filt_PP_avg_cluster_freq, vaccTypes = filt_PP_mass_VT, v = filt_PP_fit_params[5], vacc_time = 0)
+WFmodel_PP <- WF_PP$new(pars = all_params,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+n_particles <- 10L
+n_times <- 73
+x <- array(NA, dim = c(WFmodel_PP$info()$len, n_particles, n_times))
+for (t in seq_len(n_times)) {
+  x[ , , t] <- WFmodel_PP$run(t)
+}
+time <- x[1, 1, ]
+x <- x[-1, , ]
+  
+filt_PP_model_val1 <- x[,1,1]
+filt_PP_model_val2 <- x[,1,37]
+filt_PP_model_val3 <- x[,1,73]
+
+filt_PP_model1_VT <- filt_PP_model_val1[which(filt_PP_mass_VT==1)]
+filt_PP_model1_NVT <- filt_PP_model_val1[which(filt_PP_mass_VT==0)]
+filt_PP_model2_VT <- filt_PP_model_val2[which(filt_PP_mass_VT==1)]
+filt_PP_model2_NVT <- filt_PP_model_val2[which(filt_PP_mass_VT==0)]
+filt_PP_model3_VT <- filt_PP_model_val3[which(filt_PP_mass_VT==1)]
+filt_PP_model3_NVT <- filt_PP_model_val3[which(filt_PP_mass_VT==0)]
+```
+
+#filtered ggCPP plot data
+
+```{r}
+
+ggCPP_fit_params <- c(0.052109427, 0.001694954, 0.497849841, 0.069497537, 0.148361001)
+all_params <- list(dt = 1/36, species_no = filt_PP_mass_clusters,  gene_no = nrow(filt_ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(filt_PP_model_start_pop), Pop_eq = as.double(filt_PP_model_start_pop), capacity = sum(filt_PP_model_start_pop), Genotypes = filt_ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = ggCPP_fit_params[1], sigma_w = ggCPP_fit_params[2], prop_f = ggCPP_fit_params[3], delta = ggC_delta_ranking, m = ggCPP_fit_params[4], migVec = filt_PP_avg_cluster_freq, vaccTypes = filt_PP_mass_VT, v = ggCPP_fit_params[5], vacc_time = 0)
+ggCPP_WFmodel <- WF_nG_h_vP$new(pars = all_params,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+n_particles <- 10L
+n_times <- 73
+x <- array(NA, dim = c(ggCPP_WFmodel$info()$len, n_particles, n_times))
+for (t in seq_len(n_times)) {
+  x[ , , t] <- ggCPP_WFmodel$run(t)
+}
+time <- x[1, 1, ]
+x <- x[-1, , ]
+  
+filt_ggCPP_model_val1 <- x[,1,1]
+filt_ggCPP_model_val2 <- x[,1,37]
+filt_ggCPP_model_val3 <- x[,1,73]
+
+filt_ggCPP_model1_VT <- filt_ggCPP_model_val1[which(filt_PP_mass_VT==1)]
+filt_ggCPP_model1_NVT <- filt_ggCPP_model_val1[which(filt_PP_mass_VT==0)]
+filt_ggCPP_model2_VT <- filt_ggCPP_model_val2[which(filt_PP_mass_VT==1)]
+filt_ggCPP_model2_NVT <- filt_ggCPP_model_val2[which(filt_PP_mass_VT==0)]
+filt_ggCPP_model3_VT <- filt_ggCPP_model_val3[which(filt_PP_mass_VT==1)]
+filt_ggCPP_model3_NVT <- filt_ggCPP_model_val3[which(filt_PP_mass_VT==0)]
+
+```
+
+### filtered PopPUNK clusters:
+```{r}
+# Plot NVTs
+lollipop_cluster_freqs_3points(year = "2001", plot_title = "Non-Vaccine Types, PopPUNK Clusters",data1 = filt_PP_mass_cluster_freq_1[which(filt_PP_mass_VT==0)]/sum(filt_PP_mass_cluster_freq_1), model_name_1 = "COGtriangles",model1 = filt_PP_model1_NVT/sum(filt_PP_model_val1), model_name_2 = "ggCaller", model2 = filt_ggCPP_model1_NVT/sum(filt_ggCPP_model_val1))
+lollipop_cluster_freqs_3points(year = "2004",plot_title = "Non-Vaccine Types, PopPUNK  Clusters",data1 = filt_PP_mass_cluster_freq_2[which(filt_PP_mass_VT==0)]/sum(filt_PP_mass_cluster_freq_2), model_name_1 = "COGtriangles", model1 = filt_PP_model2_NVT/sum(filt_PP_model_val2), model_name_2 = "ggCaller", model2 = filt_ggCPP_model2_NVT/sum(filt_ggCPP_model_val2))
+lollipop_cluster_freqs_3points(year = "2007",plot_title = "Non-Vaccine Types, PopPUNK  Clusters",data1 = filt_PP_mass_cluster_freq_2[which(filt_PP_mass_VT==0)]/sum(filt_PP_mass_cluster_freq_2), model_name_1 = "COGtriangles", model1 = filt_PP_model3_NVT/sum(filt_PP_model_val3), model_name_2 = "ggCaller", model2 = filt_ggCPP_model3_NVT/sum(filt_ggCPP_model_val3))
+```
+
+```{r}
+# Plot VTs
+lollipop_cluster_freqs_3points(year = "2001", plot_title = "Vaccine Types, PopPUNK Clusters",data1 = filt_PP_mass_cluster_freq_1[which(filt_PP_mass_VT==1)]/sum(filt_PP_mass_cluster_freq_1), model_name_1 = "COGtriangles",model1 = filt_PP_model1_VT/sum(filt_PP_model_val1), model_name_2 = "ggCaller", model2 = filt_ggCPP_model1_VT/sum(filt_ggCPP_model_val1))
+lollipop_cluster_freqs_3points(year = "2004",plot_title = "Vaccine Types, PopPUNK Clusters",data1 = filt_PP_mass_cluster_freq_2[which(filt_PP_mass_VT==1)]/sum(filt_PP_mass_cluster_freq_2), model_name_1 = "COGtriangles", model1 = filt_PP_model2_VT/sum(filt_PP_model_val2), model_name_2 = "ggCaller", model2 = filt_ggCPP_model2_VT/sum(filt_ggCPP_model_val2))
+lollipop_cluster_freqs_3points(year = "2007",plot_title = "Vaccine Types, PopPUNK Clusters",data1 = filt_PP_mass_cluster_freq_2[which(filt_PP_mass_VT==1)]/sum(filt_PP_mass_cluster_freq_2), model_name_1 = "COGtriangles", model1 = filt_PP_model3_VT/sum(filt_PP_model_val3), model_name_2 = "ggCaller", model2 = filt_ggCPP_model3_VT/sum(filt_ggCPP_model_val3))
 ```

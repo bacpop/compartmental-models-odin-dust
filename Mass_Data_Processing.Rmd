@@ -669,3 +669,44 @@ ggCPP_intermed_gene_presence_absence_consensus_2007[-1,1] <- ggC_intermed_gene_p
 #saveRDS(ggCPP_intermed_gene_presence_absence_consensus_2007, file = "ggCPP_intermed_gene_presence_absence_consensus_2007.rds")
 ```
 
+### Filtering PopPUNK for clusters of sizes larger than 1 in at least one time point:
+```{r}
+PP_clust_max <- apply(matrix(c(PP_mass_cluster_freq_1,PP_mass_cluster_freq_2, PP_mass_cluster_freq_3),nrow=3,ncol=length(PP_mass_cluster_freq_1),byrow = TRUE),2,max)
+#PP_clust_max>1
+filt_PP_mass_cluster_freq_1 <- PP_mass_cluster_freq_1[PP_clust_max>1]
+filt_PP_mass_cluster_freq_2 <- PP_mass_cluster_freq_2[PP_clust_max>1]
+filt_PP_mass_cluster_freq_3 <- PP_mass_cluster_freq_3[PP_clust_max>1]
+```
+
+# Filtering COGtriangles by PopPUNK
+```{r}
+#filter gene presence absence matrix
+PP_intermed_gene_presence_absence_consensus <- readRDS(file = "PP_intermed_gene_presence_absence_consensus.rds")
+filt_PP_intermed_gene_presence_absence_consensus <- PP_intermed_gene_presence_absence_consensus[,c(TRUE, PP_clust_max>1)]
+# filter vaccination info
+PP_mass_VT <- readRDS(file = "PP_mass_VT.rds")
+filt_PP_mass_VT <- PP_mass_VT[PP_clust_max>1]
+# filter start pop
+PP_model_start_pop <- readRDS("PP_model_start_pop.rds")
+filt_PP_model_start_pop <- PP_model_start_pop[PP_clust_max>1]
+```
+
+```{r}
+saveRDS(filt_PP_mass_cluster_freq_1, file = "filt_PP_mass_cluster_freq_1.rds")
+saveRDS(filt_PP_mass_cluster_freq_2, file = "filt_PP_mass_cluster_freq_2.rds")
+saveRDS(filt_PP_mass_cluster_freq_3, file = "filt_PP_mass_cluster_freq_3.rds")
+saveRDS(filt_PP_intermed_gene_presence_absence_consensus, file = "filt_PP_intermed_gene_presence_absence_consensus.rds")
+saveRDS(filt_PP_mass_VT, file = "filt_PP_mass_VT.rds")
+saveRDS(filt_PP_model_start_pop, file = "filt_PP_model_start_pop.rds")
+```
+
+# Filtering ggCaller by PopPUNK
+```{r}
+#filter gene presence absence matrix
+ggCPP_intermed_gene_presence_absence_consensus <- readRDS(file = "ggCPP_intermed_gene_presence_absence_consensus.rds")
+filt_ggCPP_intermed_gene_presence_absence_consensus <- ggCPP_intermed_gene_presence_absence_consensus[,c(TRUE, PP_clust_max>1)]
+```
+
+```{r}
+saveRDS(filt_ggCPP_intermed_gene_presence_absence_consensus, file = "filt_ggCPP_intermed_gene_presence_absence_consensus.rds")
+```
