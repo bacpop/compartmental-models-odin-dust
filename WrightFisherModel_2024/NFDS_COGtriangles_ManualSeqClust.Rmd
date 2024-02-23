@@ -574,9 +574,12 @@ lollipop_cluster_freqs_3points <- function(year = "year unknown", plot_title = "
   lollipop_plot_1 <- ggplot(lollipop_data_1) +
     geom_segment( aes(x=x, xend=x, y=model_1, yend=data_1), color="grey") +
     geom_segment( aes(x=x, xend=x, y=model_2, yend=data_1), color="grey") +           
-    geom_point( aes(x=x, y=model_1, color=model_name_1), size=5, alpha = 0.7) +
-    geom_point( aes(x=x, y=data_1, color="Data"), size=5, alpha = 0.7) +
-    geom_point(aes(x=x, y=model_2, color=model_name_2), size=5, alpha = 0.7) +
+    geom_point( aes(x=x, y=model_1, color=model_name_1), size=5, shape = 1, stroke = 2, alpha = 0.7) +
+    geom_point( aes(x=x, y=data_1, color="Data"), size=5, shape = 1, stroke = 2, alpha = 0.7) +
+    geom_point(aes(x=x, y=model_2, color=model_name_2), size=5, shape = 1, stroke = 2, alpha = 0.7) +
+    #geom_point( aes(x=x, y=model_1, color=model_name_1), size=5, alpha = 0.7) +
+    #geom_point( aes(x=x, y=data_1, color="Data"), size=5, alpha = 0.7) +
+    #geom_point(aes(x=x, y=model_2, color=model_name_2), size=5, alpha = 0.7) +
     scale_color_manual(values = c("#E69F00","#56B4E9","#CC79A7"),
                       guide  = guide_legend(), 
                       name   = "Group") +
@@ -620,6 +623,27 @@ lollipop_cluster_freqs_3points(year = "2001", plot_title = "Vaccine Types, PopPU
 lollipop_cluster_freqs_3points(year = "2004",plot_title = "Vaccine Types, PopPUNK Clusters",data1 = PP_mass_cluster_freq_2[which(PP_mass_VT==1)]/sum(PP_mass_cluster_freq_2), model_name_1 = "COGtriangles", model1 = PP_model2_VT/sum(PP_model_val2), model_name_2 = "ggCaller", model2 = ggCPP_model2_VT/sum(ggCPP_model_val2))
 lollipop_cluster_freqs_3points(year = "2007",plot_title = "Vaccine Types, PopPUNK Clusters",data1 = PP_mass_cluster_freq_2[which(PP_mass_VT==1)]/sum(PP_mass_cluster_freq_2), model_name_1 = "COGtriangles", model1 = PP_model3_VT/sum(PP_model_val3), model_name_2 = "ggCaller", model2 = ggCPP_model3_VT/sum(ggCPP_model_val3))
 ```
+
+### THOUGHTS ABOUT THE COMPARABILITY OF LIKELIHOODS
+# Question: Does the likelihood decrease with the number of clusters?
+# Answer: 
+
+# these two are not the same
+# dpois(x = 10, lambda = 11) + dpois(x = 10, lambda = 9)
+#dpois(x = 10, lambda = 11, log = TRUE) + dpois(x = 5, lambda = 4, log = TRUE) + dpois(x = 4, lambda = 4, log = TRUE)
+# these two are:
+# sum(abs(10-11)+sum(9-10))
+# sum(abs(10-11)+sum(abs(5-4))+sum(abs(4-4)))
+
+
+# sum(abs(model_val2/sum(model_val2) - mass_cluster_freq_2/sum(mass_cluster_freq_2))) + sum(abs(model_val3/sum(model_val3) - mass_cluster_freq_3/sum(mass_cluster_freq_3)))
+#[1] 0.9182114
+#sum(abs(PP_model_val2/sum(PP_model_val2) - PP_mass_cluster_freq_2/sum(PP_mass_cluster_freq_2))) + sum(abs(PP_model_val3/sum(PP_model_val3) - PP_mass_cluster_freq_3/sum(PP_mass_cluster_freq_3)))
+# [1] 0.9997534
+#sum(abs(ggCPP_model_val2/sum(ggCPP_model_val2) - PP_mass_cluster_freq_2/sum(PP_mass_cluster_freq_2))) + sum(abs(ggCPP_model_val3/sum(ggCPP_model_val3) - PP_mass_cluster_freq_3/sum(PP_mass_cluster_freq_3)))
+# [1] 0.846745
+# sum(abs(ggC_model_val2/sum(ggC_model_val2) - mass_cluster_freq_2/sum(mass_cluster_freq_2))) + sum(abs(ggC_model_val3/sum(ggC_model_val3) - mass_cluster_freq_3/sum(mass_cluster_freq_3)))
+# [1] 0.7446736
 
 
 ### filter PopPUNK clusters for max(size(cluster))>1
