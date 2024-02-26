@@ -710,3 +710,103 @@ filt_ggCPP_intermed_gene_presence_absence_consensus <- ggCPP_intermed_gene_prese
 ```{r}
 saveRDS(filt_ggCPP_intermed_gene_presence_absence_consensus, file = "filt_ggCPP_intermed_gene_presence_absence_consensus.rds")
 ```
+
+
+### use serotypes instead of sequence or PopPUNK clusters:
+```{r}
+#Compute consensus genomes for sequence clusters
+Mass_serotypes_dict <- Mass_Samples_accCodes$Serotype
+names(Mass_serotypes_dict) <- Mass_Samples_accCodes$`Isolate Name`
+
+Sero_intermed_gene_presence_absence_consensus <- data.frame(matrix(0, nrow = sum(cog_filter)+1, ncol = length(unique(Mass_Samples_accCodes$Serotype))+1))
+Sero_intermed_gene_presence_absence_consensus[1,-1] <- unique(Mass_Samples_accCodes$Serotype)
+
+Sero_intermed_gene_presence_absence_consensus_2001 <- data.frame(matrix(0, nrow = sum(cog_filter)+1, ncol = length(unique(Mass_Samples_accCodes$Serotype))+1))
+Sero_intermed_gene_presence_absence_consensus_2001[1,-1] <- unique(Mass_Samples_accCodes$Serotype)
+
+Sero_intermed_gene_presence_absence_consensus_2004 <- data.frame(matrix(0, nrow = sum(cog_filter)+1, ncol = length(unique(Mass_Samples_accCodes$Serotype))+1))
+Sero_intermed_gene_presence_absence_consensus_2004[1,-1] <- unique(Mass_Samples_accCodes$Serotype)
+
+Sero_intermed_gene_presence_absence_consensus_2007 <- data.frame(matrix(0, nrow = sum(cog_filter)+1, ncol = length(unique(Mass_Samples_accCodes$Serotype))+1))
+Sero_intermed_gene_presence_absence_consensus_2007[1,-1] <- unique(Mass_Samples_accCodes$Serotype)
+
+
+cons_genomes <- function(x){
+  as.double(ceiling(median(as.integer(x))))
+}
+
+for (i in 1:length(unique(Mass_Samples_accCodes$Serotype))) {
+  Sero_intermed_gene_presence_absence_consensus[-1,i+1] <- apply(as.matrix(intermed_gene_presence_absence[-1,c(FALSE,Mass_serotypes_dict[unlist(intermed_gene_presence_absence[1,-1])]==unique(Mass_Samples_accCodes$Serotype)[i])]), 1, cons_genomes)
+  Sero_intermed_gene_presence_absence_consensus_2001[-1,i+1] <- apply(as.matrix(intermed_gene_presence_absence_2001[-1,c(FALSE,Mass_serotypes_dict[unlist(intermed_gene_presence_absence_2001[1,-1])]==unique(Mass_Samples_accCodes$Serotype)[i])]), 1, cons_genomes)
+    Sero_intermed_gene_presence_absence_consensus_2004[-1,i+1] <- apply(as.matrix(intermed_gene_presence_absence_2004[-1,c(FALSE,Mass_serotypes_dict[unlist(intermed_gene_presence_absence_2004[1,-1])]==unique(Mass_Samples_accCodes$Serotype)[i])]), 1, cons_genomes)
+    Sero_intermed_gene_presence_absence_consensus_2007[-1,i+1] <- apply(as.matrix(intermed_gene_presence_absence_2007[-1,c(FALSE,Mass_serotypes_dict[unlist(intermed_gene_presence_absence_2007[1,-1])]==unique(Mass_Samples_accCodes$Serotype)[i])]), 1, cons_genomes)
+}
+
+Sero_intermed_gene_presence_absence_consensus[-1,1] <- intermed_gene_presence_absence[-1,1]
+Sero_intermed_gene_presence_absence_consensus_2001[-1,1] <- intermed_gene_presence_absence[-1,1]
+Sero_intermed_gene_presence_absence_consensus_2004[-1,1] <- intermed_gene_presence_absence[-1,1]
+Sero_intermed_gene_presence_absence_consensus_2007[-1,1] <- intermed_gene_presence_absence[-1,1]
+```
+
+```{r}
+#save intermed gene presence absence matrices
+#saveRDS(Sero_intermed_gene_presence_absence_consensus, file = "Sero_intermed_gene_presence_absence_consensus.rds")
+#saveRDS(Sero_intermed_gene_presence_absence_consensus_2001, file = "Sero_intermed_gene_presence_absence_consensus_2001.rds")
+#saveRDS(Sero_intermed_gene_presence_absence_consensus_2004, file = "Sero_intermed_gene_presence_absence_consensus_2004.rds")
+#saveRDS(Sero_intermed_gene_presence_absence_consensus_2007, file = "Sero_intermed_gene_presence_absence_consensus_2007.rds")
+```
+
+```{r}
+# calculate Vaccine Type consensus for clusters
+Sero_mass_VT <- rep(0, length(unique(Mass_Samples_accCodes$Serotype)))
+
+for (i in 1:length(unique(Mass_Samples_accCodes$Serotype))){
+  Sero_mass_VT[i] <- ceiling(median(as.integer(Mass_Samples_accCodes[Mass_Samples_accCodes$Serotype == unique(Mass_Samples_accCodes$Serotype)[i],"Vaccine Type"]=="VT")))
+}
+# taking the median is technically not necessary for serotypes. because they should all be in agreement.
+# 1 means VT
+# 0 means NVT
+# if cluster is 50/50 it will count as VT
+```
+
+```{r}
+#save VTs
+#saveRDS(Sero_mass_VT, file = "Sero_mass_VT.rds")
+```
+
+```{r}
+#calculate the frequency of the sequence clusters and year
+Sero_freq_1 <- rep(0,length(unique(Mass_Samples_accCodes$Serotype)))
+Sero_freq_2 <- rep(0,length(unique(Mass_Samples_accCodes$Serotype)))
+Sero_freq_3 <- rep(0,length(unique(Mass_Samples_accCodes$Serotype)))
+for (i in 1:length(unique(Mass_Samples_accCodes$Serotype))){
+  Sero_freq_1[i] <- length(which(Mass_Samples_accCodes[which(Mass_Samples_accCodes$Serotype==unique(Mass_Samples_accCodes$Serotype)[i]),]$"Year of Isolation"==2001))
+  Sero_freq_2[i] <- length(which(Mass_Samples_accCodes[which(Mass_Samples_accCodes$Serotype==unique(Mass_Samples_accCodes$Serotype)[i]),]$"Year of Isolation"==2004))
+  Sero_freq_3[i] <- length(which(Mass_Samples_accCodes[which(Mass_Samples_accCodes$Serotype==unique(Mass_Samples_accCodes$Serotype)[i]),]$"Year of Isolation"==2007))
+}
+```
+
+```{r}
+#save sequence cluster frequencies
+#saveRDS(Sero_freq_1, file = "Sero_freq_1.rds")
+#saveRDS(Sero_freq_2, file = "Sero_freq_2.rds")
+#saveRDS(Sero_freq_3, file = "Sero_freq_3.rds")
+```
+
+```{r}
+### create initial population that is based on the 2001 data set but not an exact sampling from it
+# but a Poisson process
+Sero_expand_factor <- 15000 / sum(Sero_freq_1)
+exp_noise <- 10
+Sero_model_start_pop <- (sapply((Sero_freq_1 + rexp(n = length(Sero_freq_1), rate = exp_noise)) * Sero_expand_factor, rpois, n=1))
+
+# visual check for the "sampling"
+plot(Sero_freq_1/sum(Sero_freq_1))
+points(Sero_model_start_pop/sum(Sero_model_start_pop), col = "red")
+# looks similar enough, I would say
+```
+
+```{r}
+#saveRDS(Sero_model_start_pop, file = "Sero_model_start_pop.rds")
+```
+
