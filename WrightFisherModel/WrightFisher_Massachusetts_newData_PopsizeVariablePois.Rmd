@@ -191,7 +191,19 @@ delta_data3 <- (peri_post - pre_vacc_gene_freq) ^ 2 / (1 - pre_vacc_gene_freq * 
 delta_ranking3 <- rank(delta_data3)
 delta_ranking <- delta_ranking3
 
+
+
 ```
+
+```{r}
+# save the processed data
+saveRDS(delta_ranking, file = "prev_delta_ranking.rds")
+saveRDS(mass_consensus_presence_absence, file = "prev_mass_consensus_presence_absence.rds")
+saveRDS(mass_cluster_freq_1, file = "prev_mass_cluster_freq_1.rds")
+saveRDS(mass_cluster_freq_2, file = "prev_mass_cluster_freq_2.rds")
+saveRDS(mass_cluster_freq_3, file = "prev_mass_cluster_freq_3.rds")
+```
+
 
 ```{r}
 ### create initial population that is based on the 2001 data set but not an exact sampling from it

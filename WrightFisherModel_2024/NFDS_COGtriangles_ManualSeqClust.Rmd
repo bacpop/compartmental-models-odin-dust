@@ -182,6 +182,69 @@ for (i in 1:20) {
 }
 ```
 
+### prev version COGtriangles gene clusters for comparison
+# these are the pre-processed data files that I was using last summer
+
+# import data sets from data processing:
+```{r}
+#Mass_Samples_accCodes <- readRDS(file = "Mass_Samples_accCodes.rds")
+prev_intermed_gene_presence_absence_consensus <- readRDS(file = "prev_mass_consensus_presence_absence.rds")
+prev_intermed_gene_presence_absence_consensus_matrix <- sapply(prev_intermed_gene_presence_absence_consensus[,-1],as.double)
+#model_start_pop <- readRDS(file = "model_start_pop.rds")
+prev_delta_ranking <- readRDS(file = "prev_delta_ranking.rds")
+#prev_mass_cluster_freq_1 <- readRDS(file = "prev_mass_cluster_freq_1.rds")
+#prev_mass_cluster_freq_2 <- readRDS(file = "prev_mass_cluster_freq_2.rds")
+#prev_mass_cluster_freq_3 <- readRDS(file = "prev_mass_cluster_freq_3.rds")
+#mass_VT <- readRDS(file = "mass_VT.rds")
+```
+
+#define parameters for the model:
+```{r}
+prev_params_n_vP <- list(dt = 1/36, species_no = mass_clusters,  gene_no = nrow(prev_intermed_gene_presence_absence_consensus), Pop_ini = as.double(model_start_pop), Pop_eq = as.double(model_start_pop), capacity = sum(model_start_pop), Genotypes = prev_intermed_gene_presence_absence_consensus_matrix, sigma_f = 0.2193191513, sigma_w = 0.0007111157, prop_f = 0.3735531590, delta = prev_delta_ranking, m = 0.0052207254, migVec = avg_cluster_freq, vaccTypes = mass_VT, v = 0.1321567425, vacc_time = 0)
+```
+
+### Running the model:
+```{r}
+prev_WFmodel_nG_h_vP <- WF_nG_h_vP$new(pars = prev_params_n_vP,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+```
+
+```{r}
+prev_fit_dfoptim <- function(params){
+  all_params <- list(dt = 1/36, species_no = mass_clusters,  gene_no = nrow(prev_intermed_gene_presence_absence_consensus), Pop_ini = as.double(model_start_pop), Pop_eq = as.double(model_start_pop), capacity = sum(model_start_pop), Genotypes = prev_intermed_gene_presence_absence_consensus_matrix, sigma_f = params[1], sigma_w = params[2], prop_f = params[3], delta = prev_delta_ranking, m = params[4], migVec = avg_cluster_freq, vaccTypes = mass_VT, v = params[5], vacc_time = 0)
+  WFmodel <- WF_nG_h_vP$new(pars = all_params,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+  n_particles <- 10L
+  n_times <- 73
+  x <- array(NA, dim = c(WFmodel$info()$len, n_particles, n_times))
+
+  for (t in seq_len(n_times)) {
+    x[ , , t] <- WFmodel$run(t)
+  }
+  time <- x[1, 1, ]
+  x <- x[-1, , ]
+  combined_compare(x[,1,37],mass_cluster_freq_2) + combined_compare(x[,1,73],mass_cluster_freq_3) 
+  #sum((x[,1,37]/sum(x[,1,37]) - (mass_cluster_freq_2/sum(mass_cluster_freq_2)))^2) + sum((x[,1,73]/sum(x[,1,73]) - (mass_cluster_freq_3/sum(mass_cluster_freq_3)))^2)
+  #sum(abs(x[,1,37]/sum(x[,1,37]) - (mass_cluster_freq_2/sum(mass_cluster_freq_2)))) + sum(abs(x[,1,73]/sum(x[,1,73]) - (mass_cluster_freq_3/sum(mass_cluster_freq_3))))
+}
+```
+
+```{r}
+prev_optim_fit <- nmkb(c(0.15, 0.05, 0.25, 0.03, 0.05), prev_fit_dfoptim, lower=c(0,0,0,0,0), upper=c(1,1,1,1,1), control = c(maximize = TRUE))
+#$par
+#[1] 0.091127278 0.001265479 0.133685351 0.008260285 0.035640495
+
+#$value
+#[1] -205.9497
+```
+
+
 
 
 ### PopPUNK
