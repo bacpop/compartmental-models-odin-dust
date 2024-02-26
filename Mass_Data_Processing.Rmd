@@ -810,3 +810,47 @@ points(Sero_model_start_pop/sum(Sero_model_start_pop), col = "red")
 #saveRDS(Sero_model_start_pop, file = "Sero_model_start_pop.rds")
 ```
 
+### Serotype x ggCaller
+
+```{r}
+#Compute consensus genomes for sequence clusters
+#SeroggC_Mass_seq_clusters_dict <- PopPUNK_clusters$Cluster
+#names(ggCPP_Mass_seq_clusters_dict) <- PopPUNK_clusters$Taxon
+
+ggCsero_intermed_gene_presence_absence_consensus <- data.frame(matrix(0, nrow = sum(ggC_filter)+1, ncol = length(unique(Mass_Samples_accCodes$Serotype))+1))
+ggCsero_intermed_gene_presence_absence_consensus[1,-1] <-unique(Mass_Samples_accCodes$Serotype)
+
+ggCsero_intermed_gene_presence_absence_consensus_2001 <- data.frame(matrix(0, nrow = sum(ggC_filter)+1, ncol = length(unique(Mass_Samples_accCodes$Serotype))+1))
+ggCsero_intermed_gene_presence_absence_consensus_2001[1,-1] <- unique(Mass_Samples_accCodes$Serotype)
+
+ggCsero_intermed_gene_presence_absence_consensus_2004 <- data.frame(matrix(0, nrow = sum(ggC_filter)+1, ncol = length(unique(Mass_Samples_accCodes$Serotype))+1))
+ggCsero_intermed_gene_presence_absence_consensus_2004[1,-1] <- unique(Mass_Samples_accCodes$Serotype)
+
+ggCsero_intermed_gene_presence_absence_consensus_2007 <- data.frame(matrix(0, nrow = sum(ggC_filter)+1, ncol = length(unique(Mass_Samples_accCodes$Serotype))+1))
+ggCsero_intermed_gene_presence_absence_consensus_2007[1,-1] <- unique(Mass_Samples_accCodes$Serotype)
+
+
+cons_genomes <- function(x){
+  as.double(ceiling(median(as.integer(x))))
+}
+
+for (i in 1:length(unique(Mass_Samples_accCodes$Serotype))) {
+  ggCsero_intermed_gene_presence_absence_consensus[-1,i+1] <- apply(as.matrix(ggC_intermed_gene_presence_absence[-1,c(FALSE,Mass_serotypes_dict[AccNoToIsolate_dict[filenameToAccNo_dict[unlist(ggC_intermed_gene_presence_absence[1,-1])]]]==unique(Mass_Samples_accCodes$Serotype)[i])]), 1, cons_genomes)
+  ggCsero_intermed_gene_presence_absence_consensus_2001[-1,i+1] <- apply(as.matrix(ggC_intermed_gene_presence_absence_2001[-1,c(FALSE,Mass_serotypes_dict[AccNoToIsolate_dict[filenameToAccNo_dict[unlist(ggC_intermed_gene_presence_absence_2001[1,-1])]]]==unique(Mass_Samples_accCodes$Serotype)[i])]), 1, cons_genomes)
+    ggCsero_intermed_gene_presence_absence_consensus_2004[-1,i+1] <- apply(as.matrix(ggC_intermed_gene_presence_absence_2004[-1,c(FALSE,Mass_serotypes_dict[AccNoToIsolate_dict[filenameToAccNo_dict[unlist(ggC_intermed_gene_presence_absence_2004[1,-1])]]]==unique(Mass_Samples_accCodes$Serotype)[i])]), 1, cons_genomes)
+    ggCsero_intermed_gene_presence_absence_consensus_2007[-1,i+1] <- apply(as.matrix(ggC_intermed_gene_presence_absence_2007[-1,c(FALSE,Mass_serotypes_dict[AccNoToIsolate_dict[filenameToAccNo_dict[unlist(ggC_intermed_gene_presence_absence_2007[1,-1])]]]==unique(Mass_Samples_accCodes$Serotype)[i])]), 1, cons_genomes)
+}
+
+ggCsero_intermed_gene_presence_absence_consensus[-1,1] <- ggC_intermed_gene_presence_absence[-1,1]
+ggCsero_intermed_gene_presence_absence_consensus_2001[-1,1] <- ggC_intermed_gene_presence_absence[-1,1]
+ggCsero_intermed_gene_presence_absence_consensus_2004[-1,1] <- ggC_intermed_gene_presence_absence[-1,1]
+ggCsero_intermed_gene_presence_absence_consensus_2007[-1,1] <- ggC_intermed_gene_presence_absence[-1,1]
+```
+
+
+```{r}
+#save intermed gene presence absence matrices
+#saveRDS(ggCsero_intermed_gene_presence_absence_consensus, file = "ggCsero_intermed_gene_presence_absence_consensus.rds")
+#saveRDS(ggCsero_intermed_gene_presence_absence_consensus_2001, file = "ggCsero_intermed_gene_presence_absence_consensus_2001.rds")
+#saveRDS(ggCsero_intermed_gene_presence_absence_consensus_2004, file = "ggCsero_intermed_gene_presence_absence_consensus_2004.rds")
+#saveRDS(ggCsero_intermed_gene_presence_absence_consensus_2007, file = "ggCsero_intermed_gene_presence_absence_consensus_2007.rds")

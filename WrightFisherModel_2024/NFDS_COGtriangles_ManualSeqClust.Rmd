@@ -1003,3 +1003,64 @@ optim_fit <- nmkb(c(0.15, 0.05, 0.25, 0.03, 0.05), sero_fit_dfoptim, lower=c(0,0
 #$value
 #[1] -205.9478
 ```
+
+### ggCaller and serotypes:
+
+```{r}
+#Mass_Samples_accCodes <- readRDS(file = "Mass_Samples_accCodes.rds")
+ggCsero_intermed_gene_presence_absence_consensus <- readRDS(file = "ggCsero_intermed_gene_presence_absence_consensus.rds")
+ggCsero_intermed_gene_presence_absence_consensus_matrix <- sapply(ggCsero_intermed_gene_presence_absence_consensus[-1,-1],as.double)
+Sero_model_start_pop <- readRDS(file = "Sero_model_start_pop.rds")
+#delta_ranking <- readRDS(file = "delta_ranking.rds")
+#Sero_freq_1 <- readRDS(file = "Sero_freq_1.rds")
+#Sero_freq_2<- readRDS(file = "Sero_freq_2.rds")
+#Sero_freq_3 <- readRDS(file = "Sero_freq_3.rds")
+#Sero_mass_VT <- readRDS(file = "Sero_mass_VT.rds")
+```
+
+# import data sets from data processing:
+```{r}
+ggC_delta_ranking <- readRDS(file = "ggC_delta_ranking.rds")
+```
+
+#define parameters for the model:
+```{r}
+ggCsero_params_n_vP <- list(dt = 1/36, species_no = mass_serotypes,  gene_no = nrow(ggCsero_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(Sero_model_start_pop), Pop_eq = as.double(Sero_model_start_pop), capacity = sum(Sero_model_start_pop), Genotypes = ggCsero_intermed_gene_presence_absence_consensus_matrix, sigma_f = 0.2193191513, sigma_w = 0.0007111157, prop_f = 0.3735531590, delta = ggC_delta_ranking, m = 0.0052207254, migVec = avg_sero_freq, vaccTypes = Sero_mass_VT, v = 0.1321567425, vacc_time = 0)
+```
+
+
+```{r}
+ggCsero_fit_dfoptim <- function(params){
+  all_params <- list(dt = 1/36, species_no = mass_serotypes,  gene_no = nrow(ggCsero_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(Sero_model_start_pop), Pop_eq = as.double(Sero_model_start_pop), capacity = sum(Sero_model_start_pop), Genotypes = ggCsero_intermed_gene_presence_absence_consensus_matrix, sigma_f = params[1], sigma_w = params[2], prop_f = params[3], delta = ggC_delta_ranking, m = params[4], migVec = avg_sero_freq, vaccTypes = Sero_mass_VT, v = params[5], vacc_time = 0)
+  WFmodel <- WF_nG_h_vP$new(pars = all_params,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+  n_particles <- 10L
+  n_times <- 73
+  x <- array(NA, dim = c(WFmodel$info()$len, n_particles, n_times))
+
+  for (t in seq_len(n_times)) {
+    x[ , , t] <- WFmodel$run(t)
+  }
+  time <- x[1, 1, ]
+  x <- x[-1, , ]
+  combined_compare(x[,1,37],Sero_freq_2) + combined_compare(x[,1,73],Sero_freq_3) 
+  #sum((x[,1,37]/sum(x[,1,37]) - (mass_cluster_freq_2/sum(mass_cluster_freq_2)))^2) + sum((x[,1,73]/sum(x[,1,73]) - (mass_cluster_freq_3/sum(mass_cluster_freq_3)))^2)
+  #sum(abs(x[,1,37]/sum(x[,1,37]) - (mass_cluster_freq_2/sum(mass_cluster_freq_2)))) + sum(abs(x[,1,73]/sum(x[,1,73]) - (mass_cluster_freq_3/sum(mass_cluster_freq_3))))
+}
+
+```
+
+```{r}
+ggCsero_optim_fit <- nmkb(c(0.15, 0.05, 0.25, 0.03, 0.05), ggCsero_fit_dfoptim, lower=c(0,0,0,0,0), upper=c(1,1,1,1,1), control = c(maximize = TRUE))
+#$par
+#[1] 0.413061811 0.006497421 0.099712391 0.062105898 0.323338547
+
+
+#$value
+#[1] -209.249
+
+#better value than COGtriangles + manual seq clusters and COGtriangles + PopPUNK clusters!
+```
