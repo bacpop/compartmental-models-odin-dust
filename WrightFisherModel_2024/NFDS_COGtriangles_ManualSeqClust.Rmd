@@ -873,3 +873,36 @@ lollipop_cluster_freqs_3points(year = "2001", plot_title = "Vaccine Types, PopPU
 lollipop_cluster_freqs_3points(year = "2004",plot_title = "Vaccine Types, PopPUNK Clusters",data1 = filt_PP_mass_cluster_freq_2[which(filt_PP_mass_VT==1)]/sum(filt_PP_mass_cluster_freq_2), model_name_1 = "COGtriangles", model1 = filt_PP_model2_VT/sum(filt_PP_model_val2), model_name_2 = "ggCaller", model2 = filt_ggCPP_model2_VT/sum(filt_ggCPP_model_val2))
 lollipop_cluster_freqs_3points(year = "2007",plot_title = "Vaccine Types, PopPUNK Clusters",data1 = filt_PP_mass_cluster_freq_2[which(filt_PP_mass_VT==1)]/sum(filt_PP_mass_cluster_freq_2), model_name_1 = "COGtriangles", model1 = filt_PP_model3_VT/sum(filt_PP_model_val3), model_name_2 = "ggCaller", model2 = filt_ggCPP_model3_VT/sum(filt_ggCPP_model_val3))
 ```
+
+
+## data exploration: how much do the vt-frequencies within clusters change?
+```{r}
+PP_mass_clusters <- length(unique(PopPUNK_clusters$Cluster))
+meanPP_VT_2001 <- rep(0, PP_mass_clusters)
+meanPP_VT_2004 <- rep(0, PP_mass_clusters)
+meanPP_VT_2007 <- rep(0, PP_mass_clusters)
+for (i in 1:PP_mass_clusters){
+     meanPP_VT_2001[i] <- mean(as.integer(PopPUNK_clusters[PopPUNK_clusters$SeqYear == 2001 & PopPUNK_clusters$Cluster == i,"VT"]=="VT"))
+}
+for (i in 1:PP_mass_clusters){
+     meanPP_VT_2004[i] <- mean(as.integer(PopPUNK_clusters[PopPUNK_clusters$SeqYear == 2004 & PopPUNK_clusters$Cluster == i,"VT"]=="VT"))
+}
+for (i in 1:PP_mass_clusters){
+     meanPP_VT_2007[i] <- mean(as.integer(PopPUNK_clusters[PopPUNK_clusters$SeqYear == 2007 & PopPUNK_clusters$Cluster == i,"VT"]=="VT"))
+}
+plot(meanPP_VT_2001)
+points(meanPP_VT_2004, col = "#E69F00")
+points(meanPP_VT_2007, col = "#56B4E9")
+```
+
+```{r}
+# checking the ones that are somewhere btw 0 and 1 in 2001:
+meanPP_VT_2001
+meanPP_VT_2001[2]
+meanPP_VT_2004[2]
+meanPP_VT_2007[2]
+meanPP_VT_2001[22]
+meanPP_VT_2004[22]
+meanPP_VT_2007[22]
+```
+
