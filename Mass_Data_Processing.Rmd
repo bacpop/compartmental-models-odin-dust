@@ -854,3 +854,57 @@ ggCsero_intermed_gene_presence_absence_consensus_2007[-1,1] <- ggC_intermed_gene
 #saveRDS(ggCsero_intermed_gene_presence_absence_consensus_2001, file = "ggCsero_intermed_gene_presence_absence_consensus_2001.rds")
 #saveRDS(ggCsero_intermed_gene_presence_absence_consensus_2004, file = "ggCsero_intermed_gene_presence_absence_consensus_2004.rds")
 #saveRDS(ggCsero_intermed_gene_presence_absence_consensus_2007, file = "ggCsero_intermed_gene_presence_absence_consensus_2007.rds")
+```
+
+# format data for the 616-compartments model
+```{r}
+# Mass_Samples_accCodes is the dataframe with all Mass data
+# Mass_Isolates are the isolates names
+mass_seqs <- nrow(Mass_Samples_accCodes)
+mass_seq_freq_1 <- rep(0, mass_seqs)
+mass_seq_freq_2 <- rep(0, mass_seqs)
+mass_seq_freq_3 <- rep(0, mass_seqs)
+
+for (i in 1:mass_seqs){
+  mass_seq_freq_1[i] <- if(Mass_Samples_accCodes[i,]$`Year of Isolation`==2001){1}else{0}
+  mass_seq_freq_2[i] <- if(Mass_Samples_accCodes[i,]$`Year of Isolation`==2004){1}else{0}
+  mass_seq_freq_3[i] <- if(Mass_Samples_accCodes[i,]$`Year of Isolation`==2007){1}else{0}
+}
+```
+
+```{r}
+#saveRDS(mass_seq_freq_1,file = "mass_seq_freq_1.rds")
+#saveRDS(mass_seq_freq_2, file = "mass_seq_freq_2.rds")
+#saveRDS(mass_seq_freq_3, file = "mass_seq_freq_3.rds")
+```
+
+```{r}
+### create initial population that is based on the 2001 data set but not an exact sampling from it
+# but a Poisson process
+seq_expand_factor <- 15000 / sum(mass_seq_freq_1)
+exp_noise <- 10
+seq_model_start_pop <- (sapply((mass_seq_freq_1 + rexp(n = length(mass_seq_freq_1), rate = exp_noise)) * seq_expand_factor, rpois, n=1))
+
+# visual check for the "sampling"
+plot(mass_seq_freq_1/sum(mass_seq_freq_1))
+points(seq_model_start_pop/sum(seq_model_start_pop), col = "red")
+# looks quite different from the data
+# maybe for the individual-based model, I need less noise?
+seq_model_start_pop_2 <- (sapply((mass_seq_freq_1 + rexp(n = length(mass_seq_freq_1), rate = 100)) * seq_expand_factor, rpois, n=1))
+```
+
+```{r}
+#save seq start population
+saveRDS(seq_model_start_pop, file = "seq_model_start_pop.rds")
+saveRDS(seq_model_start_pop_2, file = "seq_model_start_pop_2.rds")
+```
+
+```{r}
+# VT vector
+mass_seq_VT <- as.integer(Mass_Samples_accCodes$`Vaccine Type`=="VT")
+```
+
+```{r}
+saveRDS(mass_seq_VT, file = "mass_seq_VT.rds")
+```
+
