@@ -82,9 +82,9 @@ lollipop_cluster_freqs_3points <- function(year = "year unknown", plot_title = "
   lollipop_plot_1 <- ggplot(lollipop_data_1) +
     geom_segment( aes(x=x, xend=x, y=model_1, yend=data_1), color="grey") +
     geom_segment( aes(x=x, xend=x, y=model_2, yend=data_1), color="grey") +           
-    geom_point( aes(x=x, y=model_1, color=model_name_1), size=5, shape = 1, stroke = 2, alpha = 0.7) +
-    geom_point( aes(x=x, y=data_1, color="Data"), size=5, shape = 1, stroke = 2, alpha = 0.7) +
-    geom_point(aes(x=x, y=model_2, color=model_name_2), size=5, shape = 1, stroke = 2, alpha = 0.7) +
+    geom_point( aes(x=x, y=model_1, color=model_name_1), size=3, shape = 1, stroke = 2, alpha = 0.7) +
+    geom_point( aes(x=x, y=data_1, color="Data"), size=3, shape = 1, stroke = 2, alpha = 0.7) +
+    geom_point(aes(x=x, y=model_2, color=model_name_2), size=3, shape = 1, stroke = 2, alpha = 0.7) +
     #geom_point( aes(x=x, y=model_1, color=model_name_1), size=5, alpha = 0.7) +
     #geom_point( aes(x=x, y=data_1, color="Data"), size=5, alpha = 0.7) +
     #geom_point(aes(x=x, y=model_2, color=model_name_2), size=5, alpha = 0.7) +

@@ -842,19 +842,47 @@ sero_fit_dfoptim <- function(params){
   time <- x[1, 1, ]
   x <- x[-1, , ]
   combined_compare(x[,1,37],Sero_freq_2) + combined_compare(x[,1,73],Sero_freq_3) 
-  #sum((x[,1,37]/sum(x[,1,37]) - (mass_cluster_freq_2/sum(mass_cluster_freq_2)))^2) + sum((x[,1,73]/sum(x[,1,73]) - (mass_cluster_freq_3/sum(mass_cluster_freq_3)))^2)
-  #sum(abs(x[,1,37]/sum(x[,1,37]) - (mass_cluster_freq_2/sum(mass_cluster_freq_2)))) + sum(abs(x[,1,73]/sum(x[,1,73]) - (mass_cluster_freq_3/sum(mass_cluster_freq_3))))
 }
 
 ```
 
 ```{r}
-optim_fit <- nmkb(c(0.15, 0.05, 0.25, 0.03, 0.05), sero_fit_dfoptim, lower=c(0,0,0,0,0), upper=c(1,1,1,1,1), control = c(maximize = TRUE))
+sero_optim_fit <- nmkb(c(0.15, 0.05, 0.25, 0.03, 0.05), sero_fit_dfoptim, lower=c(0,0,0,0,0), upper=c(1,1,1,1,1), control = c(maximize = TRUE))
 #$par
 #[1] 0.38251173 0.00518133 0.31922936 0.03974063 0.23900668
 
 #$value
 #[1] -205.9478
+```
+
+```{r}
+
+sero_fit_params <- sero_optim_fit$par
+all_params <- list(dt = 1/36, species_no = mass_serotypes,  gene_no = nrow(Sero_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(Sero_model_start_pop), Pop_eq = as.double(Sero_model_start_pop), capacity = sum(Sero_model_start_pop), Genotypes = Sero_intermed_gene_presence_absence_consensus_matrix, sigma_f = sero_fit_params[1], sigma_w = sero_fit_params[2], prop_f = sero_fit_params[3], delta = delta_ranking, m = sero_fit_params[4], migVec = avg_sero_freq, vaccTypes = Sero_mass_VT, v = sero_fit_params[5], vacc_time = 0)
+WFmodel <- WF_nG_h_vP$new(pars = all_params,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+n_particles <- 10L
+n_times <- 73
+x <- array(NA, dim = c(WFmodel$info()$len, n_particles, n_times))
+for (t in seq_len(n_times)) {
+  x[ , , t] <- WFmodel$run(t)
+}
+time <- x[1, 1, ]
+x <- x[-1, , ]
+  
+sero_model_val1 <- x[,1,1]
+sero_model_val2 <- x[,1,37]
+sero_model_val3 <- x[,1,73]
+
+sero_model1_VT <- sero_model_val1[which(Sero_mass_VT==1)]
+sero_model1_NVT <- sero_model_val1[which(Sero_mass_VT==0)]
+sero_model2_VT <- sero_model_val2[which(Sero_mass_VT==1)]
+sero_model2_NVT <- sero_model_val2[which(Sero_mass_VT==0)]
+sero_model3_VT <- sero_model_val3[which(Sero_mass_VT==1)]
+sero_model3_NVT <- sero_model_val3[which(Sero_mass_VT==0)]
 ```
 
 ### ggCaller and serotypes:
@@ -918,10 +946,9 @@ ggCsero_optim_fit <- nmkb(c(0.15, 0.05, 0.25, 0.03, 0.05), ggCsero_fit_dfoptim, 
 #better value than COGtriangles + manual seq clusters and COGtriangles + PopPUNK clusters!
 ```
 
-#ggC plot data
+#ggCsero plot data
 
 ```{r}
-
 ggCsero_fit_params <- ggCsero_optim_fit$par
 all_params <- list(dt = 1/36, species_no = mass_serotypes,  gene_no = nrow(ggCsero_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(Sero_model_start_pop), Pop_eq = as.double(Sero_model_start_pop), capacity = sum(Sero_model_start_pop), Genotypes = ggCsero_intermed_gene_presence_absence_consensus_matrix, sigma_f = ggCsero_fit_params[1], sigma_w = ggCsero_fit_params[2], prop_f = ggCsero_fit_params[3], delta = ggC_delta_ranking, m = ggCsero_fit_params[4], migVec = avg_sero_freq, vaccTypes = Sero_mass_VT, v = ggCsero_fit_params[5], vacc_time = 0)
 ggC_WFmodel <- WF_nG_h_vP$new(pars = all_params,
@@ -942,11 +969,25 @@ ggCsero_model_val1 <- x[,1,1]
 ggCsero_model_val2 <- x[,1,37]
 ggCsero_model_val3 <- x[,1,73]
 
-ggCsero_model1_VT <- ggC_model_val1[which(mass_VT==1)]
-ggCsero_model1_NVT <- ggC_model_val1[which(mass_VT==0)]
-ggCsero_model2_VT <- ggC_model_val2[which(mass_VT==1)]
-ggCsero_model2_NVT <- ggC_model_val2[which(mass_VT==0)]
-ggCsero_model3_VT <- ggC_model_val3[which(mass_VT==1)]
-ggCsero_model3_NVT <- ggC_model_val3[which(mass_VT==0)]
+ggCsero_model1_VT <- ggCsero_model_val1[which(Sero_mass_VT==1)]
+ggCsero_model1_NVT <- ggCsero_model_val1[which(Sero_mass_VT==0)]
+ggCsero_model2_VT <- ggCsero_model_val2[which(Sero_mass_VT==1)]
+ggCsero_model2_NVT <- ggCsero_model_val2[which(Sero_mass_VT==0)]
+ggCsero_model3_VT <- ggCsero_model_val3[which(Sero_mass_VT==1)]
+ggCsero_model3_NVT <- ggCsero_model_val3[which(Sero_mass_VT==0)]
+```
 
+### filtered PopPUNK clusters:
+```{r}
+# Plot NVTs
+lollipop_cluster_freqs_3points(year = "2001", plot_title = "Non-Vaccine Types, Serotypes",data1 = Sero_freq_1[which(Sero_mass_VT==0)]/sum(Sero_freq_1), model_name_1 = "COGtriangles",model1 = sero_model1_NVT/sum(sero_model_val1), model_name_2 = "ggCaller", model2 = ggCsero_model1_NVT/sum(ggCsero_model_val1))
+lollipop_cluster_freqs_3points(year = "2004",plot_title = "Non-Vaccine Types, Serotypes",data1 = Sero_freq_2[which(Sero_mass_VT==0)]/sum(Sero_freq_2), model_name_1 = "COGtriangles", model1 = sero_model2_NVT/sum(sero_model_val2), model_name_2 = "ggCaller", model2 = ggCsero_model2_NVT/sum(ggCsero_model_val2))
+lollipop_cluster_freqs_3points(year = "2007",plot_title = "Non-Vaccine Types, Serotypes",data1 = Sero_freq_3[which(Sero_mass_VT==0)]/sum(Sero_freq_3), model_name_1 = "COGtriangles", model1 = sero_model3_NVT/sum(sero_model_val3), model_name_2 = "ggCaller", model2 = ggCsero_model3_NVT/sum(ggCsero_model_val3))
+```
+
+```{r}
+# Plot VTs
+lollipop_cluster_freqs_3points(year = "2001", plot_title = "Vaccine Types, Serotypes",data1 = Sero_freq_1[which(Sero_mass_VT==1)]/sum(Sero_freq_1), model_name_1 = "COGtriangles",model1 = sero_model1_VT/sum(sero_model_val1), model_name_2 = "ggCaller", model2 = ggCsero_model1_VT/sum(ggCsero_model_val1))
+lollipop_cluster_freqs_3points(year = "2004",plot_title = "Vaccine Types, Serotypes",data1 = Sero_freq_2[which(Sero_mass_VT==1)]/sum(Sero_freq_2), model_name_1 = "COGtriangles", model1 = sero_model2_VT/sum(sero_model_val2), model_name_2 = "ggCaller", model2 = ggCsero_model2_VT/sum(ggCsero_model_val2))
+lollipop_cluster_freqs_3points(year = "2007",plot_title = "Vaccine Types, Serotypes",data1 = Sero_freq_3[which(Sero_mass_VT==1)]/sum(Sero_freq_3), model_name_1 = "COGtriangles", model1 = sero_model3_VT/sum(sero_model_val3), model_name_2 = "ggCaller", model2 = ggCsero_model3_VT/sum(ggCsero_model_val3))
 ```
