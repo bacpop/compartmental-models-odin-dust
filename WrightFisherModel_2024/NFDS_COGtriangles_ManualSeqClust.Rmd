@@ -513,31 +513,31 @@ ggCPP_model3_NVT <- ggCPP_model_val3[which(PP_mass_VT==0)]
 
 ```{r}
 # Plot NVTs
-lollipop_cluster_freqs_3points(year = "2001", plot_title = "Non-Vaccine Types, manual Seq Clusters",data1 = mass_cluster_freq_1[which(mass_VT==0)]/sum(mass_cluster_freq_1), model_name_1 = "COGtriangles",model1 = model1_NVT/sum(model_val1), model_name_2 = "ggCaller", model2 = ggC_model1_NVT/sum(ggC_model_val1))
-lollipop_cluster_freqs_3points(year = "2004",plot_title = "Non-Vaccine Types, manual Seq Clusters",data1 = mass_cluster_freq_2[which(mass_VT==0)]/sum(mass_cluster_freq_2), model_name_1 = "COGtriangles", model1 = model2_NVT/sum(model_val2), model_name_2 = "ggCaller", model2 = ggC_model2_NVT/sum(ggC_model_val2))
-lollipop_cluster_freqs_3points(year = "2007",plot_title = "Non-Vaccine Types, manual Seq Clusters",data1 = mass_cluster_freq_3[which(mass_VT==0)]/sum(mass_cluster_freq_3), model_name_1 = "COGtriangles", model1 = model3_NVT/sum(model_val3), model_name_2 = "ggCaller", model2 = ggC_model3_NVT/sum(ggC_model_val3))
+lollipop_cluster_freqs_2x2points(year = "2001", plot_title = "Non-Vaccine Types, manual Seq Clusters",data1 = mass_cluster_freq_1[which(mass_VT==0)]/sum(mass_cluster_freq_1), model_name_1 = "COGtriangles",model1 = model1_NVT/sum(model_val1), model_name_2 = "ggCaller", model2 = ggC_model1_NVT/sum(ggC_model_val1))
+lollipop_cluster_freqs_2x2points(year = "2004",plot_title = "Non-Vaccine Types, manual Seq Clusters",data1 = mass_cluster_freq_2[which(mass_VT==0)]/sum(mass_cluster_freq_2), model_name_1 = "COGtriangles", model1 = model2_NVT/sum(model_val2), model_name_2 = "ggCaller", model2 = ggC_model2_NVT/sum(ggC_model_val2))
+lollipop_cluster_freqs_2x2points(year = "2007",plot_title = "Non-Vaccine Types, manual Seq Clusters",data1 = mass_cluster_freq_3[which(mass_VT==0)]/sum(mass_cluster_freq_3), model_name_1 = "COGtriangles", model1 = model3_NVT/sum(model_val3), model_name_2 = "ggCaller", model2 = ggC_model3_NVT/sum(ggC_model_val3))
 ```
 
 ```{r}
 # Plot VTs
-lollipop_cluster_freqs_3points(year = "2001", plot_title = "Vaccine Types, manual Seq Clusters",data1 = mass_cluster_freq_1[which(mass_VT==1)]/sum(mass_cluster_freq_1), model_name_1 = "COGtriangles",model1 = model1_VT/sum(model_val1), model_name_2 = "ggCaller", model2 = ggC_model1_VT/sum(ggC_model_val1))
-lollipop_cluster_freqs_3points(year = "2004",plot_title = "Vaccine Types, manual Seq Clusters",data1 = mass_cluster_freq_2[which(mass_VT==1)]/sum(mass_cluster_freq_2), model_name_1 = "COGtriangles", model1 = model2_VT/sum(model_val2), model_name_2 = "ggCaller", model2 = ggC_model2_VT/sum(ggC_model_val2))
-lollipop_cluster_freqs_3points(year = "2007",plot_title = "Vaccine Types, manual Seq Clusters",data1 = mass_cluster_freq_3[which(mass_VT==1)]/sum(mass_cluster_freq_3), model_name_1 = "COGtriangles", model1 = model3_VT/sum(model_val3), model_name_2 = "ggCaller", model2 = ggC_model3_VT/sum(ggC_model_val3))
+lollipop_cluster_freqs_2x2points(year = "2001", plot_title = "Vaccine Types, manual Seq Clusters",data1 = mass_cluster_freq_1[which(mass_VT==1)]/sum(mass_cluster_freq_1), model_name_1 = "COGtriangles",model1 = model1_VT/sum(model_val1), model_name_2 = "ggCaller", model2 = ggC_model1_VT/sum(ggC_model_val1))
+lollipop_cluster_freqs_2x2points(year = "2004",plot_title = "Vaccine Types, manual Seq Clusters",data1 = mass_cluster_freq_2[which(mass_VT==1)]/sum(mass_cluster_freq_2), model_name_1 = "COGtriangles", model1 = model2_VT/sum(model_val2), model_name_2 = "ggCaller", model2 = ggC_model2_VT/sum(ggC_model_val2))
+lollipop_cluster_freqs_2x2points(year = "2007",plot_title = "Vaccine Types, manual Seq Clusters",data1 = mass_cluster_freq_3[which(mass_VT==1)]/sum(mass_cluster_freq_3), model_name_1 = "COGtriangles", model1 = model3_VT/sum(model_val3), model_name_2 = "ggCaller", model2 = ggC_model3_VT/sum(ggC_model_val3))
 ```
 
 ### PopPUNK clusters:
 ```{r}
 # Plot NVTs
-lollipop_cluster_freqs_3points(year = "2001", plot_title = "Non-Vaccine Types, PopPUNK Clusters",data1 = PP_mass_cluster_freq_1[which(PP_mass_VT==0)]/sum(PP_mass_cluster_freq_1), model_name_1 = "COGtriangles",model1 = PP_model1_NVT/sum(PP_model_val1), model_name_2 = "ggCaller", model2 = ggCPP_model1_NVT/sum(ggCPP_model_val1))
-lollipop_cluster_freqs_3points(year = "2004",plot_title = "Non-Vaccine Types, PopPUNK  Clusters",data1 = PP_mass_cluster_freq_2[which(PP_mass_VT==0)]/sum(PP_mass_cluster_freq_2), model_name_1 = "COGtriangles", model1 = PP_model2_NVT/sum(PP_model_val2), model_name_2 = "ggCaller", model2 = ggCPP_model2_NVT/sum(ggCPP_model_val2))
-lollipop_cluster_freqs_3points(year = "2007",plot_title = "Non-Vaccine Types, PopPUNK  Clusters",data1 = PP_mass_cluster_freq_2[which(PP_mass_VT==0)]/sum(PP_mass_cluster_freq_2), model_name_1 = "COGtriangles", model1 = PP_model3_NVT/sum(PP_model_val3), model_name_2 = "ggCaller", model2 = ggCPP_model3_NVT/sum(ggCPP_model_val3))
+lollipop_cluster_freqs_2x2points(year = "2001", plot_title = "Non-Vaccine Types, PopPUNK Clusters",data1 = PP_mass_cluster_freq_1[which(PP_mass_VT==0)]/sum(PP_mass_cluster_freq_1), model_name_1 = "COGtriangles",model1 = PP_model1_NVT/sum(PP_model_val1), model_name_2 = "ggCaller", model2 = ggCPP_model1_NVT/sum(ggCPP_model_val1))
+lollipop_cluster_freqs_2x2points(year = "2004",plot_title = "Non-Vaccine Types, PopPUNK  Clusters",data1 = PP_mass_cluster_freq_2[which(PP_mass_VT==0)]/sum(PP_mass_cluster_freq_2), model_name_1 = "COGtriangles", model1 = PP_model2_NVT/sum(PP_model_val2), model_name_2 = "ggCaller", model2 = ggCPP_model2_NVT/sum(ggCPP_model_val2))
+lollipop_cluster_freqs_2x2points(year = "2007",plot_title = "Non-Vaccine Types, PopPUNK  Clusters",data1 = PP_mass_cluster_freq_2[which(PP_mass_VT==0)]/sum(PP_mass_cluster_freq_2), model_name_1 = "COGtriangles", model1 = PP_model3_NVT/sum(PP_model_val3), model_name_2 = "ggCaller", model2 = ggCPP_model3_NVT/sum(ggCPP_model_val3))
 ```
 
 ```{r}
 # Plot VTs
-lollipop_cluster_freqs_3points(year = "2001", plot_title = "Vaccine Types, PopPUNK Clusters",data1 = PP_mass_cluster_freq_1[which(PP_mass_VT==1)]/sum(PP_mass_cluster_freq_1), model_name_1 = "COGtriangles",model1 = PP_model1_VT/sum(PP_model_val1), model_name_2 = "ggCaller", model2 = ggCPP_model1_VT/sum(ggCPP_model_val1))
-lollipop_cluster_freqs_3points(year = "2004",plot_title = "Vaccine Types, PopPUNK Clusters",data1 = PP_mass_cluster_freq_2[which(PP_mass_VT==1)]/sum(PP_mass_cluster_freq_2), model_name_1 = "COGtriangles", model1 = PP_model2_VT/sum(PP_model_val2), model_name_2 = "ggCaller", model2 = ggCPP_model2_VT/sum(ggCPP_model_val2))
-lollipop_cluster_freqs_3points(year = "2007",plot_title = "Vaccine Types, PopPUNK Clusters",data1 = PP_mass_cluster_freq_2[which(PP_mass_VT==1)]/sum(PP_mass_cluster_freq_2), model_name_1 = "COGtriangles", model1 = PP_model3_VT/sum(PP_model_val3), model_name_2 = "ggCaller", model2 = ggCPP_model3_VT/sum(ggCPP_model_val3))
+lollipop_cluster_freqs_2x2points(year = "2001", plot_title = "Vaccine Types, PopPUNK Clusters",data1 = PP_mass_cluster_freq_1[which(PP_mass_VT==1)]/sum(PP_mass_cluster_freq_1), model_name_1 = "COGtriangles",model1 = PP_model1_VT/sum(PP_model_val1), model_name_2 = "ggCaller", model2 = ggCPP_model1_VT/sum(ggCPP_model_val1))
+lollipop_cluster_freqs_2x2points(year = "2004",plot_title = "Vaccine Types, PopPUNK Clusters",data1 = PP_mass_cluster_freq_2[which(PP_mass_VT==1)]/sum(PP_mass_cluster_freq_2), model_name_1 = "COGtriangles", model1 = PP_model2_VT/sum(PP_model_val2), model_name_2 = "ggCaller", model2 = ggCPP_model2_VT/sum(ggCPP_model_val2))
+lollipop_cluster_freqs_2x2points(year = "2007",plot_title = "Vaccine Types, PopPUNK Clusters",data1 = PP_mass_cluster_freq_2[which(PP_mass_VT==1)]/sum(PP_mass_cluster_freq_2), model_name_1 = "COGtriangles", model1 = PP_model3_VT/sum(PP_model_val3), model_name_2 = "ggCaller", model2 = ggCPP_model3_VT/sum(ggCPP_model_val3))
 ```
 
 ### THOUGHTS ABOUT THE COMPARABILITY OF LIKELIHOODS
@@ -977,17 +977,18 @@ ggCsero_model3_VT <- ggCsero_model_val3[which(Sero_mass_VT==1)]
 ggCsero_model3_NVT <- ggCsero_model_val3[which(Sero_mass_VT==0)]
 ```
 
-### filtered PopPUNK clusters:
+# Create new Lollipop plots that split the COGtriangles and ggCaller into two rows
 ```{r}
 # Plot NVTs
-lollipop_cluster_freqs_3points(year = "2001", plot_title = "Non-Vaccine Types, Serotypes",data1 = Sero_freq_1[which(Sero_mass_VT==0)]/sum(Sero_freq_1), model_name_1 = "COGtriangles",model1 = sero_model1_NVT/sum(sero_model_val1), model_name_2 = "ggCaller", model2 = ggCsero_model1_NVT/sum(ggCsero_model_val1))
-lollipop_cluster_freqs_3points(year = "2004",plot_title = "Non-Vaccine Types, Serotypes",data1 = Sero_freq_2[which(Sero_mass_VT==0)]/sum(Sero_freq_2), model_name_1 = "COGtriangles", model1 = sero_model2_NVT/sum(sero_model_val2), model_name_2 = "ggCaller", model2 = ggCsero_model2_NVT/sum(ggCsero_model_val2))
-lollipop_cluster_freqs_3points(year = "2007",plot_title = "Non-Vaccine Types, Serotypes",data1 = Sero_freq_3[which(Sero_mass_VT==0)]/sum(Sero_freq_3), model_name_1 = "COGtriangles", model1 = sero_model3_NVT/sum(sero_model_val3), model_name_2 = "ggCaller", model2 = ggCsero_model3_NVT/sum(ggCsero_model_val3))
+lollipop_cluster_freqs_2x2points(year = "2001", plot_title = "Non-Vaccine Types, Serotypes",data1 = Sero_freq_1[which(Sero_mass_VT==0)]/sum(Sero_freq_1), model_name_1 = "COGtriangles",model1 = sero_model1_NVT/sum(sero_model_val1), model_name_2 = "ggCaller", model2 = ggCsero_model1_NVT/sum(ggCsero_model_val1))
+lollipop_cluster_freqs_2x2points(year = "2004",plot_title = "Non-Vaccine Types, Serotypes",data1 = Sero_freq_2[which(Sero_mass_VT==0)]/sum(Sero_freq_2), model_name_1 = "COGtriangles", model1 = sero_model2_NVT/sum(sero_model_val2), model_name_2 = "ggCaller", model2 = ggCsero_model2_NVT/sum(ggCsero_model_val2))
+lollipop_cluster_freqs_2x2points(year = "2007",plot_title = "Non-Vaccine Types, Serotypes",data1 = Sero_freq_3[which(Sero_mass_VT==0)]/sum(Sero_freq_3), model_name_1 = "COGtriangles", model1 = sero_model3_NVT/sum(sero_model_val3), model_name_2 = "ggCaller", model2 = ggCsero_model3_NVT/sum(ggCsero_model_val3))
 ```
+
 
 ```{r}
 # Plot VTs
-lollipop_cluster_freqs_3points(year = "2001", plot_title = "Vaccine Types, Serotypes",data1 = Sero_freq_1[which(Sero_mass_VT==1)]/sum(Sero_freq_1), model_name_1 = "COGtriangles",model1 = sero_model1_VT/sum(sero_model_val1), model_name_2 = "ggCaller", model2 = ggCsero_model1_VT/sum(ggCsero_model_val1))
-lollipop_cluster_freqs_3points(year = "2004",plot_title = "Vaccine Types, Serotypes",data1 = Sero_freq_2[which(Sero_mass_VT==1)]/sum(Sero_freq_2), model_name_1 = "COGtriangles", model1 = sero_model2_VT/sum(sero_model_val2), model_name_2 = "ggCaller", model2 = ggCsero_model2_VT/sum(ggCsero_model_val2))
-lollipop_cluster_freqs_3points(year = "2007",plot_title = "Vaccine Types, Serotypes",data1 = Sero_freq_3[which(Sero_mass_VT==1)]/sum(Sero_freq_3), model_name_1 = "COGtriangles", model1 = sero_model3_VT/sum(sero_model_val3), model_name_2 = "ggCaller", model2 = ggCsero_model3_VT/sum(ggCsero_model_val3))
+lollipop_cluster_freqs_2x2points(year = "2001", plot_title = "Vaccine Types, Serotypes",data1 = Sero_freq_1[which(Sero_mass_VT==1)]/sum(Sero_freq_1), model_name_1 = "COGtriangles",model1 = sero_model1_VT/sum(sero_model_val1), model_name_2 = "ggCaller", model2 = ggCsero_model1_VT/sum(ggCsero_model_val1))
+lollipop_cluster_freqs_2x2points(year = "2004",plot_title = "Vaccine Types, Serotypes",data1 = Sero_freq_2[which(Sero_mass_VT==1)]/sum(Sero_freq_2), model_name_1 = "COGtriangles", model1 = sero_model2_VT/sum(sero_model_val2), model_name_2 = "ggCaller", model2 = ggCsero_model2_VT/sum(ggCsero_model_val2))
+lollipop_cluster_freqs_2x2points(year = "2007",plot_title = "Vaccine Types, Serotypes",data1 = Sero_freq_3[which(Sero_mass_VT==1)]/sum(Sero_freq_3), model_name_1 = "COGtriangles", model1 = sero_model3_VT/sum(sero_model_val3), model_name_2 = "ggCaller", model2 = ggCsero_model3_VT/sum(ggCsero_model_val3))
 ```

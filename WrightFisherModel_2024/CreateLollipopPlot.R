@@ -101,3 +101,36 @@ lollipop_cluster_freqs_3points <- function(year = "year unknown", plot_title = "
     ylim(0, max(max(lollipop_data_1$model_1)))
   grid.arrange(lollipop_plot_1 + scale_y_continuous(limits = c(NA,0.2)) + theme(plot.margin = unit(c(.5,0.5,1,0.5), "cm"),axis.text.y = element_blank()), ncol = 1, nrow=1, top = textGrob(plot_title,gp=gpar(fontsize=20,font=3)))
 }
+
+lollipop_cluster_freqs_2x2points <- function(year = "year unknown", plot_title = "Generic Plot Title",data1, model_name_1 ="Model 1", model1, model_name_2 ="Model 2", model2){
+  lollipop_data_1 <- data.frame(
+    x=1:(length(data1)),
+    model_1=model1,
+    data_1=as.numeric(data1),
+    data_2=as.numeric(data1),
+    model_2 =model2
+  )
+  # Change baseline
+  lollipop_plot_1 <- ggplot(lollipop_data_1) +
+    geom_segment( aes(x=x, xend=x, y=model_1, yend=data_1), color="grey") +
+    geom_segment( aes(x=x-0.3, xend=x-0.3, y=model_2, yend=data_2), color="grey") +
+    geom_point( aes(x=x, y=data_1, color="Data"), size=5) +
+    geom_point( aes(x=x-0.3, y=data_2, color="Data"), size=5) +
+    geom_point( aes(x=x, y=model_1, color=model_name_1), size=5) +
+    geom_point( aes(x=x-0.3, y=model_2, color=model_name_2), size=5) +
+    #geom_point( aes(x=x, y=model_1, color=model_name_1), size=5, alpha = 0.7) +
+    #geom_point( aes(x=x, y=data_1, color="Data"), size=5, alpha = 0.7) +
+    #geom_point(aes(x=x, y=model_2, color=model_name_2), size=5, alpha = 0.7) +
+    scale_color_manual(values = c("#E69F00","#56B4E9","#CC79A7"),
+                       guide  = guide_legend(), 
+                       name   = "Group") +
+    coord_flip()+
+    #theme_ipsum() +
+    theme(legend.position = c(.8,.8),legend.text = element_text(size = 20),legend.title = element_text(size = 20)) +
+    ggtitle(year) +
+    ylab("Frequency") +
+    xlab("Clusters") +
+    theme(axis.title  = element_text(size = 20), axis.text = element_text(size = 20), plot.title = element_text(size = 25,hjust = 0.5))  +
+    ylim(0, max(max(lollipop_data_1$model_1)))
+  grid.arrange(lollipop_plot_1 + scale_y_continuous(limits = c(NA,0.2)) + theme(plot.margin = unit(c(.5,0.5,1,0.5), "cm"),axis.text.y = element_blank()), ncol = 1, nrow=1, top = textGrob(plot_title,gp=gpar(fontsize=20,font=3)))
+}
