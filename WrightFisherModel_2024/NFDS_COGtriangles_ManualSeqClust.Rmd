@@ -1140,12 +1140,102 @@ null_ggCPP_optim_fit <- nmkb(c(0.03, 0.05), fit_null_ggCPP, lower=c(0,0), upper=
 
 ```{r}
 null_man_params <- list(dt = 1/36, species_no = mass_clusters, Pop_ini = as.double(model_start_pop), capacity = sum(model_start_pop), migVec = avg_cluster_freq, vaccTypes = mass_VT, vacc_time = 0)
+
 fit_null_man <- fitting_closure(null_man_params, mass_cluster_freq_2, mass_cluster_freq_3)
+
 null_man_optim_fit <- nmkb(c(0.03, 0.05), fit_null_man, lower=c(0,0), upper=c(1,1), control = c(maximize = TRUE))
 #$par
 #[1] 0.008636252 0.024126479
 
 #$value
 #[1] -239.5123
+```
+
+# try simulated annealing instead of dfoptim
+```{r}
+# install.packages("optimization")
+library(optimization)
+
+
+null_man_sa <- optim_sa(fun = fit_null_man, start = c(0.008636252, 0.024126479), maximization = TRUE, trace = TRUE,lower=c(0,0), upper=c(1,1), control = c(rf = 2))
+#$par
+#[1] 0.01 0.04
+
+#$function_value
+#[1] -252.2131
+```
+
+```{r}
+start_m <- rep(0,10)
+start_v <- rep(0,10)
+end_m <- rep(0,10)
+end_v <- rep(0,10)
+end_error <- rep(0,10)
+for (i in 1:10) {
+  start_params <- runif(2)
+  null_man_sa <- optim_sa(fun = fit_null_man, start = start_params, maximization = TRUE, trace = FALSE,lower=c(0,0), upper=c(1,1), control = c(rf = 3, r = 0.8))
+  end_error[i] <- null_man_sa$function_value
+  end_m[i] <- null_man_sa$par[1]
+  end_v[i] <- null_man_sa$par[2]
+  start_m[i] <- start_params[1]
+  start_v[i] <- start_params[2]
+}
+
+# best:
+# -241.3298
+# end params
+# 0.006305697 0.01630453
+# start params
+# 0.98630570 0.8363045314
+```
+
+```{r}
+NFDS_fitting_closure <- function(all_other_params, data1, data2){
+  fit_dfoptim <- function(fit_params){
+  params <- c(all_other_params, sigma_f = fit_params[1], sigma_w = fit_params[2], prop_f = fit_params[3], m = fit_params[4], v = fit_params[5])
+  WFmodel <- WF_nG_h_vP$new(pars = params,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+  n_particles <- 10L
+  n_times <- 73
+  x <- array(NA, dim = c(WFmodel$info()$len, n_particles, n_times))
+
+  for (t in seq_len(n_times)) {
+    x[ , , t] <- WFmodel$run(t)
+  }
+  time <- x[1, 1, ]
+  x <- x[-1, , ]
+  combined_compare(x[,1,37],data1) + combined_compare(x[,1,73],data2) 
+}
+}
+```
+
+```{r}
+ggCPP_params <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, delta = ggC_delta_ranking, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, vacc_time = 0)
+
+ggCPP_fitting <- NFDS_fitting_closure(ggCPP_params, PP_mass_cluster_freq_2, PP_mass_cluster_freq_3)
+
+start_params <- c(0.15, 0.05, 0.25, 0.03, 0.05)
+
+null_man_sa <- optim_sa(fun = ggCPP_fitting, start = start_params, maximization = TRUE, trace = TRUE,lower=c(0.05,0,0,0,0), upper=c(1,0.05,1,1,1), control = c(rf = 3, r = 0.8))
+
+# took really long (10 mins?)
+# and produced weird results:
+# $par
+#[1] 0.68 0.01 0.10 0.04 0.16
+
+#$function_value
+#[1] -274.9081
+
+# 42 iterations (not so much for so much time?)
+# maybe issue with sigma_w and sigma_f? maybe I should force the smaller one to be small
+
+#$par
+#[1] 0.12 0.00 0.49 0.04 0.25
+
+#$function_value
+#[1] -246.5182
 ```
 
