@@ -366,8 +366,6 @@ ggCPP_optim_fit <- nmkb(c(0.15, 0.05, 0.25, 0.03, 0.05), ggCPP_fit_dfoptim, lowe
 # but might not be comparable
 ```
 
-
-
 ### Visualise Fits:
 
 ```{r}
@@ -1094,3 +1092,60 @@ seq_optim_fit_2 <- nmkb(c(0.15, 0.05, 0.25, 0.03, 0.05), seq_fit_dfoptim_2, lowe
 # and the parameter values are completely different
 # I think I need to change my objective function - it should still be based on the cluster frequencies - I don't really care about getting the exact sequences correct
 ```
+
+### NULL MODEL
+```{r}
+WF_null <- odin.dust::odin_dust("null_NFDS_Model.R")
+```
+
+# Fitting the model:
+
+```{r}
+fitting_closure <- function(all_other_params, data1, data2){
+  null_fit_dfoptim <- function(fit_params){
+  params <- c(all_other_params, m = fit_params[1], v = fit_params[2])
+  null_WFmodel <- WF_null$new(pars = params,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+  n_particles <- 10L
+  n_times <- 73
+  x <- array(NA, dim = c(null_WFmodel$info()$len, n_particles, n_times))
+
+  for (t in seq_len(n_times)) {
+    x[ , , t] <- null_WFmodel$run(t)
+  }
+  time <- x[1, 1, ]
+  x <- x[-1, , ]
+  combined_compare(x[,1,37],data1) + combined_compare(x[,1,73],data2) 
+}
+}
+```
+
+```{r}
+null_ggCPP_params <- list(dt = 1/36, species_no = PP_mass_clusters, Pop_ini = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, vacc_time = 0)
+
+fit_null_ggCPP <- fitting_closure(null_ggCPP_params, PP_mass_cluster_freq_2, PP_mass_cluster_freq_3)
+
+null_ggCPP_optim_fit <- nmkb(c(0.03, 0.05), fit_null_ggCPP, lower=c(0,0), upper=c(1,1), control = c(maximize = TRUE))
+#$par
+#[1] 0.01172671 0.01913524
+
+#$value
+#[1] -295.7375
+
+# A little worse than ggCaller + PopPUNK non-null (but actually not so much worse...)
+```
+
+```{r}
+null_man_params <- list(dt = 1/36, species_no = mass_clusters, Pop_ini = as.double(model_start_pop), capacity = sum(model_start_pop), migVec = avg_cluster_freq, vaccTypes = mass_VT, vacc_time = 0)
+fit_null_man <- fitting_closure(null_man_params, mass_cluster_freq_2, mass_cluster_freq_3)
+null_man_optim_fit <- nmkb(c(0.03, 0.05), fit_null_man, lower=c(0,0), upper=c(1,1), control = c(maximize = TRUE))
+#$par
+#[1] 0.008636252 0.024126479
+
+#$value
+#[1] -239.5123
+```
+
