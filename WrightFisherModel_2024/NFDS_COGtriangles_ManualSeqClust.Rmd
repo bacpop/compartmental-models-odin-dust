@@ -540,6 +540,16 @@ lollipop_cluster_freqs_2x2points(year = "2004",plot_title = "Vaccine Types, PopP
 lollipop_cluster_freqs_2x2points(year = "2007",plot_title = "Vaccine Types, PopPUNK Clusters",data1 = PP_mass_cluster_freq_2[which(PP_mass_VT==1)]/sum(PP_mass_cluster_freq_2), model_name_1 = "COGtriangles", model1 = PP_model3_VT/sum(PP_model_val3), model_name_2 = "ggCaller", model2 = ggCPP_model3_VT/sum(ggCPP_model_val3))
 ```
 
+### Plot VTs and NVT together in one plot
+```{r}
+#ggCPP_model_val1
+lollipop_cluster_freqs_VTandNVT(year = "2001", plot_title = "PopPUNK and ggCaller", data1 = PP_mass_cluster_freq_1/sum(PP_mass_cluster_freq_1), model_name_1 ="Model", model1 = ggCPP_model_val1/sum(ggCPP_model_val1), PP_mass_VT)
+lollipop_cluster_freqs_VTandNVT(year = "2004", plot_title = "PopPUNK and ggCaller", data1 = PP_mass_cluster_freq_2/sum(PP_mass_cluster_freq_2), model_name_1 ="Model", model1 = ggCPP_model_val2/sum(ggCPP_model_val2), PP_mass_VT)
+lollipop_cluster_freqs_VTandNVT(year = "2007", plot_title = "PopPUNK and ggCaller", data1 = PP_mass_cluster_freq_3/sum(PP_mass_cluster_freq_3), model_name_1 ="Model", model1 = ggCPP_model_val3/sum(ggCPP_model_val3), PP_mass_VT)
+```
+
+
+
 ### THOUGHTS ABOUT THE COMPARABILITY OF LIKELIHOODS
 # Question: Does the likelihood decrease with the number of clusters?
 # Answer: 
