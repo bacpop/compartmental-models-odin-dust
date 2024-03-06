@@ -481,6 +481,9 @@ ggC_model3_NVT <- ggC_model_val3[which(mass_VT==0)]
 ```{r}
 
 ggCPP_fit_params <- ggCPP_optim_fit$par
+ggCPP_fit_params <- c(0.138193890,0.008439717, 0.199494193, 0.024378998, 0.155166177)
+
+
 all_params <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = ggCPP_fit_params[1], sigma_w = ggCPP_fit_params[2], prop_f = ggCPP_fit_params[3], delta = ggC_delta_ranking, m = ggCPP_fit_params[4], migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = ggCPP_fit_params[5], vacc_time = 0)
 ggCPP_WFmodel <- WF_nG_h_vP$new(pars = all_params,
                          time = 1,
@@ -1006,8 +1009,10 @@ lollipop_cluster_freqs_2x2points(year = "2007",plot_title = "Vaccine Types, Sero
 mass_seq_freq_1 <- readRDS("mass_seq_freq_1.rds")
 mass_seq_freq_2 <- readRDS("mass_seq_freq_2.rds")
 mass_seq_freq_3 <- readRDS("mass_seq_freq_3.rds")
-seq_model_start_pop <- readRDS("seq_model_start_pop.rds")
+seq_model_start_pop <- readRDS("seq_model_start_pop.rds") 
 seq_model_start_pop_2 <- readRDS("seq_model_start_pop_2.rds")
+# the two start populations differ in the amount of noise that has been added
+# the first one has more than the second 
 mass_seq_VT <- readRDS("mass_seq_VT.rds")
 ```
 
@@ -1021,9 +1026,8 @@ intermed_gene_presence_absence_matrix <- sapply(intermed_gene_presence_absence[-
 mass_seqs <- nrow(Mass_Samples_accCodes)
 avg_mass_seqs <- rep(1/mass_seqs, mass_seqs)
 
-seq_params_n_vP <- list(dt = 1/36, species_no = mass_seqs,  gene_no = nrow(intermed_gene_presence_absence)-1, Pop_ini = as.double(seq_model_start_pop), Pop_eq = as.double(seq_model_start_pop), capacity = sum(seq_model_start_pop), Genotypes = intermed_gene_presence_absence_matrix, sigma_f = 0.2193191513, sigma_w = 0.0007111157, prop_f = 0.3735531590, delta = delta_ranking, m = 0.0052207254, migVec = avg_mass_seqs, vaccTypes = mass_seq_VT, v = 0.1321567425, vacc_time = 0)
+seq_params_n_vP <- list(dt = 1/36, species_no = mass_seqs,  gene_no = nrow(intermed_gene_presence_absence)-1, Pop_ini = as.double(seq_model_start_pop), Pop_eq = as.double(seq_model_start_pop), capacity = sum(seq_model_start_pop), Genotypes = intermed_gene_presence_absence_matrix, sigma_f = 0.2193191513, sigma_w = 0.0007111157, prop_f = 0.3735531590, delta = delta_ranking, m = 0.0052207254, migVec = avg_mass_seqs, vaccTypes = as.double(mass_seq_VT), v = 0.1321567425, vacc_time = 0)
 
-```{r}
 seq_WFmodel <- WF_nG_h_vP$new(pars = seq_params_n_vP,
                          time = 1,
                          n_particles = 10L,
@@ -1092,6 +1096,155 @@ seq_optim_fit_2 <- nmkb(c(0.15, 0.05, 0.25, 0.03, 0.05), seq_fit_dfoptim_2, lowe
 # and the parameter values are completely different
 # I think I need to change my objective function - it should still be based on the cluster frequencies - I don't really care about getting the exact sequences correct
 ```
+
+```{r}
+# summarize single-sequence clusters into PP clusters
+sum_seq_clusters <- function(sequence_clust){
+  clustered_seqs <- rep(0, PP_mass_clusters)
+  for (i in 1:PP_mass_clusters) {
+    clustered_seqs[i] <- sum(sequence_clust[which(PopPUNK_clusters$Cluster==i)])
+  }
+  clustered_seqs
+}
+
+#PopPUNK_clusters
+PP_combined_compare_616 <- function(state, observed, pars = NULL) {
+  result <- 0
+  data_size <- sum(observed)
+  model_size = sum(state)
+  
+  # need to summarize the data and the observations into clusters
+  clustered_state <- sum_seq_clusters(state)
+  clustered_obs <- sum_seq_clusters(observed)
+  
+  for (i in 1:length(clustered_obs)){
+    result <- result + ll_pois(clustered_obs[i], clustered_state[i]/model_size * data_size)
+  }
+  result
+}
+
+NFDS_fitting_closure_616 <- function(all_other_params, data1, data2){
+  fit_dfoptim <- function(fit_params){
+    params <- c(all_other_params, sigma_f = fit_params[1], sigma_w = fit_params[2], prop_f = fit_params[3], m = fit_params[4], v = fit_params[5])
+    WFmodel <- WF_nG_h_vP$new(pars = params,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+    n_particles <- 10L
+    n_times <- 73
+    x <- array(NA, dim = c(WFmodel$info()$len, n_particles, n_times))
+
+    for (t in seq_len(n_times)) {
+      x[ , , t] <- WFmodel$run(t)
+    }
+    time <- x[1, 1, ]
+    x <- x[-1, , ]
+    PP_combined_compare_616(x[,1,37],data1) + PP_combined_compare_616(x[,1,73],data2) 
+  }
+}
+```
+
+```{r}
+ggCPP_params_616 <- list(dt = 1/36, species_no = mass_seqs,  gene_no = nrow(intermed_gene_presence_absence)-1, Pop_ini = as.double(seq_model_start_pop), Pop_eq = as.double(seq_model_start_pop), capacity = sum(seq_model_start_pop), Genotypes = intermed_gene_presence_absence_matrix, delta = delta_ranking, migVec = avg_mass_seqs, vaccTypes = as.double(mass_seq_VT), vacc_time = 0)
+
+ggCPP_fitting_616 <- NFDS_fitting_closure_616(ggCPP_params_616, as.double(mass_seq_freq_2), as.double(mass_seq_freq_3))
+
+start_params <- c(0.15, 0.05, 0.25, 0.03, 0.05)
+
+fit_616 <- nmkb(start_params, ggCPP_fitting_616, lower=c(0,0,0,0,0), upper=c(1,1,1,1,1), control = c(maximize = TRUE, trace = TRUE))
+
+#null_man_sa <- optim_sa(fun = ggCPP_fitting_616, start = start_params, maximization = TRUE, trace = TRUE,lower=c(0.05,0,0,0,0), upper=c(1,0.05,1,1,1), control = c(rf = 2, r = 0.6))
+#$par
+#[1] 0.0138223223 0.0014012080 0.0006622993 0.5182582935 0.9826246156
+
+#$value
+#[1] -263.108
+
+start_p <- rep(0,10)
+start_w <- rep(0,10)
+start_prop <- rep(0,10)
+end_p <- rep(0,10)
+end_w <- rep(0,10)
+end_prop <- rep(0,10)
+start_m <- rep(0,10)
+start_v <- rep(0,10)
+end_m <- rep(0,10)
+end_v <- rep(0,10)
+end_error <- rep(0,10)
+for (i in 1:10) {
+  start_params <- runif(5)
+  fit_616 <- nmkb(start_params, ggCPP_fitting_616, lower=c(0,0,0,0,0), upper=c(1,1,1,1,1), control = c(maximize = TRUE, trace = TRUE))
+  end_error[i] <- fit_616$value
+  end_p[i] <- fit_616$par[1]
+  end_w[i] <- fit_616$par[2]
+  end_prop[i] <- fit_616$par[3]
+  end_m[i] <- fit_616$par[4]
+  end_v[i] <- fit_616$par[5]
+  
+  start_p[i] <- start_params[1]
+  start_w[i] <- start_params[2]
+  start_prop[i] <- start_params[3]
+  start_m[i] <- start_params[4]
+  start_v[i] <- start_params[5]
+}
+```
+
+```{r}
+# only seven runs, which already took an hour or so
+#> end_error
+# [1] -269.2086 -267.4982 -269.9346 -267.8150 -268.5025 -270.1028 -265.8139    0.0000    0.0000    0.0000
+#> end_p
+# [1] 0.695418564 0.880586639 0.995642865 0.172117022 0.350358448 0.341518580 0.001895943 0.000000000 0.000000000 0.000000000
+#> end_w
+# [1] 0.09528001 0.16557455 0.97558824 0.26675343 0.37023268 0.90908575 0.08035755 0.00000000 0.00000000 0.00000000
+#> end_prop
+# [1] 0.919970171 0.001408166 0.424236528 0.340439155 0.388935327 0.998642027 0.822636697 0.000000000 0.000000000 0.000000000
+#> end_m
+# [1] 0.9092072 0.7310387 0.9928808 0.8810217 0.9177145 0.9542316 0.7865585 0.0000000 0.0000000 0.0000000
+#> end_v
+# [1] 0.9944368 0.8493109 0.9018145 0.6526372 0.9294109 0.6186854 0.9969169 0.0000000 0.0000000 0.0000000
+#> start_p
+# [1] 0.1043812 0.5933345 0.9334867 0.3675858 0.4993742 0.2117662 0.2748254 0.0000000 0.0000000 0.0000000
+#> start_w
+# [1] 0.52289973 0.32520405 0.70701398 0.34342386 0.08975637 0.82618422 0.31166237 0.00000000 0.00000000 0.00000000
+#> start_prop
+# [1] 0.49302235 0.03924397 0.34615051 0.24132111 0.68209792 0.96136825 0.87793033 0.00000000 0.00000000 0.00000000
+#> start_m
+# [1] 0.6302457 0.6323589 0.8953097 0.8982296 0.6935370 0.9034749 0.6929284 0.0000000 0.0000000 0.0000000
+#> start_v
+# [1] 0.8896970 0.7250780 0.3615256 0.2809701 0.3773499 0.4795797 0.9857552 0.0000000 0.0000000 0.0000000
+```
+
+```{r}
+plot_end_p <- c(0.695418564, 0.880586639, 0.995642865, 0.172117022, 0.350358448, 0.341518580, 0.001895943)
+plot_end_w <- c(0.09528001, 0.16557455, 0.97558824, 0.26675343, 0.37023268, 0.90908575, 0.08035755)
+plot_end_prop <- c(0.919970171, 0.001408166, 0.424236528, 0.340439155, 0.388935327, 0.998642027, 0.822636697)
+plot_end_m <- c(0.9092072, 0.7310387, 0.9928808, 0.8810217, 0.9177145, 0.9542316, 0.7865585)
+plot_end_v <- c(0.9944368, 0.8493109, 0.9018145, 0.6526372, 0.9294109, 0.6186854, 0.9969169)
+
+plot_start_p <- c(0.1043812, 0.5933345, 0.9334867, 0.3675858, 0.4993742, 0.2117662, 0.2748254)
+plot_start_w <- c(0.52289973, 0.32520405, 0.70701398, 0.34342386, 0.08975637, 0.82618422, 0.31166237)
+plot_start_prop <- c(0.49302235, 0.03924397, 0.34615051, 0.24132111, 0.68209792, 0.96136825, 0.87793033)
+plot_start_m <- c(0.6302457, 0.6323589, 0.8953097, 0.8982296, 0.6935370, 0.9034749, 0.6929284)
+plot_start_v <- c(0.8896970, 0.7250780, 0.3615256, 0.2809701, 0.3773499, 0.4795797, 0.9857552)
+plot(1:7, plot_end_p,  pch = 19)
+points(plot_end_w, col = "#E69F00", pch = 19)
+points(plot_end_prop, col = "#56B4E9", pch = 19)
+points(plot_end_m, col = "#009E73", pch = 19)
+points(plot_end_v, col = "#F0E442", pch = 19)
+lines(plot_end_p)
+lines(plot_end_w, col = "#E69F00",)
+lines(plot_end_prop, col = "#56B4E9")
+lines(plot_end_m, col = "#009E73")
+lines(plot_end_v, col = "#F0E442")
+points(plot_start_p, pch = 17)
+points(plot_start_w, col = "#E69F00", pch = 17)
+points(plot_start_prop, col = "#56B4E9", pch = 17)
+points(plot_start_m, col = "#009E73", pch = 17)
+points(plot_start_v, col = "#F0E442", pch = 17)
+```
+
 
 ### NULL MODEL
 ```{r}
@@ -1219,15 +1372,15 @@ ggCPP_fitting <- NFDS_fitting_closure(ggCPP_params, PP_mass_cluster_freq_2, PP_m
 
 start_params <- c(0.15, 0.05, 0.25, 0.03, 0.05)
 
-null_man_sa <- optim_sa(fun = ggCPP_fitting, start = start_params, maximization = TRUE, trace = TRUE,lower=c(0.05,0,0,0,0), upper=c(1,0.05,1,1,1), control = c(rf = 3, r = 0.8))
+null_man_sa <- optim_sa(fun = ggCPP_fitting, start = start_params, maximization = TRUE, trace = TRUE,lower=c(0.05,0,0,0,0), upper=c(1,0.05,1,1,1), control = c(rf = 2, r = 0.6))
 
 # took really long (10 mins?)
 # and produced weird results:
 # $par
-#[1] 0.68 0.01 0.10 0.04 0.16
+#[1] 0.25 0.01 0.22 0.02 0.24
 
 #$function_value
-#[1] -274.9081
+#[1] -258.0113
 
 # 42 iterations (not so much for so much time?)
 # maybe issue with sigma_w and sigma_f? maybe I should force the smaller one to be small
@@ -1239,3 +1392,45 @@ null_man_sa <- optim_sa(fun = ggCPP_fitting, start = start_params, maximization 
 #[1] -246.5182
 ```
 
+# Visualise cluster frequency changes for ggplot / PopPUNK
+```{r}
+# plot cluster freq coloured by vacc type, non VT and mixed
+#create colour-vector based on VT mean info
+plot_VT_colours <- rep("black",PP_mass_clusters)
+for (i in 1:PP_mass_clusters){
+  if(PP_mass_VT[i] ==1){
+    plot_VT_colours[i] <- "#E69F00"
+  }
+  else if(PP_mass_VT[i] ==0){
+    plot_VT_colours[i] <- "#56B4E9"
+  }
+}
+
+
+par(mfrow=c(1,1))
+op <- par(mar = c(5,7,4,2) + 0.1,mgp=c(3,1,0))
+plot(PP_mass_cluster_freq_1 / sum(PP_mass_cluster_freq_1), PP_mass_cluster_freq_3 / sum(PP_mass_cluster_freq_3), axes = FALSE, ann = FALSE, pch = 19, col = plot_VT_colours, cex = 2.5, ylim = c(0,0.18), xlim = c(0,0.18))
+#abline(a=0, b=1)
+legend("topleft", title = "Clusters", c("VT", "Non-VT"),fill = c("#E69F00", "#56B4E9"), cex = 2.5)
+axis(1,cex.axis = 2.5)
+axis(2, cex.axis = 2.5)
+title(xlab = "Pre-vaccine cluster frequency", cex.lab=2.5)
+title(ylab = "Post-vaccine cluster frequency", cex.lab = 2.5,
+      line = 4.5)
+box()
+par(op)
+```
+
+```{r}
+### ggCaller
+ggCaller_gene_presence_absence_2001 <- readRDS(file = "ggCaller_gene_presence_absence_2001.rds")
+ggCaller_gene_presence_absence_2004 <- readRDS(file = "ggCaller_gene_presence_absence_2004.rds")
+ggCaller_gene_presence_absence_2007 <- readRDS(file = "ggCaller_gene_presence_absence_2007.rds")
+
+gene_cluster_counts_2001 <- apply(ggCaller_gene_presence_absence_2001[-1,-1],1,sum_as_int)/(ncol(ggCaller_gene_presence_absence_2001)-1)
+gene_cluster_counts_2007 <- apply(ggCaller_gene_presence_absence_2007[-1,-1],1,sum_as_int)/(ncol(ggCaller_gene_presence_absence_2007)-1)
+
+par(mar=c(5,6,4,1)+.1)
+plot((gene_cluster_counts_2001), gene_cluster_counts_2007, pch = 21, xlab = "Pre-vaccine COG frequency", ylab = "Post-vaccine COG frequency",cex.lab=2.5, cex.axis = 2.5, cex = 1.5)
+
+```
