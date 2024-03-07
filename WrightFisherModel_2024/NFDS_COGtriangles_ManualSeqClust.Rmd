@@ -1036,73 +1036,14 @@ seq_WFmodel <- WF_nG_h_vP$new(pars = seq_params_n_vP,
 ```
 
 ```{r}
-seq_fit_dfoptim <- function(params){
-  all_params <- list(dt = 1/36, species_no = mass_seqs,  gene_no = nrow(intermed_gene_presence_absence)-1, Pop_ini = as.double(seq_model_start_pop), Pop_eq = as.double(seq_model_start_pop), capacity = sum(seq_model_start_pop), Genotypes = intermed_gene_presence_absence_matrix, sigma_f = params[1], sigma_w = params[2], prop_f = params[3], delta = delta_ranking, m = params[4], migVec = avg_mass_seqs, vaccTypes = as.double(mass_seq_VT), v = params[5], vacc_time = 0)
-  WFmodel <- WF_nG_h_vP$new(pars = all_params,
-                         time = 1,
-                         n_particles = 10L,
-                         n_threads = 4L,
-                         seed = 1L)
-  n_particles <- 10L
-  n_times <- 73
-  x <- array(NA, dim = c(WFmodel$info()$len, n_particles, n_times))
-  for (t in seq_len(n_times)) {
-    x[ , , t] <- WFmodel$run(t)
-  }
-  time <- x[1, 1, ]
-  x <- x[-1, , ]
-  combined_compare(x[,1,37],as.double(mass_seq_freq_2)) + combined_compare(x[,1,73],as.double(mass_seq_freq_3))
-}
-```
+Mass_samples_index_dict <- 1:nrow(Mass_Samples_accCodes)
+names(Mass_samples_index_dict) <- Mass_Samples_accCodes$`Isolate Name`
 
-```{r}
-seq_optim_fit <- nmkb(c(0.15, 0.05, 0.25, 0.03, 0.05), seq_fit_dfoptim, lower=c(0,0,0,0,0), upper=c(1,1,1,1,1), control = c(maximize = TRUE))
-#$par
-#[1] 0.2874219386 0.0006232399 0.0193643503 0.6749873251 0.9720733640
-
-#$value
-#[1] -916.9239
-```
-
-```{r}
-seq_fit_dfoptim_2 <- function(params){
-  all_params <- list(dt = 1/36, species_no = mass_seqs,  gene_no = nrow(intermed_gene_presence_absence)-1, Pop_ini = as.double(seq_model_start_pop_2), Pop_eq = as.double(seq_model_start_pop_2), capacity = sum(seq_model_start_pop_2), Genotypes = intermed_gene_presence_absence_matrix, sigma_f = params[1], sigma_w = params[2], prop_f = params[3], delta = delta_ranking, m = params[4], migVec = avg_mass_seqs, vaccTypes = as.double(mass_seq_VT), v = params[5], vacc_time = 0)
-  WFmodel <- WF_nG_h_vP$new(pars = all_params,
-                         time = 1,
-                         n_particles = 10L,
-                         n_threads = 4L,
-                         seed = 1L)
-  n_particles <- 10L
-  n_times <- 73
-  x <- array(NA, dim = c(WFmodel$info()$len, n_particles, n_times))
-  for (t in seq_len(n_times)) {
-    x[ , , t] <- WFmodel$run(t)
-  }
-  time <- x[1, 1, ]
-  x <- x[-1, , ]
-  combined_compare(x[,1,37],as.double(mass_seq_freq_2)) + combined_compare(x[,1,73],as.double(mass_seq_freq_3))
-}
-```
-
-```{r}
-seq_optim_fit_2 <- nmkb(c(0.15, 0.05, 0.25, 0.03, 0.05), seq_fit_dfoptim_2, lower=c(0,0,0,0,0), upper=c(1,1,1,1,1), control = c(maximize = TRUE))
-#$par
-#[1] 0.00447771 0.00124846 0.47304656 0.74062053 0.05294554
-
-#$value
-#[1] -928.5971
-
-### does even a little worse
-# and the parameter values are completely different
-# I think I need to change my objective function - it should still be based on the cluster frequencies - I don't really care about getting the exact sequences correct
-```
-
-```{r}
 # summarize single-sequence clusters into PP clusters
 sum_seq_clusters <- function(sequence_clust){
   clustered_seqs <- rep(0, PP_mass_clusters)
   for (i in 1:PP_mass_clusters) {
-    clustered_seqs[i] <- sum(sequence_clust[which(PopPUNK_clusters$Cluster==i)])
+    clustered_seqs[i] <- sum(sequence_clust[Mass_samples_index_dict[PopPUNK_clusters[PopPUNK_clusters$Cluster==i,]$IsolateName]])
   }
   clustered_seqs
 }
@@ -1152,14 +1093,13 @@ ggCPP_fitting_616 <- NFDS_fitting_closure_616(ggCPP_params_616, as.double(mass_s
 
 start_params <- c(0.15, 0.05, 0.25, 0.03, 0.05)
 
-fit_616 <- nmkb(start_params, ggCPP_fitting_616, lower=c(0,0,0,0,0), upper=c(1,1,1,1,1), control = c(maximize = TRUE, trace = TRUE))
+fit_616 <- nmkb(start_params, ggCPP_fitting_616, lower=c(0.055,0,0,0,0), upper=c(1,0.055,1,1,1), control = c(maximize = TRUE, trace = TRUE))
 
-#null_man_sa <- optim_sa(fun = ggCPP_fitting_616, start = start_params, maximization = TRUE, trace = TRUE,lower=c(0.05,0,0,0,0), upper=c(1,0.05,1,1,1), control = c(rf = 2, r = 0.6))
 #$par
-#[1] 0.0138223223 0.0014012080 0.0006622993 0.5182582935 0.9826246156
+#[1] 0.10461712 0.05499699 0.12309585 0.72932605 0.97526777
 
 #$value
-#[1] -263.108
+#[1] -188.9444
 
 start_p <- rep(0,10)
 start_w <- rep(0,10)
@@ -1244,6 +1184,79 @@ points(plot_start_prop, col = "#56B4E9", pch = 17)
 points(plot_start_m, col = "#009E73", pch = 17)
 points(plot_start_v, col = "#F0E442", pch = 17)
 ```
+
+# evaluate on manual sequence clusters instead
+```{r}
+# summarize single-sequence clusters into PP clusters
+sum_seq_man_clusters <- function(sequence_clust){
+  clustered_seqs <- rep(0, mass_clusters)
+  for (i in 1:mass_clusters) {
+    clustered_seqs[i] <- sum(sequence_clust[which(Mass_Samples_accCodes$SequenceCluster==i)])
+  }
+  clustered_seqs
+}
+
+#manual sequence clusters
+combined_compare_616 <- function(state, observed, pars = NULL) {
+  result <- 0
+  data_size <- sum(observed)
+  model_size = sum(state)
+  
+  # need to summarize the data and the observations into clusters
+  clustered_state <- sum_seq_man_clusters(state)
+  clustered_obs <- sum_seq_man_clusters(observed)
+  
+  for (i in 1:length(clustered_obs)){
+    result <- result + ll_pois(clustered_obs[i], clustered_state[i]/model_size * data_size)
+  }
+  result
+}
+
+NFDS_fitting_closure_616_man <- function(all_other_params, data1, data2){
+  fit_dfoptim <- function(fit_params){
+    params <- c(all_other_params, sigma_f = fit_params[1], sigma_w = fit_params[2], prop_f = fit_params[3], m = fit_params[4], v = fit_params[5])
+    WFmodel <- WF_nG_h_vP$new(pars = params,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+    n_particles <- 10L
+    n_times <- 73
+    x <- array(NA, dim = c(WFmodel$info()$len, n_particles, n_times))
+
+    for (t in seq_len(n_times)) {
+      x[ , , t] <- WFmodel$run(t)
+    }
+    time <- x[1, 1, ]
+    x <- x[-1, , ]
+    combined_compare_616(x[,1,37],data1) + combined_compare_616(x[,1,73],data2) 
+  }
+}
+```
+
+```{r}
+COG_params_616 <- list(dt = 1/36, species_no = mass_seqs,  gene_no = nrow(intermed_gene_presence_absence)-1, Pop_ini = as.double(seq_model_start_pop), Pop_eq = as.double(seq_model_start_pop), capacity = sum(seq_model_start_pop), Genotypes = intermed_gene_presence_absence_matrix, delta = delta_ranking, migVec = avg_mass_seqs, vaccTypes = as.double(mass_seq_VT), vacc_time = 0)
+
+COG_fitting_616 <- NFDS_fitting_closure_616_man(COG_params_616, as.double(mass_seq_freq_2), as.double(mass_seq_freq_3))
+
+start_params <- c(0.15, 0.05, 0.25, 0.03, 0.05)
+
+fit_616 <- nmkb(start_params, COG_fitting_616, lower=c(0.055,0,0,0,0), upper=c(1,0.055,1,1,1), control = c(maximize = TRUE, trace = TRUE))
+
+#$par
+#[1] 0.0138223223 0.0014012080 0.0006622993 0.5182582935 0.9826246156
+
+#$value
+#[1] -263.108
+```
+
+# ggCaller version
+```{r}
+ggC_intermed_gene_presence_absence <- readRDS("ggC_intermed_gene_presence_absence.rds")
+ggC_intermed_gene_presence_absence_matrix <- sapply(ggC_intermed_gene_presence_absence[-1,-1],as.double)
+```
+
+
 
 
 ### NULL MODEL
