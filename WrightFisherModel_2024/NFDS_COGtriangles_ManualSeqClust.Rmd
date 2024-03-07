@@ -1087,13 +1087,13 @@ NFDS_fitting_closure_616 <- function(all_other_params, data1, data2){
 ```
 
 ```{r}
-ggCPP_params_616 <- list(dt = 1/36, species_no = mass_seqs,  gene_no = nrow(intermed_gene_presence_absence)-1, Pop_ini = as.double(seq_model_start_pop), Pop_eq = as.double(seq_model_start_pop), capacity = sum(seq_model_start_pop), Genotypes = intermed_gene_presence_absence_matrix, delta = delta_ranking, migVec = avg_mass_seqs, vaccTypes = as.double(mass_seq_VT), vacc_time = 0)
+COGPP_params_616 <- list(dt = 1/36, species_no = mass_seqs,  gene_no = nrow(intermed_gene_presence_absence)-1, Pop_ini = as.double(seq_model_start_pop), Pop_eq = as.double(seq_model_start_pop), capacity = sum(seq_model_start_pop), Genotypes = intermed_gene_presence_absence_matrix, delta = delta_ranking, migVec = avg_mass_seqs, vaccTypes = as.double(mass_seq_VT), vacc_time = 0)
 
-ggCPP_fitting_616 <- NFDS_fitting_closure_616(ggCPP_params_616, as.double(mass_seq_freq_2), as.double(mass_seq_freq_3))
+COGPP_fitting_616 <- NFDS_fitting_closure_616(COGPP_params_616, as.double(mass_seq_freq_2), as.double(mass_seq_freq_3))
 
 start_params <- c(0.15, 0.05, 0.25, 0.03, 0.05)
 
-fit_616 <- nmkb(start_params, ggCPP_fitting_616, lower=c(0.055,0,0,0,0), upper=c(1,0.055,1,1,1), control = c(maximize = TRUE, trace = TRUE))
+fit_616 <- nmkb(start_params, COGPP_fitting_616, lower=c(0.055,0,0,0,0), upper=c(1,0.055,1,1,1), control = c(maximize = TRUE, trace = TRUE))
 
 #$par
 #[1] 0.10461712 0.05499699 0.12309585 0.72932605 0.97526777
@@ -1241,13 +1241,13 @@ COG_fitting_616 <- NFDS_fitting_closure_616_man(COG_params_616, as.double(mass_s
 
 start_params <- c(0.15, 0.05, 0.25, 0.03, 0.05)
 
-fit_616 <- nmkb(start_params, COG_fitting_616, lower=c(0.055,0,0,0,0), upper=c(1,0.055,1,1,1), control = c(maximize = TRUE, trace = TRUE))
+man_fit_616 <- nmkb(start_params, COG_fitting_616, lower=c(0.055,0,0,0,0), upper=c(1,0.055,1,1,1), control = c(maximize = TRUE, trace = TRUE))
 
 #$par
-#[1] 0.0138223223 0.0014012080 0.0006622993 0.5182582935 0.9826246156
+#[1] 0.0607118499 0.0530314041 0.0001057576 0.7724929778 0.9902405314
 
 #$value
-#[1] -263.108
+#[1] -142.7887
 ```
 
 # ggCaller version
@@ -1256,8 +1256,37 @@ ggC_intermed_gene_presence_absence <- readRDS("ggC_intermed_gene_presence_absenc
 ggC_intermed_gene_presence_absence_matrix <- sapply(ggC_intermed_gene_presence_absence[-1,-1],as.double)
 ```
 
+```{r}
+ggCPP_params_616 <- list(dt = 1/36, species_no = mass_seqs,  gene_no = nrow(ggC_intermed_gene_presence_absence)-1, Pop_ini = as.double(seq_model_start_pop), Pop_eq = as.double(seq_model_start_pop), capacity = sum(seq_model_start_pop), Genotypes = ggC_intermed_gene_presence_absence_matrix, delta = ggC_delta_ranking, migVec = avg_mass_seqs, vaccTypes = as.double(mass_seq_VT), vacc_time = 0)
 
+ggCPP_fitting_616 <- NFDS_fitting_closure_616(ggCPP_params_616, as.double(mass_seq_freq_2), as.double(mass_seq_freq_3))
 
+start_params <- c(0.15, 0.05, 0.25, 0.03, 0.05)
+
+ggCPP_fit_616 <- nmkb(start_params, ggCPP_fitting_616, lower=c(0,0,0,0,0), upper=c(1,1,1,1,1), control = c(maximize = TRUE))
+
+#$par
+#[1] 0.005014889 0.022394344 0.822039194 0.557391976 0.834516365
+
+#$value
+#[1] -187.8815
+```
+
+```{r}
+gCC_params_616 <- list(dt = 1/36, species_no = mass_seqs,  gene_no = nrow(ggC_intermed_gene_presence_absence)-1, Pop_ini = as.double(seq_model_start_pop), Pop_eq = as.double(seq_model_start_pop), capacity = sum(seq_model_start_pop), Genotypes = ggC_intermed_gene_presence_absence_matrix, delta = ggC_delta_ranking, migVec = avg_mass_seqs, vaccTypes = as.double(mass_seq_VT), vacc_time = 0)
+
+gCC_fitting_616 <- NFDS_fitting_closure_616_man(gCC_params_616, as.double(mass_seq_freq_2), as.double(mass_seq_freq_3))
+
+start_params <- c(0.15, 0.05, 0.25, 0.03, 0.05)
+
+gCC_man_fit_616 <- nmkb(start_params, gCC_fitting_616, lower=c(0.055,0,0,0,0), upper=c(1,0.055,1,1,1), control = c(maximize = TRUE, trace = TRUE))
+
+#$par
+#[1] 0.0550442470 0.0548071213 0.0000829429 0.6642395068 0.9333139271
+
+#$value
+#[1] -141.187
+```
 
 ### NULL MODEL
 ```{r}
