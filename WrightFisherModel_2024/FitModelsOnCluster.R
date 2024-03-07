@@ -92,7 +92,7 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   mass_cluster_freq_2 <- readRDS(file = "mass_cluster_freq_2.rds")
   mass_cluster_freq_3 <- readRDS(file = "mass_cluster_freq_3.rds")
   mass_VT <- readRDS(file = "mass_VT.rds")
-  mass_clusters <- length(unique(seq_clusters$Cluster))
+  mass_clusters <- length(unique(seq_clusters$SequenceCluster))
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
   output_filename <- "ggCaller_manSeqClusters"
 } else if(args[1] == "COGtriangles" & args[2] == "manualSeqClusters"){
@@ -105,7 +105,7 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   mass_cluster_freq_2 <- readRDS(file = "mass_cluster_freq_2.rds")
   mass_cluster_freq_3 <- readRDS(file = "mass_cluster_freq_3.rds")
   mass_VT <- readRDS(file = "mass_VT.rds")
-  mass_clusters <- length(unique(seq_clusters$Cluster))
+  mass_clusters <- length(unique(seq_clusters$SequenceCluster))
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
   output_filename <- "COGtriangles_manSeqClusters"
 }
