@@ -49,9 +49,10 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   model_start_pop <- readRDS("seq_model_start_pop.rds") 
   delta_ranking <- readRDS(file = "ggC_delta_ranking.rds")
   mass_cluster_freq_1 <- readRDS("mass_seq_freq_1.rds")
-  mass_cluster_freq_2 <- readRDS("mass_seq_freq_2.rds")
-  mass_cluster_freq_3 <- readRDS("mass_seq_freq_3.rds")
+  mass_cluster_freq_2 <- readRDS(file = "PP_mass_cluster_freq_2.rds")
+  mass_cluster_freq_3 <- readRDS(file = "PP_mass_cluster_freq_3.rds")
   mass_VT <- readRDS("mass_seq_VT.rds")
+  Mass_Samples_accCodes <- readRDS(file = "Mass_Samples_accCodes.rds")
   mass_clusters <- nrow(Mass_Samples_accCodes)
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
   output_filename <- "616_ggCaller_PopPUNK"
@@ -62,9 +63,10 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   model_start_pop <- readRDS("seq_model_start_pop.rds") 
   delta_ranking <- readRDS(file = "delta_ranking.rds")
   mass_cluster_freq_1 <- readRDS("mass_seq_freq_1.rds")
-  mass_cluster_freq_2 <- readRDS("mass_seq_freq_2.rds")
-  mass_cluster_freq_3 <- readRDS("mass_seq_freq_3.rds")
+  mass_cluster_freq_2 <- readRDS(file = "PP_mass_cluster_freq_2.rds")
+  mass_cluster_freq_3 <- readRDS(file = "PP_mass_cluster_freq_3.rds")
   mass_VT <- readRDS("mass_seq_VT.rds")
+  Mass_Samples_accCodes <- readRDS(file = "Mass_Samples_accCodes.rds")
   mass_clusters <- nrow(Mass_Samples_accCodes)
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
   output_filename <- "616_COGtriangles_PopPUNK"
@@ -75,10 +77,10 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   model_start_pop <- readRDS("seq_model_start_pop.rds") 
   delta_ranking <- readRDS(file = "ggC_delta_ranking.rds")
   mass_cluster_freq_1 <- readRDS("mass_seq_freq_1.rds")
-  mass_cluster_freq_2 <- readRDS("mass_seq_freq_2.rds")
-  mass_cluster_freq_3 <- readRDS("mass_seq_freq_3.rds")
+  mass_cluster_freq_2 <- readRDS(file = "mass_cluster_freq_2.rds")
+  mass_cluster_freq_3 <- readRDS(file = "mass_cluster_freq_3.rds")
   mass_VT <- readRDS("mass_seq_VT.rds")
-  mass_clusters <- nrow(Mass_Samples_accCodes)
+  mass_clusters <- nrow(seq_clusters)
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
   output_filename <- "616_ggCaller_manSeqClusters"
 } else if(args[1] == "COGtriangles" & args[2] == "manualSeqClusters"){
@@ -88,16 +90,17 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   model_start_pop <- readRDS("seq_model_start_pop.rds") 
   delta_ranking <- readRDS(file = "delta_ranking.rds")
   mass_cluster_freq_1 <- readRDS("mass_seq_freq_1.rds")
-  mass_cluster_freq_2 <- readRDS("mass_seq_freq_2.rds")
-  mass_cluster_freq_3 <- readRDS("mass_seq_freq_3.rds")
+  mass_cluster_freq_2 <- readRDS(file = "mass_cluster_freq_2.rds")
+  mass_cluster_freq_3 <- readRDS(file = "mass_cluster_freq_3.rds")
   mass_VT <- readRDS("mass_seq_VT.rds")
-  mass_clusters <- nrow(Mass_Samples_accCodes)
+  mass_clusters <- nrow(seq_clusters)
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
   output_filename <- "616_COGtriangles_manSeqClusters"
 }
 
 if(args[2] == "PopPUNK"){
   PP_mass_clusters <- length(unique(seq_clusters$Cluster))
+  mass_clusters2 <- length(unique(seq_clusters$Cluster))
   Mass_samples_index_dict <- 1:nrow(Mass_Samples_accCodes)
   names(Mass_samples_index_dict) <- Mass_Samples_accCodes$`Isolate Name`
   
@@ -105,7 +108,7 @@ if(args[2] == "PopPUNK"){
   sum_seq_clusters <- function(sequence_clust){
     clustered_seqs <- rep(0, PP_mass_clusters)
     for (i in 1:PP_mass_clusters) {
-      clustered_seqs[i] <- sum(sequence_clust[Mass_samples_index_dict[PopPUNK_clusters[PopPUNK_clusters$Cluster==i,]$IsolateName]])
+      clustered_seqs[i] <- sum(sequence_clust[Mass_samples_index_dict[seq_clusters[seq_clusters$Cluster==i,]$IsolateName]])
     }
     clustered_seqs
   }
@@ -113,25 +116,25 @@ if(args[2] == "PopPUNK"){
   #PopPUNK_clusters
   combined_compare_616 <- function(state, observed, pars = NULL) {
     result <- 0
-    data_size <- sum(observed)
-    model_size = sum(state)
+    data_size <- sum(unlist(observed))
+    model_size = sum(unlist(state))
     
     # need to summarize the data and the observations into clusters
-    clustered_state <- sum_seq_clusters(state)
-    clustered_obs <- sum_seq_clusters(observed)
+    clustered_state <- sum_seq_clusters(unlist(state))
     
-    for (i in 1:length(clustered_obs)){
-      result <- result + ll_pois(clustered_obs[i], clustered_state[i]/model_size * data_size)
+    for (i in 1:PP_mass_clusters){
+      result <- result + ll_pois(observed[[as.character(i)]], clustered_state[i]/model_size * data_size)
     }
     result
   }
 }else if(args[2] == "manualSeqClusters"){
   man_mass_clusters <- length(unique(seq_clusters$SequenceCluster))
+  mass_clusters2 <- length(unique(seq_clusters$SequenceCluster))
   # summarize single-sequence clusters into PP clusters
   sum_seq_man_clusters <- function(sequence_clust){
     clustered_seqs <- rep(0, man_mass_clusters)
     for (i in 1:man_mass_clusters) {
-      clustered_seqs[i] <- sum(sequence_clust[which(Mass_Samples_accCodes$SequenceCluster==i)])
+      clustered_seqs[i] <- sum(sequence_clust[which(seq_clusters$SequenceCluster==i)])
     }
     clustered_seqs
   }
@@ -139,15 +142,14 @@ if(args[2] == "PopPUNK"){
   #manual sequence clusters
   combined_compare_616 <- function(state, observed, pars = NULL) {
     result <- 0
-    data_size <- sum(observed)
-    model_size = sum(state)
+    data_size <- sum(unlist(observed))
+    model_size = sum(unlist(state))
     
     # need to summarize the data and the observations into clusters
-    clustered_state <- sum_seq_man_clusters(state)
-    clustered_obs <- sum_seq_man_clusters(observed)
+    clustered_state <- sum_seq_man_clusters(unlist(state))
     
-    for (i in 1:length(clustered_obs)){
-      result <- result + ll_pois(clustered_obs[i], clustered_state[i]/model_size * data_size)
+    for (i in 1:man_mass_clusters){
+      result <- result + ll_pois(observed[[as.character(i)]], clustered_state[i]/model_size * data_size)
     }
     result
   }
@@ -161,7 +163,7 @@ dt <- 1/36 # we assume that the generation time of Strep. pneumo is 1 month
 # we have data from 2001, 2004, 2007, so we want 3 (years) * 12 (months) = 36 updates in-between
 
 peripost_mass_cluster_freq <- data.frame("year" = c(1, 2), rbind(mass_cluster_freq_2, mass_cluster_freq_3))
-names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
+names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters2))
 
 fitting_mass_data <- mcstate::particle_filter_data(data = peripost_mass_cluster_freq,
                                                    time = "year",
@@ -170,7 +172,7 @@ fitting_mass_data <- mcstate::particle_filter_data(data = peripost_mass_cluster_
 
 det_filter <- particle_deterministic$new(data = fitting_mass_data,
                                          model = WF,
-                                         compare = combined_compare)
+                                         compare = combined_compare_616)
 
 # Using MCMC to infer parameters
 pmcmc_sigma_f <- mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0, max = 1)
@@ -230,7 +232,7 @@ mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_
 
 det_filter <- particle_deterministic$new(data = fitting_mass_data,
                                          model = WF,
-                                         compare = combined_compare)
+                                         compare = combined_compare_616)
 
 n_steps <- 1000
 n_burnin <- 0
@@ -261,7 +263,7 @@ det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("si
 
 det_filter <- particle_deterministic$new(data = fitting_mass_data,
                                          model = WF,
-                                         compare = combined_compare)
+                                         compare = combined_compare_616)
 
 n_steps <- 20000
 n_burnin <- 0
