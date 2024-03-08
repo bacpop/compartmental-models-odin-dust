@@ -25,10 +25,6 @@ if(length(args)==0){
   stop("Requires command line argument.")
 }
 
-
-# read in model from file
-WF_null <- odin.dust::odin_dust("null_NFDS_Model.R")
-
 # likelihood for fitting:
 ll_pois <- function(obs, model) {
   exp_noise <- 1e6
@@ -43,73 +39,122 @@ ll_pois <- function(obs, model) {
   ll_obs
 }
 
-combined_compare <- function(state, observed, pars = NULL) {
-  result <- 0
-  #data_size <- sum(mass_cluster_freq_1)
-  #model_size = 15000
-  data_size <- sum(unlist(observed))
-  model_size = sum(unlist(state))
-  
-  for (i in 1:mass_clusters){
-    result <- result + ll_pois(observed[[as.character(i)]], state[1+i, , drop = TRUE]/model_size * data_size)
-  }
-  result
-}
+# read in model from file
+WF <- odin.dust::odin_dust("NFDS_Model.R")
 
 if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   seq_clusters <- readRDS("PopPUNK_clusters.rds")
-  intermed_gene_presence_absence_consensus <- readRDS(file = "ggCPP_intermed_gene_presence_absence_consensus.rds")
+  intermed_gene_presence_absence_consensus <- readRDS("ggC_intermed_gene_presence_absence.rds")
   intermed_gene_presence_absence_consensus_matrix <- sapply(intermed_gene_presence_absence_consensus[-1,-1],as.double)
-  model_start_pop <- readRDS(file = "PP_model_start_pop.rds")
+  model_start_pop <- readRDS("seq_model_start_pop.rds") 
   delta_ranking <- readRDS(file = "ggC_delta_ranking.rds")
-  mass_cluster_freq_1 <- readRDS(file = "PP_mass_cluster_freq_1.rds")
-  mass_cluster_freq_2 <- readRDS(file = "PP_mass_cluster_freq_2.rds")
-  mass_cluster_freq_3 <- readRDS(file = "PP_mass_cluster_freq_3.rds")
-  mass_VT <- readRDS(file = "PP_mass_VT.rds")
-  mass_clusters <- length(unique(seq_clusters$Cluster))
+  mass_cluster_freq_1 <- readRDS("mass_seq_freq_1.rds")
+  mass_cluster_freq_2 <- readRDS("mass_seq_freq_2.rds")
+  mass_cluster_freq_3 <- readRDS("mass_seq_freq_3.rds")
+  mass_VT <- readRDS("mass_seq_VT.rds")
+  mass_clusters <- nrow(Mass_Samples_accCodes)
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
-  output_filename <- "nullModel_ggCaller_PopPUNK"
+  output_filename <- "616_ggCaller_PopPUNK"
 } else if(args[1] == "COGtriangles" & args[2] == "PopPUNK"){
   seq_clusters <- readRDS("PopPUNK_clusters.rds")
-  intermed_gene_presence_absence_consensus <- readRDS(file = "PP_intermed_gene_presence_absence_consensus.rds")
+  intermed_gene_presence_absence_consensus <- readRDS("intermed_gene_presence_absence.rds")
   intermed_gene_presence_absence_consensus_matrix <- sapply(intermed_gene_presence_absence_consensus[-1,-1],as.double)
-  model_start_pop <- readRDS(file = "PP_model_start_pop.rds")
+  model_start_pop <- readRDS("seq_model_start_pop.rds") 
   delta_ranking <- readRDS(file = "delta_ranking.rds")
-  mass_cluster_freq_1 <- readRDS(file = "PP_mass_cluster_freq_1.rds")
-  mass_cluster_freq_2 <- readRDS(file = "PP_mass_cluster_freq_2.rds")
-  mass_cluster_freq_3 <- readRDS(file = "PP_mass_cluster_freq_3.rds")
-  mass_VT <- readRDS(file = "PP_mass_VT.rds")
-  mass_clusters <- length(unique(seq_clusters$Cluster))
+  mass_cluster_freq_1 <- readRDS("mass_seq_freq_1.rds")
+  mass_cluster_freq_2 <- readRDS("mass_seq_freq_2.rds")
+  mass_cluster_freq_3 <- readRDS("mass_seq_freq_3.rds")
+  mass_VT <- readRDS("mass_seq_VT.rds")
+  mass_clusters <- nrow(Mass_Samples_accCodes)
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
-  output_filename <- "nullModels_COG_PopPUNK"
+  output_filename <- "616_COGtriangles_PopPUNK"
 } else if(args[1] == "ggCaller" & args[2] == "manualSeqClusters"){
   seq_clusters <- readRDS("Mass_Samples_accCodes.rds")
-  intermed_gene_presence_absence_consensus <- readRDS(file = "ggC_intermed_gene_presence_absence_consensus.rds")
+  intermed_gene_presence_absence_consensus <- readRDS("ggC_intermed_gene_presence_absence.rds")
   intermed_gene_presence_absence_consensus_matrix <- sapply(intermed_gene_presence_absence_consensus[-1,-1],as.double)
-  model_start_pop <- readRDS(file = "model_start_pop.rds")
+  model_start_pop <- readRDS("seq_model_start_pop.rds") 
   delta_ranking <- readRDS(file = "ggC_delta_ranking.rds")
-  mass_cluster_freq_1 <- readRDS(file = "mass_cluster_freq_1.rds")
-  mass_cluster_freq_2 <- readRDS(file = "mass_cluster_freq_2.rds")
-  mass_cluster_freq_3 <- readRDS(file = "mass_cluster_freq_3.rds")
-  mass_VT <- readRDS(file = "mass_VT.rds")
-  mass_clusters <- length(unique(seq_clusters$SequenceCluster))
+  mass_cluster_freq_1 <- readRDS("mass_seq_freq_1.rds")
+  mass_cluster_freq_2 <- readRDS("mass_seq_freq_2.rds")
+  mass_cluster_freq_3 <- readRDS("mass_seq_freq_3.rds")
+  mass_VT <- readRDS("mass_seq_VT.rds")
+  mass_clusters <- nrow(Mass_Samples_accCodes)
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
-  output_filename <- "nullModel_ggCaller_manSeqClusters"
+  output_filename <- "616_ggCaller_manSeqClusters"
 } else if(args[1] == "COGtriangles" & args[2] == "manualSeqClusters"){
   seq_clusters <- readRDS("Mass_Samples_accCodes.rds")
-  intermed_gene_presence_absence_consensus <- readRDS(file = "intermed_gene_presence_absence_consensus.rds")
+  intermed_gene_presence_absence_consensus <- readRDS("intermed_gene_presence_absence.rds")
   intermed_gene_presence_absence_consensus_matrix <- sapply(intermed_gene_presence_absence_consensus[-1,-1],as.double)
-  model_start_pop <- readRDS(file = "model_start_pop.rds")
+  model_start_pop <- readRDS("seq_model_start_pop.rds") 
   delta_ranking <- readRDS(file = "delta_ranking.rds")
-  mass_cluster_freq_1 <- readRDS(file = "mass_cluster_freq_1.rds")
-  mass_cluster_freq_2 <- readRDS(file = "mass_cluster_freq_2.rds")
-  mass_cluster_freq_3 <- readRDS(file = "mass_cluster_freq_3.rds")
-  mass_VT <- readRDS(file = "mass_VT.rds")
-  mass_clusters <- length(unique(seq_clusters$SequenceCluster))
+  mass_cluster_freq_1 <- readRDS("mass_seq_freq_1.rds")
+  mass_cluster_freq_2 <- readRDS("mass_seq_freq_2.rds")
+  mass_cluster_freq_3 <- readRDS("mass_seq_freq_3.rds")
+  mass_VT <- readRDS("mass_seq_VT.rds")
+  mass_clusters <- nrow(Mass_Samples_accCodes)
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
-  output_filename <- "nullModel_COG_manSeqClusters"
+  output_filename <- "616_COGtriangles_manSeqClusters"
 }
-#null_ggCPP_params <- list(dt = 1/36, species_no = PP_mass_clusters, Pop_ini = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, vacc_time = 0)
+
+if(args[2] == "PopPUNK"){
+  PP_mass_clusters <- length(unique(seq_clusters$Cluster))
+  Mass_samples_index_dict <- 1:nrow(Mass_Samples_accCodes)
+  names(Mass_samples_index_dict) <- Mass_Samples_accCodes$`Isolate Name`
+  
+  # summarize single-sequence clusters into PP clusters
+  sum_seq_clusters <- function(sequence_clust){
+    clustered_seqs <- rep(0, PP_mass_clusters)
+    for (i in 1:PP_mass_clusters) {
+      clustered_seqs[i] <- sum(sequence_clust[Mass_samples_index_dict[PopPUNK_clusters[PopPUNK_clusters$Cluster==i,]$IsolateName]])
+    }
+    clustered_seqs
+  }
+  
+  #PopPUNK_clusters
+  combined_compare_616 <- function(state, observed, pars = NULL) {
+    result <- 0
+    data_size <- sum(observed)
+    model_size = sum(state)
+    
+    # need to summarize the data and the observations into clusters
+    clustered_state <- sum_seq_clusters(state)
+    clustered_obs <- sum_seq_clusters(observed)
+    
+    for (i in 1:length(clustered_obs)){
+      result <- result + ll_pois(clustered_obs[i], clustered_state[i]/model_size * data_size)
+    }
+    result
+  }
+}else if(args[2] == "manualSeqClusters"){
+  man_mass_clusters <- length(unique(seq_clusters$SequenceCluster))
+  # summarize single-sequence clusters into PP clusters
+  sum_seq_man_clusters <- function(sequence_clust){
+    clustered_seqs <- rep(0, man_mass_clusters)
+    for (i in 1:man_mass_clusters) {
+      clustered_seqs[i] <- sum(sequence_clust[which(Mass_Samples_accCodes$SequenceCluster==i)])
+    }
+    clustered_seqs
+  }
+  
+  #manual sequence clusters
+  combined_compare_616 <- function(state, observed, pars = NULL) {
+    result <- 0
+    data_size <- sum(observed)
+    model_size = sum(state)
+    
+    # need to summarize the data and the observations into clusters
+    clustered_state <- sum_seq_man_clusters(state)
+    clustered_obs <- sum_seq_man_clusters(observed)
+    
+    for (i in 1:length(clustered_obs)){
+      result <- result + ll_pois(clustered_obs[i], clustered_state[i]/model_size * data_size)
+    }
+    result
+  }
+}
+
+
+
 
 # process data with particle filter:
 dt <- 1/36 # we assume that the generation time of Strep. pneumo is 1 month
@@ -124,13 +169,13 @@ fitting_mass_data <- mcstate::particle_filter_data(data = peripost_mass_cluster_
                                                    initial_time = 0)
 
 det_filter <- particle_deterministic$new(data = fitting_mass_data,
-                                         model = WF_null,
+                                         model = WF,
                                          compare = combined_compare)
 
 # Using MCMC to infer parameters
-#pmcmc_sigma_f <- mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0, max = 1)
-#pmcmc_sigma_w <- mcstate::pmcmc_parameter("sigma_w", 0.05, min = 0, max = 1)
-#pmcmc_prop_f <- mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1)
+pmcmc_sigma_f <- mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0, max = 1)
+pmcmc_sigma_w <- mcstate::pmcmc_parameter("sigma_w", 0.05, min = 0, max = 1)
+pmcmc_prop_f <- mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1)
 pmcmc_m <- mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 1)
 pmcmc_v <- mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)
 species_no <- mass_clusters
@@ -163,17 +208,16 @@ make_transform <- function(p) {
            vacc_time = p[(((2 * mass_clusters + 1) + (gene_no * species_no) - 1) + 2 + gene_no) + no_clusters + 2],
            dt = p[(((2 * mass_clusters + 1) + (gene_no * species_no) - 1) + 2 + gene_no) + no_clusters + 3],
            migVec = p[((((2 * mass_clusters + 1) + (gene_no * species_no) - 1) + 2 + gene_no) + no_clusters + 4):((((2 * mass_clusters + 1) + (gene_no * species_no) - 1) + 2 + gene_no) + no_clusters + 4 + species_no - 1)]), as.list(theta))
-    #list(all_params[[1]],all_params[[2]],all_params[[4]],all_params[[6]],all_params[[7]],all_params[[8]],all_params[[9]],all_params[[10]],all_params[[11]])
   }
 }
 
 transform <- function(x) {
   make_transform(complex_params)}
-proposal_matrix <- diag(0.1, 2) # the proposal matrix defines the covariance-variance matrix for a mult normal dist
+proposal_matrix <- diag(0.1, 5) # the proposal matrix defines the covariance-variance matrix for a mult normal dist
 # here, all parameters are proposed independently. 
 # think about this, this might not actually be true
 #mcmc_pars <- mcstate::pmcmc_parameters$new(list(pmcmc_sigma_f, pmcmc_sigma_w, pmcmc_prop_f, pmcmc_m, pmcmc_v), proposal_matrix, transform)
-mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 1), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), proposal_matrix, make_transform(complex_params))
+mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0.075, max = 1), mcstate::pmcmc_parameter("sigma_w", 0.05, min = 0, max = 0.0749), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 1), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), proposal_matrix, make_transform(complex_params))
 #= make_transform(c(Pop_ini, Pop_eq, Genotypes, capacity, delta, vaccTypes, species_no, gene_no, vacc_time)))
 #mcmc_pars$names()
 #mcmc_pars$model(mcmc_pars$initial())
@@ -182,10 +226,10 @@ mcmc_pars$initial()
 # it explains how to not fit all parameters but just the ones I want
 # non-scalar parameters have to be transformed for this.
 
-mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 0.2), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 0.5)), proposal_matrix, make_transform(complex_params))
+mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.1432, min = 0.075, max = 0.22), mcstate::pmcmc_parameter("sigma_w", 0.0011, min = 0, max = 0.0749), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 0.2), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 0.5)), proposal_matrix, make_transform(complex_params))
 
 det_filter <- particle_deterministic$new(data = fitting_mass_data,
-                                         model = WF_null,
+                                         model = WF,
                                          compare = combined_compare)
 
 n_steps <- 1000
@@ -213,10 +257,10 @@ print("det_mcmc_1 log likelihood")
 processed_chains$probabilities[nrow(processed_chains$probabilities),2]
 det_proposal_matrix <- cov(processed_chains$pars)
 #det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0.075, max = 0.22), mcstate::pmcmc_parameter("sigma_w", 0.05, min = 0.000001, max = 0.0749), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 0.2), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 0.5)), det_proposal_matrix, make_transform(complex_params))
-det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("m", parameter_mean_hpd[1], min = 0, max = 1), mcstate::pmcmc_parameter("v", parameter_mean_hpd[2], min = 0, max = 1)), det_proposal_matrix, make_transform(complex_params))
+det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", parameter_mean_hpd[1], min = 0.075, max = 0.22), mcstate::pmcmc_parameter("sigma_w", parameter_mean_hpd[2], min = 0.000001, max = 0.0749), mcstate::pmcmc_parameter("prop_f", parameter_mean_hpd[3], min = 0, max = 1), mcstate::pmcmc_parameter("m", parameter_mean_hpd[4], min = 0, max = 0.2), mcstate::pmcmc_parameter("v", parameter_mean_hpd[5], min = 0, max = 0.5)), det_proposal_matrix, make_transform(complex_params))
 
 det_filter <- particle_deterministic$new(data = fitting_mass_data,
-                                         model = WF_null,
+                                         model = WF,
                                          compare = combined_compare)
 
 n_steps <- 20000
