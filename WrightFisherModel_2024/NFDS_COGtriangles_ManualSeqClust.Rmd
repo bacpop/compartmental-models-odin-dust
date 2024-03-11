@@ -1476,3 +1476,85 @@ par(mar=c(5,6,4,1)+.1)
 plot((gene_cluster_counts_2001), gene_cluster_counts_2007, pch = 21, xlab = "Pre-vaccine COG frequency", ylab = "Post-vaccine COG frequency",cex.lab=2.5, cex.axis = 2.5, cex = 1.5)
 
 ```
+
+### try out finding the important genes for NFDS for ggCPP
+```{r}
+# create a vector with randomly distributed zeros and ones of the length of the number of genes and the number of ones determined by prop_f
+nfds_gene_bool <- rbinom(nrow(ggC_intermed_gene_presence_absence_consensus)-1,1,0.3)
+```
+
+```{r}
+WF_findGenes <- odin.dust::odin_dust("NFDS_Model_FindGenes.R")
+# copy of WrightFisherModel/WrightFisher_newData_nGenotypes_haploid_PopsizeVariablePois.R
+```
+
+```{r}
+all_params <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = 0.3, delta_bool = as.double(nfds_gene_bool), m = 0.005, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.05, vacc_time = 0)
+```
+
+### Running the model:
+```{r}
+WFmodel_findGenes <- WF_findGenes$new(pars = all_params,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+# WFmodel_findGenes$run(10)
+```
+
+# maybe try fitting with dfoptim?
+# create gene_bool_vectors
+# idea: create vectors where 25 percent are 1, the rest 0
+# then find the genes that are "on" (=1) in the best fits
+# 25 percent for ggCaller are 71 genes (1774/25 ~= 71)
+```{r}
+find_genes_df <- data.frame(matrix(0,nrow = nrow(ggC_intermed_gene_presence_absence_consensus)-1, ncol = 50))
+for (i in 1:25) {
+  find_genes_df[,i] <- rep(c(rep(0,24),1),75)[i:(nrow(ggC_intermed_gene_presence_absence_consensus)-2 + i)]
+  find_genes_df[,i+25] <- c(rep(0,1703),rep(1,71),rep(0,1703))[(1 + (i-1) * 71) : (nrow(ggC_intermed_gene_presence_absence_consensus)-1 + (i-1) * 71)]
+}
+```
+
+```{r}
+fitting_closure_FindGenes <- function(all_other_params, data1, data2){
+  null_fit_dfoptim <- function(fit_params){
+  params <- c(all_other_params, sigma_f = fit_params[1], m = fit_params[2], v = fit_params[3])
+  WF_findGenes_model <- WF_findGenes$new(pars = params,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+  n_particles <- 10L
+  n_times <- 73
+  x <- array(NA, dim = c(WF_findGenes_model$info()$len, n_particles, n_times))
+
+  for (t in seq_len(n_times)) {
+    x[ , , t] <- WF_findGenes_model$run(t)
+  }
+  time <- x[1, 1, ]
+  x <- x[-1, , ]
+  combined_compare(x[,1,37],data1) + combined_compare(x[,1,73],data2) 
+}
+}
+```
+
+```{r}
+FindGenes_all_params <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = 0.3, delta_bool = as.double(nfds_gene_bool), m = 0.005, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.05, vacc_time = 0)
+
+fit_FindGenes_ggCPP <- fitting_closure_FindGenes(FindGenes_all_params, PP_mass_cluster_freq_2, PP_mass_cluster_freq_3)
+
+FindGenes_ggCPP_optim_fit <- nmkb(c(0.15, 0.03, 0.05), fit_FindGenes_ggCPP, lower=c(0,0,0), upper=c(1,1,1), control = c(maximize = TRUE))
+```
+
+```{r}
+for (i in 1:10){
+  FindGenes_all_params <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = 0.3, delta_bool = as.double(find_genes_df[,i]), m = 0.005, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.05, vacc_time = 0)
+
+fit_FindGenes_ggCPP <- fitting_closure_FindGenes(FindGenes_all_params, PP_mass_cluster_freq_2, PP_mass_cluster_freq_3)
+
+FindGenes_ggCPP_optim_fit <- nmkb(c(0.15, 0.03, 0.05), fit_FindGenes_ggCPP, lower=c(0,0,0), upper=c(1,1,1), control = c(maximize = TRUE))
+print(FindGenes_ggCPP_optim_fit$par)
+print(FindGenes_ggCPP_optim_fit$value)
+}
+```
+
