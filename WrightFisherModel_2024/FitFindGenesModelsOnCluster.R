@@ -130,15 +130,20 @@ det_filter <- particle_deterministic$new(data = fitting_mass_data,
 
 # compute boolean gene vectors
 n_groups <- ceiling((nrow(intermed_gene_presence_absence_consensus)-1)/25)
-find_genes_df <- data.frame(matrix(0,nrow = nrow(intermed_gene_presence_absence_consensus)-1, ncol = 50))
+find_genes_df <- data.frame(matrix(0,nrow = nrow(intermed_gene_presence_absence_consensus)-1, ncol = 51))
 for (i in 1:25) {
   find_genes_df[,i] <- rep(c(rep(0,24),1),(n_groups + 4))[i:(nrow(intermed_gene_presence_absence_consensus)-2 + i)]
-  find_genes_df[,i+25] <- c(rep(0,(nrow(intermed_gene_presence_absence_consensus) - 1-n_groups)),rep(1,n_groups),rep(0,(nrow(intermed_gene_presence_absence_consensus) - 1-n_groups)))[(1 + (i-1) * n_groups) : (nrow(intermed_gene_presence_absence_consensus)-1 + (i-1) * n_groups)]
+  find_genes_df[,i+25] <- c(rep(0,(nrow(intermed_gene_presence_absence_consensus) - 1-n_groups)),rep(1,n_groups),rep(0,(nrow(intermed_gene_presence_absence_consensus) - n_groups)))[(1 + (i-1) * n_groups) : (nrow(intermed_gene_presence_absence_consensus)-1 + (i-1) * n_groups)]
 }
+ggCmanFindGeneResults <- readRDS("ggCmanSeqCl_FindGenesResults2.rds")
+find_genes_df[,51] <- ggCmanFindGeneResults
+
+
 
 print(output_filename)
 
-for (i in 1:50) {
+for (i in 51:51) {
+#for (i in 1:50) {
 
 # Using MCMC to infer parameters
 pmcmc_sigma_f <- mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0, max = 1)
@@ -251,7 +256,7 @@ det_mcmc2 <- coda::as.mcmc(cbind(det_pmcmc_run2$probabilities, det_pmcmc_run2$pa
 #pdf(file = paste(output_filename,"det_mcmc2.pdf",sep = "_"),   # The directory you want to save the file in
 #    width = 6, # The width of the plot in inches
 #    height = 12)
-#plot(det_mcmc2)
+plot(det_mcmc2)
 #dev.off()
 
 processed_chains <- mcstate::pmcmc_thin(det_pmcmc_run2, burnin = 500, thin = 1)
