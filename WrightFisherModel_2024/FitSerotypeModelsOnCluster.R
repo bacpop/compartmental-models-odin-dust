@@ -56,58 +56,32 @@ combined_compare <- function(state, observed, pars = NULL) {
   result
 }
 
-if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
-  seq_clusters <- readRDS("PopPUNK_clusters.rds")
-  intermed_gene_presence_absence_consensus <- readRDS(file = "ggCPP_intermed_gene_presence_absence_consensus.rds")
-  intermed_gene_presence_absence_consensus_matrix <- sapply(intermed_gene_presence_absence_consensus[-1,-1],as.double)
-  model_start_pop <- readRDS(file = "PP_model_start_pop.rds")
-  delta_ranking <- readRDS(file = "ggC_delta_ranking.rds")
-  mass_cluster_freq_1 <- readRDS(file = "PP_mass_cluster_freq_1.rds")
-  mass_cluster_freq_2 <- readRDS(file = "PP_mass_cluster_freq_2.rds")
-  mass_cluster_freq_3 <- readRDS(file = "PP_mass_cluster_freq_3.rds")
-  mass_VT <- readRDS(file = "PP_mass_VT.rds")
-  mass_clusters <- length(unique(seq_clusters$Cluster))
-  avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
-  output_filename <- "ggCaller_PopPUNK"
-} else if(args[1] == "COGtriangles" & args[2] == "PopPUNK"){
-  seq_clusters <- readRDS("PopPUNK_clusters.rds")
-  intermed_gene_presence_absence_consensus <- readRDS(file = "PP_intermed_gene_presence_absence_consensus.rds")
-  intermed_gene_presence_absence_consensus_matrix <- sapply(intermed_gene_presence_absence_consensus[-1,-1],as.double)
-  model_start_pop <- readRDS(file = "PP_model_start_pop.rds")
-  delta_ranking <- readRDS(file = "delta_ranking.rds")
-  mass_cluster_freq_1 <- readRDS(file = "PP_mass_cluster_freq_1.rds")
-  mass_cluster_freq_2 <- readRDS(file = "PP_mass_cluster_freq_2.rds")
-  mass_cluster_freq_3 <- readRDS(file = "PP_mass_cluster_freq_3.rds")
-  mass_VT <- readRDS(file = "PP_mass_VT.rds")
-  mass_clusters <- length(unique(seq_clusters$Cluster))
-  avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
-  output_filename <- "COGtriangles_PopPUNK"
-} else if(args[1] == "ggCaller" & args[2] == "manualSeqClusters"){
+if(args[1] == "ggCaller"){
   seq_clusters <- readRDS("Mass_Samples_accCodes.rds")
-  intermed_gene_presence_absence_consensus <- readRDS(file = "ggC_intermed_gene_presence_absence_consensus.rds")
+  intermed_gene_presence_absence_consensus <- readRDS(file = "ggCsero_intermed_gene_presence_absence_consensus.rds")
   intermed_gene_presence_absence_consensus_matrix <- sapply(intermed_gene_presence_absence_consensus[-1,-1],as.double)
-  model_start_pop <- readRDS(file = "model_start_pop.rds")
+  model_start_pop <- readRDS(file = "Sero_model_start_pop.rds")
   delta_ranking <- readRDS(file = "ggC_delta_ranking.rds")
-  mass_cluster_freq_1 <- readRDS(file = "mass_cluster_freq_1.rds")
-  mass_cluster_freq_2 <- readRDS(file = "mass_cluster_freq_2.rds")
-  mass_cluster_freq_3 <- readRDS(file = "mass_cluster_freq_3.rds")
-  mass_VT <- readRDS(file = "mass_VT.rds")
-  mass_clusters <- length(unique(seq_clusters$SequenceCluster))
+  mass_cluster_freq_1 <- readRDS(file = "Sero_freq_1.rds")
+  mass_cluster_freq_2 <- readRDS(file = "Sero_freq_2.rds")
+  mass_cluster_freq_3 <- readRDS(file = "Sero_freq_3.rds")
+  mass_VT <- readRDS(file = "Sero_mass_VT.rds")
+  mass_clusters <- length(unique(seq_clusters$Serotype))
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
-  output_filename <- "ggCaller_manSeqClusters"
-} else if(args[1] == "COGtriangles" & args[2] == "manualSeqClusters"){
+  output_filename <- "ggCaller_Serotype"
+} else if(args[1] == "COGtriangles"){
   seq_clusters <- readRDS("Mass_Samples_accCodes.rds")
-  intermed_gene_presence_absence_consensus <- readRDS(file = "intermed_gene_presence_absence_consensus.rds")
+  intermed_gene_presence_absence_consensus <- readRDS(file = "Sero_intermed_gene_presence_absence_consensus.rds")
   intermed_gene_presence_absence_consensus_matrix <- sapply(intermed_gene_presence_absence_consensus[-1,-1],as.double)
-  model_start_pop <- readRDS(file = "model_start_pop.rds")
+  model_start_pop <- readRDS(file = "Sero_model_start_pop.rds")
   delta_ranking <- readRDS(file = "delta_ranking.rds")
-  mass_cluster_freq_1 <- readRDS(file = "mass_cluster_freq_1.rds")
-  mass_cluster_freq_2 <- readRDS(file = "mass_cluster_freq_2.rds")
-  mass_cluster_freq_3 <- readRDS(file = "mass_cluster_freq_3.rds")
-  mass_VT <- readRDS(file = "mass_VT.rds")
-  mass_clusters <- length(unique(seq_clusters$SequenceCluster))
+  mass_cluster_freq_1 <- readRDS(file = "Sero_freq_1.rds")
+  mass_cluster_freq_2 <- readRDS(file = "Sero_freq_2.rds")
+  mass_cluster_freq_3 <- readRDS(file = "Sero_freq_3.rds")
+  mass_VT <- readRDS(file = "Sero_mass_VT.rds")
+  mass_clusters <- length(unique(seq_clusters$Serotype))
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
-  output_filename <- "COGtriangles_manSeqClusters"
+  output_filename <- "COGtriangles_Serotype"
 }
 
 

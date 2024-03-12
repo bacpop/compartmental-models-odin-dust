@@ -57,3 +57,19 @@ saveRDS(new_fitting_vec2, "ggCmanSeqCl_FindGenesResults2.rds")
 #-261.6746 
 #[1] "det_mcmc_2 mean log likelihood"
 #[1] -258.4692
+
+### ggCPP FindGenes version
+output_ggCPP_FindGenes <- read_csv("~/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_03_12/output_ggCPP_FindGenes.txt")
+View(output_ggCPP_FindGenes)
+colnames(output_ggCPP_FindGenes) <- output_ggCPP_FindGenes[10,1]
+output_ggCPP_FindGenes <- output_ggCPP_FindGenes[-(1:10),]
+for (i in 1:49) {
+  likelihoods_FindGenes_df[i,3] <- strsplit(output_ggCPP_FindGenes[9 * i,1]$`[1] "ggCaller_PopPUNK"`, "\\[1\\]")[[1]][2]
+}
+#sort.list(likelihoods_FindGenes_df$ggCmanSeqCl) # should be decreasing=TRUE but it does not seem to recognise the minus sign
+sort.list(likelihoods_FindGenes_df$ggCPP)[1:10]
+#  5 44 46 21 12 38 30  2 19 28
+
+rowSums(find_genes_df[,sort.list(likelihoods_FindGenes_df$ggCPP)[1:10]])
+sum(rowSums(find_genes_df[,sort.list(likelihoods_FindGenes_df$ggCPP)[1:10]])==1) # 568
+sum(rowSums(find_genes_df[,sort.list(likelihoods_FindGenes_df$ggCPP)[1:10]])==2) # 71
