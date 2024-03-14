@@ -41,6 +41,8 @@ mass_clusters <- length(unique(Mass_Samples_accCodes$SequenceCluster))
 avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
 
 params_n_vP <- list(dt = 1/36, species_no = mass_clusters,  gene_no = nrow(intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(model_start_pop), Pop_eq = as.double(model_start_pop), capacity = sum(model_start_pop), Genotypes = intermed_gene_presence_absence_consensus_matrix, sigma_f = 0.2193191513, sigma_w = 0.0007111157, prop_f = 0.3735531590, delta = delta_ranking, m = 0.0052207254, migVec = avg_cluster_freq, vaccTypes = mass_VT, v = 0.1321567425, vacc_time = 0)
+
+params_n_vP <- list(dt = 1/36, species_no = mass_clusters,  gene_no = nrow(intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(model_start_pop), Pop_eq = as.double(model_start_pop), capacity = sum(model_start_pop), Genotypes = intermed_gene_presence_absence_consensus_matrix, sigma_f = 0.1789665082, sigma_w = 0.0006039627, prop_f = 0.3669067334 , delta = delta_ranking, m = 0.0078524723 , migVec = avg_cluster_freq, vaccTypes = mass_VT, v = 0.1103623064, vacc_time = 0)
 ```
 
 ### Running the model:
@@ -1557,4 +1559,31 @@ print(FindGenes_ggCPP_optim_fit$par)
 print(FindGenes_ggCPP_optim_fit$value)
 }
 ```
+
+### Comparing different models using abs error
+```{r}
+
+params_n_vP <- list(dt = 1/36, species_no = mass_clusters,  gene_no = nrow(intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(model_start_pop), Pop_eq = as.double(model_start_pop), capacity = sum(model_start_pop), Genotypes = intermed_gene_presence_absence_consensus_matrix, sigma_f = 0.1789665082, sigma_w = 0.0006039627, prop_f = 0.3669067334 , delta = delta_ranking, m = 0.0078524723 , migVec = avg_cluster_freq, vaccTypes = mass_VT, v = 0.1103623064, vacc_time = 0)
+WFmodel_nG_h_vP <- WF_nG_h_vP$new(pars = params_n_vP,
+                          time = 1,
+                          n_particles = 10L,
+                          n_threads = 4L,
+                          seed = 1L)
+simMean <- rowMeans(WFmodel_nG_h_vP$run(72)[-1,])
+sum(abs(mass_cluster_freq_3/sum(mass_cluster_freq_3) - simMean/sum(simMean)))
+# [1] 0.407629
+
+WF_PP <- odin.dust::odin_dust("NFDS_Model.R")
+
+all_params <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(PP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = PP_intermed_gene_presence_absence_consensus_matrix, sigma_f = 0.1764665767, sigma_w = 0.0005367709, prop_f = 0.437293239, delta = delta_ranking, m = 0.0114977275, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.1135499700, vacc_time = 0)
+WFmodel_PP <- WF_PP$new(pars = all_params,
+                                   time = 1,
+                                   n_particles = 10L,
+                                   n_threads = 4L,
+                                   seed = 1L)
+simMeanPP <- rowMeans(WFmodel_PP$run(72)[-1,])
+sum(abs(PP_mass_cluster_freq_3/sum(PP_mass_cluster_freq_3) - simMeanPP/sum(simMeanPP)))
+# [1] 0.4440668
+```
+
 
