@@ -108,6 +108,19 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   mass_clusters <- length(unique(seq_clusters$SequenceCluster))
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
   output_filename <- "COGtriangles_manSeqClusters"
+} else if(args[1] == "prev_COGtriangles" & args[2] == "manualSeqClusters"){
+  seq_clusters <- readRDS("Mass_Samples_accCodes.rds")
+  intermed_gene_presence_absence_consensus <- readRDS(file = "prev_mass_consensus_presence_absence.rds")
+  intermed_gene_presence_absence_consensus_matrix <- sapply(intermed_gene_presence_absence_consensus[,-1],as.double)
+  model_start_pop <- readRDS(file = "model_start_pop.rds")
+  delta_ranking <- readRDS(file = "prev_delta_ranking.rds")
+  mass_cluster_freq_1 <- readRDS(file = "mass_cluster_freq_1.rds")
+  mass_cluster_freq_2 <- readRDS(file = "mass_cluster_freq_2.rds")
+  mass_cluster_freq_3 <- readRDS(file = "mass_cluster_freq_3.rds")
+  mass_VT <- readRDS(file = "mass_VT.rds")
+  mass_clusters <- length(unique(seq_clusters$SequenceCluster))
+  avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
+  output_filename <- "prev_COGtriangles_manSeqClusters"
 }
 
 

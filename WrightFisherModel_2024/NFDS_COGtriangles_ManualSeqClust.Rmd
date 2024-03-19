@@ -1573,6 +1573,8 @@ simMean2 <- rowMeans(WFmodel_nG_h_vP$run(36)[-1,])
 simMean3 <- rowMeans(WFmodel_nG_h_vP$run(72)[-1,])
 sum(abs(mass_cluster_freq_3/sum(mass_cluster_freq_3) - simMean3/sum(simMean3)))
 # [1] 0.407629
+sum(abs(mass_cluster_freq_3/sum(mass_cluster_freq_3) - simMean3/sum(simMean3))) + sum(abs(mass_cluster_freq_2/sum(mass_cluster_freq_2) - simMean2/sum(simMean2)))
+# [1] 0.7558528
 sum(abs(mass_cluster_freq_3/sum(mass_cluster_freq_3) - simMean3/sum(simMean3)))/mass_clusters
 # [1] 0.009942172
 
@@ -1587,6 +1589,8 @@ simMeanPP2 <- rowMeans(WFmodel_PP$run(36)[-1,])
 simMeanPP3 <- rowMeans(WFmodel_PP$run(72)[-1,])
 sum(abs(PP_mass_cluster_freq_3/sum(PP_mass_cluster_freq_3) - simMeanPP3/sum(simMeanPP3)))
 # [1] 0.4440668
+sum(abs(PP_mass_cluster_freq_3/sum(PP_mass_cluster_freq_3) - simMeanPP3/sum(simMeanPP3))) + sum(abs(PP_mass_cluster_freq_2/sum(PP_mass_cluster_freq_2) - simMeanPP2/sum(simMeanPP2)))
+# [1] 0.8750077
 sum(abs(PP_mass_cluster_freq_3/sum(PP_mass_cluster_freq_3) - simMeanPP3/sum(simMeanPP3)))/PP_mass_clusters
 # [1] 0.007162368
 
@@ -1601,6 +1605,8 @@ simMeanggC2 <- rowMeans(WFmodel_ggCmanSeqCl$run(36)[-1,])
 simMeanggC3 <- rowMeans(WFmodel_ggCmanSeqCl$run(72)[-1,])
 sum(abs(mass_cluster_freq_3/sum(mass_cluster_freq_3) - simMeanggC3/sum(simMeanggC3)))
 # [1] 0.3908194
+sum(abs(mass_cluster_freq_3/sum(mass_cluster_freq_3) - simMeanggC3/sum(simMeanggC3))) + sum(abs(mass_cluster_freq_2/sum(mass_cluster_freq_2) - simMeanggC2/sum(simMeanggC2)))
+# [1] 0.7078664
 sum(abs(mass_cluster_freq_3/sum(mass_cluster_freq_3) - simMeanggC3/sum(simMeanggC3)))/mass_clusters
 # [1] 0.009532182
 
@@ -1615,6 +1621,8 @@ simMeanggCPP2 <- rowMeans(WFmodel_ggCPP$run(36)[-1,])
 simMeanggCPP3 <- rowMeans(WFmodel_ggCPP$run(72)[-1,])
 sum(abs(PP_mass_cluster_freq_3/sum(PP_mass_cluster_freq_3) - simMeanggCPP3/sum(simMeanggCPP3)))
 # [1] 0.4220826
+sum(abs(PP_mass_cluster_freq_3/sum(PP_mass_cluster_freq_3) - simMeanggCPP3/sum(simMeanggCPP3))) + sum(abs(PP_mass_cluster_freq_2/sum(PP_mass_cluster_freq_2) - simMeanggCPP2/sum(simMeanggCPP2)))
+# [1] 0.8474369
 sum(abs(PP_mass_cluster_freq_3/sum(PP_mass_cluster_freq_3) - simMeanggCPP3/sum(simMeanggCPP3)))/PP_mass_clusters
 # [1] 0.006807784
 ```
@@ -1623,6 +1631,7 @@ sum(abs(PP_mass_cluster_freq_3/sum(PP_mass_cluster_freq_3) - simMeanggCPP3/sum(s
 PP_manSeq_clusters_df <- data.frame(matrix(Mass_Samples_accCodes$`Isolate Name`,nrow = nrow(Mass_Samples_accCodes),ncol = 1))
 PP_manSeq_clusters_df[,2] <- Mass_Samples_accCodes$SequenceCluster
 PP_manSeq_clusters_df[,3] <- PP_Mass_seq_clusters_dict[Mass_Samples_accCodes$`Isolate Name`]
+colnames(PP_manSeq_clusters_df) <- c("Isolate_Name","manSeqCl","PP")
 
 # create dictionary to translate between PopPUNK and man seq clusters
 PP_to_manSeq_dict <- rep(0,PP_mass_clusters)
@@ -1706,6 +1715,8 @@ simMean2 <- rowMeans(WFmodel_nG_h_vP$run(36)[-1,])
 simMean3 <- rowMeans(WFmodel_nG_h_vP$run(72)[-1,])
 sum(abs(mass_cluster_freq_3/sum(mass_cluster_freq_3) - simMean3/sum(simMean3)))
 # [1] 0.6136608
+sum(abs(mass_cluster_freq_3/sum(mass_cluster_freq_3) - simMean3/sum(simMean3))) + sum(abs(mass_cluster_freq_2/sum(mass_cluster_freq_2) - simMean2/sum(simMean2)))
+# [1] 1.025771
 sum(abs(mass_cluster_freq_3/sum(mass_cluster_freq_3) - simMean3/sum(simMean3)))/mass_clusters
 # [1] 0.01496734
 
@@ -1720,6 +1731,8 @@ simMeanPP2 <- rowMeans(WFmodel_PP$run(36)[-1,])
 simMeanPP3 <- rowMeans(WFmodel_PP$run(72)[-1,])
 sum(abs(PP_mass_cluster_freq_3/sum(PP_mass_cluster_freq_3) - simMeanPP3/sum(simMeanPP3)))
 # [1] 0.650785
+sum(abs(PP_mass_cluster_freq_3/sum(PP_mass_cluster_freq_3) - simMeanPP3/sum(simMeanPP3))) + sum(abs(PP_mass_cluster_freq_2/sum(PP_mass_cluster_freq_2) - simMeanPP2/sum(simMeanPP2)))
+# [1] 1.155241
 sum(abs(PP_mass_cluster_freq_3/sum(PP_mass_cluster_freq_3) - simMeanPP3/sum(simMeanPP3)))/PP_mass_clusters
 # [1] 0.01049653
 
@@ -1734,11 +1747,13 @@ simMeanggC2 <- rowMeans(WFmodel_ggCmanSeqCl$run(36)[-1,])
 simMeanggC3 <- rowMeans(WFmodel_ggCmanSeqCl$run(72)[-1,])
 sum(abs(mass_cluster_freq_3/sum(mass_cluster_freq_3) - simMeanggC3/sum(simMeanggC3)))
 # [1] 0.5759087
+sum(abs(mass_cluster_freq_3/sum(mass_cluster_freq_3) - simMeanggC3/sum(simMeanggC3))) + sum(abs(mass_cluster_freq_2/sum(mass_cluster_freq_2) - simMeanggC2/sum(simMeanggC2)))
+# [1] 1.002419
 sum(abs(mass_cluster_freq_3/sum(mass_cluster_freq_3) - simMeanggC3/sum(simMeanggC3)))/mass_clusters
 # [1] 0.01404655
 
 ### ggCaller PopPUNK
-params_ggCPP <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = 0.118078349, sigma_w = 0, prop_f = 1, delta = ggC_delta_ranking, m = 0.03104461, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.15977862, vacc_time = 0)
+params_ggCPP <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = 0.01931485, sigma_w = 0, prop_f = 1, delta = ggC_delta_ranking, m = 0.03104461, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.15977862, vacc_time = 0)
 WFmodel_ggCPP <- WF_nG_h_vP$new(pars = params_ggCPP,
                                    time = 1,
                                    n_particles = 10L,
@@ -1747,9 +1762,11 @@ WFmodel_ggCPP <- WF_nG_h_vP$new(pars = params_ggCPP,
 simMeanggCPP2 <- rowMeans(WFmodel_ggCPP$run(36)[-1,])
 simMeanggCPP3 <- rowMeans(WFmodel_ggCPP$run(72)[-1,])
 sum(abs(PP_mass_cluster_freq_3/sum(PP_mass_cluster_freq_3) - simMeanggCPP3/sum(simMeanggCPP3)))
-# [1] 0.7404015
+# [1] 0.6169782
+sum(abs(PP_mass_cluster_freq_3/sum(PP_mass_cluster_freq_3) - simMeanggCPP3/sum(simMeanggCPP3))) + sum(abs(PP_mass_cluster_freq_2/sum(PP_mass_cluster_freq_2) - simMeanggCPP2/sum(simMeanggCPP2)))
+# [1] 1.151487
 sum(abs(PP_mass_cluster_freq_3/sum(PP_mass_cluster_freq_3) - simMeanggCPP3/sum(simMeanggCPP3)))/PP_mass_clusters
-# [1] 0.01194196
+# [1] 0.009951261
 ```
 
 ```{r}
@@ -1789,6 +1806,149 @@ combined_compare(simMeanggC2,mass_cluster_freq_2) + combined_compare(simMeanggC3
 
 # ggC PopPUNK
 combined_compare(p3_ggCPP2_fit_asManSeqCl,PP_mass_cluster_freq_2_asManSeqCl) + combined_compare(p3_ggCPP3_fit_asManSeqCl,PP_mass_cluster_freq_3_asManSeqCl)
-#[1] -316.4249
+#[1] -250.1021
+```
+
+### Null model
+```{r}
+# COG
+null_man_params <- list(dt = 1/36, species_no = mass_clusters, Pop_ini = as.double(model_start_pop), capacity = sum(model_start_pop), migVec = avg_cluster_freq, vaccTypes = mass_VT, vacc_time = 0, m = 0.007792041, v = 0.023544605)
+# ggCaller
+null_man_params <- list(dt = 1/36, species_no = mass_clusters, Pop_ini = as.double(model_start_pop), capacity = sum(model_start_pop), migVec = avg_cluster_freq, vaccTypes = mass_VT, vacc_time = 0, m = 0.007772363, v = 0.023542031)
+null_man_WFmodel <- WF_null$new(pars = null_man_params,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+simMeanMan2 <- rowMeans(null_man_WFmodel$run(36)[-1,])
+simMeanMan3 <- rowMeans(null_man_WFmodel$run(72)[-1,])
+# COG man seq clusters
+combined_compare(simMeanMan2,mass_cluster_freq_2) + combined_compare(simMeanMan3,mass_cluster_freq_3)
+# [1] -251.8277 # COG
+# [1] -247.3254 # ggCaller
+
+# COG
+null_ggCPP_params <- list(dt = 1/36, species_no = PP_mass_clusters, Pop_ini = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, vacc_time = 0, m = 0.008116513, v = 0.031218082)
+# ggCaller
+null_ggCPP_params <- list(dt = 1/36, species_no = PP_mass_clusters, Pop_ini = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, vacc_time = 0, m = 0.008118758 , v = 0.031313422)
+null_ggCPP_WFmodel <- WF_null$new(pars = null_ggCPP_params,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+simMeanggCPP2 <- rowMeans(null_ggCPP_WFmodel$run(36)[-1,])
+simMeanggCPP3 <- rowMeans(null_ggCPP_WFmodel$run(72)[-1,])
+null_ggCPP2_fit_asManSeqCl <- rep(0,mass_clusters)
+for (i in 1:PP_mass_clusters) {
+  null_ggCPP2_fit_asManSeqCl[PP_to_manSeq_dict[i]+1] <- null_ggCPP2_fit_asManSeqCl[PP_to_manSeq_dict[i]+1] + simMeanggCPP2[i]
+}
+null_ggCPP3_fit_asManSeqCl <- rep(0,mass_clusters)
+for (i in 1:PP_mass_clusters) {
+  null_ggCPP3_fit_asManSeqCl[PP_to_manSeq_dict[i]+1] <- null_ggCPP3_fit_asManSeqCl[PP_to_manSeq_dict[i]+1] + simMeanggCPP3[i]
+}
+# ggC PopPUNK
+combined_compare(null_ggCPP2_fit_asManSeqCl,PP_mass_cluster_freq_2_asManSeqCl) + combined_compare(null_ggCPP3_fit_asManSeqCl,PP_mass_cluster_freq_3_asManSeqCl)
+# [1] -260.3223 # COG
+#[1] -267.9277 # ggCaller
+```
+
+### Serotypes
+```{r}
+# For serotypes, the mapping won't work as well because there are multiple serotypes in some clusters and multiple clusters in some serotypes...
+for (i in 1:mass_clusters-1) {
+  print(Mass_Samples_accCodes$Serotype[which(Mass_Samples_accCodes$SequenceCluster==i-1)])
+}
+serotypes_mass <- unique(Mass_Samples_accCodes$Serotype)
+for (i in 1:length(serotypes_mass)) {
+  print(Mass_Samples_accCodes$SequenceCluster[which(Mass_Samples_accCodes$Serotype==serotypes_mass[i])])
+}
+
+# maybe calculating the absolute error is the best that I can do?
+# COG man seq clusters
+seroCOG_params <- list(dt = 1/36, species_no = mass_serotypes,  gene_no = nrow(Sero_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(Sero_model_start_pop), Pop_eq = as.double(Sero_model_start_pop), capacity = sum(Sero_model_start_pop), Genotypes = Sero_intermed_gene_presence_absence_consensus_matrix, sigma_f = 0.092853976, sigma_w = 0.001272531, prop_f = 0.279026024, delta = delta_ranking, m = 0.003294931, migVec = avg_sero_freq, vaccTypes = Sero_mass_VT, v = 0.104832549, vacc_time = 0)
+seroCOG_WFmodel <- WF_nG_h_vP$new(pars = seroCOG_params,
+                          time = 1,
+                          n_particles = 10L,
+                          n_threads = 4L,
+                          seed = 1L)
+simMean2 <- rowMeans(seroCOG_WFmodel$run(36)[-1,])
+simMean3 <- rowMeans(seroCOG_WFmodel$run(72)[-1,])
+sum(abs(Sero_freq_3/sum(Sero_freq_3) - simMean3/sum(simMean3)))
+# [1] 0.4791769
+sum(abs(Sero_freq_3/sum(Sero_freq_3) - simMean3/sum(simMean3))) + sum(abs(Sero_freq_2/sum(Sero_freq_2) - simMean2/sum(simMean2)))
+# [1] 0.8189977
+sum(abs(Sero_freq_3/sum(Sero_freq_3) - simMean3/sum(simMean3)))/mass_serotypes
+# [1] 0.01497428
+
+ggCsero_params_n_vP <- list(dt = 1/36, species_no = mass_serotypes,  gene_no = nrow(ggCsero_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(Sero_model_start_pop), Pop_eq = as.double(Sero_model_start_pop), capacity = sum(Sero_model_start_pop), Genotypes = ggCsero_intermed_gene_presence_absence_consensus_matrix, sigma_f = 0.106580510, sigma_w = 0.001225886, prop_f = 0.350827911, delta = ggC_delta_ranking, m = 0.027188726, migVec = avg_sero_freq, vaccTypes = Sero_mass_VT, v = 0.268750983, vacc_time = 0)
+seroggC_WFmodel <- WF_nG_h_vP$new(pars = ggCsero_params_n_vP,
+                          time = 1,
+                          n_particles = 10L,
+                          n_threads = 4L,
+                          seed = 1L)
+simMean2 <- rowMeans(seroggC_WFmodel$run(36)[-1,])
+simMean3 <- rowMeans(seroggC_WFmodel$run(72)[-1,])
+sum(abs(Sero_freq_3/sum(Sero_freq_3) - simMean3/sum(simMean3)))
+# [1] 0.546132
+sum(abs(Sero_freq_3/sum(Sero_freq_3) - simMean3/sum(simMean3))) + sum(abs(Sero_freq_2/sum(Sero_freq_2) - simMean2/sum(simMean2)))
+# [1] 0.9233974
+sum(abs(Sero_freq_3/sum(Sero_freq_3) - simMean3/sum(simMean3)))/mass_serotypes
+# [1] 0.01706663
+
+```
+
+# 616 compartments
+```{r}
+c616_mass_cluster_freq_1 <- readRDS("mass_seq_freq_1.rds")
+c616_mass_cluster_freq_2 <- readRDS(file = "mass_seq_freq_2.rds")
+c616_mass_cluster_freq_3 <- readRDS(file = "mass_seq_freq_3.rds")
+c616_intermed_gene_presence_absence <- readRDS("intermed_gene_presence_absence.rds")
+c616_intermed_gene_presence_absence_matrix <- sapply(c616_intermed_gene_presence_absence[-1,-1],as.double)
+seq_model_start_pop <- readRDS("seq_model_start_pop.rds") 
+mass_seq_VT <- readRDS("mass_seq_VT.rds")
+
+
+man_mass_clusters <- length(unique(seq_clusters$SequenceCluster))
+mass_clusters2 <- length(unique(seq_clusters$SequenceCluster))
+# summarize single-sequence clusters into PP clusters
+sum_seq_man_clusters <- function(sequence_clust){
+  clustered_seqs <- rep(0, mass_clusters)
+  for (i in 1:mass_clusters) {
+    clustered_seqs[i] <- sum(sequence_clust[which(Mass_Samples_accCodes$SequenceCluster==i-1)])
+  }
+  clustered_seqs
+}
+  
+#observed will be the mass_cluster_freq_2 and _3, not the c616 one
+combined_compare_616 <- function(state, observed, pars = NULL) {
+  result <- 0
+  data_size <- sum(unlist(observed))
+  model_size = sum(unlist(state))
+    
+  # need to summarize the data and the observations into clusters
+  clustered_state <- sum_seq_man_clusters(unlist(state))
+    
+  for (i in 1:mass_clusters){
+    result <- result + ll_pois(observed[i], clustered_state[i]/model_size * data_size)
+  }
+  result
+}
+```
+
+```{r}
+# COG with 616 compartments
+seq_clusters <- readRDS("Mass_Samples_accCodes.rds")
+avg_cluster_freq <- rep(1/nrow(seq_clusters), nrow(seq_clusters))
+c616_params_n_vP <- list(dt = 1/36, species_no = nrow(seq_clusters),  gene_no = nrow(c616_intermed_gene_presence_absence)-1, Pop_ini = as.double(seq_model_start_pop), Pop_eq = as.double(seq_model_start_pop), capacity = sum(seq_model_start_pop), Genotypes = c616_intermed_gene_presence_absence_matrix, sigma_f = 0.20840945, sigma_w = 0.02772616, prop_f = 0.90395014, delta = as.double(delta_ranking), m = 0.17328677, migVec = as.double(avg_cluster_freq), vaccTypes = as.double(mass_seq_VT), v = 0.42626268, vacc_time = 0)
+WFmodel_nG_h_vP <- WF_nG_h_vP$new(pars = c616_params_n_vP,
+                          time = 1,
+                          n_particles = 10L,
+                          n_threads = 4L,
+                          seed = 1L)
+simMean2 <- rowMeans(WFmodel_nG_h_vP$run(36)[-1,])
+simMean3 <- rowMeans(WFmodel_nG_h_vP$run(72)[-1,])
+
+combined_compare_616(simMean2,mass_cluster_freq_2) + combined_compare_616(simMean3,mass_cluster_freq_3)
+# [1] -230.2955
 ```
 
