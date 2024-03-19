@@ -1952,3 +1952,45 @@ combined_compare_616(simMean2,mass_cluster_freq_2) + combined_compare_616(simMea
 # [1] -230.2955
 ```
 
+#Lollipop for normal model together with NULL model
+```{r}
+### ggCaller PopPUNK
+params_ggCPP <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = 0.1180783495, sigma_w = 0.0004164005, prop_f = 0.3803173188, delta = ggC_delta_ranking, m = 0.0117180887, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.1509501052, vacc_time = 0)
+WFmodel_ggCPP <- WF_nG_h_vP$new(pars = params_ggCPP,
+                                   time = 1,
+                                   n_particles = 10L,
+                                   n_threads = 4L,
+                                   seed = 1L)
+simMeanggCPP2 <- rowMeans(WFmodel_ggCPP$run(36)[-1,])
+simMeanggCPP3 <- rowMeans(WFmodel_ggCPP$run(72)[-1,])
+
+# Null ggCPP
+NullsimMeanggCPP2 <- rowMeans(null_ggCPP_WFmodel$run(36)[-1,])
+NullsimMeanggCPP3 <- rowMeans(null_ggCPP_WFmodel$run(72)[-1,])
+
+lollipop_cluster_freqs_2x2_VTandNVT(year = "2004", plot_title = "Full Model vs Null Model", data1 = PP_mass_cluster_freq_2/sum(PP_mass_cluster_freq_2), model_name_1 ="NFDS Model", model1 = simMeanggCPP2/sum(simMeanggCPP2), model2 = NullsimMeanggCPP2/sum(NullsimMeanggCPP2), model_name_2 = "Null Model", VT_vec = PP_mass_VT)
+lollipop_cluster_freqs_2x2_VTandNVT(year = "2007", plot_title = "Full Model vs Null Model", data1 = PP_mass_cluster_freq_3/sum(PP_mass_cluster_freq_3), model_name_1 ="NFDS Model", model1 = simMeanggCPP3/sum(simMeanggCPP3), model2 = NullsimMeanggCPP3/sum(NullsimMeanggCPP3), model_name_2 = "Null Model", VT_vec = PP_mass_VT)
+
+
+# 3-param
+### ggCaller PopPUNK
+params_ggCPP <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = 0.01931485, sigma_w = 0, prop_f = 1, delta = ggC_delta_ranking, m = 0.03104461, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.15977862, vacc_time = 0)
+WFmodel_ggCPP <- WF_nG_h_vP$new(pars = params_ggCPP,
+                                   time = 1,
+                                   n_particles = 10L,
+                                   n_threads = 4L,
+                                   seed = 1L)
+p3_simMeanggCPP2 <- rowMeans(WFmodel_ggCPP$run(36)[-1,])
+p3_simMeanggCPP3 <- rowMeans(WFmodel_ggCPP$run(72)[-1,])
+
+lollipop_cluster_freqs_2x2_VTandNVT(year = "2004", plot_title = "3-param Model vs Null Model", data1 = PP_mass_cluster_freq_2/sum(PP_mass_cluster_freq_2), model_name_1 ="3-param Model", model1 = p3_simMeanggCPP2/sum(p3_simMeanggCPP2), model2 = NullsimMeanggCPP2/sum(NullsimMeanggCPP2), model_name_2 = "Null Model", VT_vec = PP_mass_VT)
+lollipop_cluster_freqs_2x2_VTandNVT(year = "2007", plot_title = "3-param Model vs Null Model", data1 = PP_mass_cluster_freq_3/sum(PP_mass_cluster_freq_3), model_name_1 ="3-param Model", model1 = p3_simMeanggCPP3/sum(p3_simMeanggCPP3), model2 = NullsimMeanggCPP3/sum(NullsimMeanggCPP3), model_name_2 = "Null Model", VT_vec = PP_mass_VT)
+```
+
+### Plot ggCPP results in lollipop plot
+```{r}
+#ggCPP_model_val1
+lollipop_cluster_freqs_VTandNVT(year = "2001", plot_title = "PopPUNK and ggCaller", data1 = PP_mass_cluster_freq_1/sum(PP_mass_cluster_freq_1), model_name_1 ="Model", model1 = PP_model_start_pop/sum(PP_model_start_pop), PP_mass_VT)
+lollipop_cluster_freqs_VTandNVT(year = "2004", plot_title = "PopPUNK and ggCaller", data1 = PP_mass_cluster_freq_2/sum(PP_mass_cluster_freq_2), model_name_1 ="Model", model1 = simMeanggCPP2/sum(simMeanggCPP2), PP_mass_VT)
+lollipop_cluster_freqs_VTandNVT(year = "2007", plot_title = "PopPUNK and ggCaller", data1 = PP_mass_cluster_freq_3/sum(PP_mass_cluster_freq_3), model_name_1 ="Model", model1 = simMeanggCPP3/sum(simMeanggCPP3), PP_mass_VT)
+```
