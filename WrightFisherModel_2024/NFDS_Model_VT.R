@@ -10,7 +10,7 @@ Pop_size <- sum(Pop[1:species_no,1:2])
 # frequency dependent selection (i.e. the fitness of the genotypes are not constant but based on how frequent the genes/loci they contain are in the population)
 # based on Corander et al. (2017)
 # frequency of each gene at current time:
-gene_freq[,] <-  Genotypes[i,j] * sum(Pop[,j])
+gene_freq[,] <-  Genotypes[i,j] * sum(Pop[j,])
 freq[] <- sum(gene_freq[i,1:species_no]) / Pop_size
 
 # overall deviation of loci for genomes
@@ -45,8 +45,10 @@ Pop_mig[,] <- rbinom(mig_num, migVec[i,j])
 ## Core equation for population (assume constant size here):
 update(Pop[,]) <- y[i,j] + Pop_mig[i,j]
 #update(probs2[]) <- eq[i]
+update(Pop_tot[]) <- sum(y[i,]) + sum(Pop_mig[i,])
 
 initial(Pop[,]) <- Pop_ini[i,j] # deterministic, user-based start value
+initial(Pop_tot[]) <- sum(Pop_ini[i,])
 #initial(probs2[]) <- (1 + 0.02) * Pop_ini[i]
 
 #calculate equilibrium frequencies of genes
@@ -79,6 +81,7 @@ dim(freq) <- gene_no
 dim(Pop_ini) <- c(species_no,2)
 dim(Pop_eq) <- species_no
 dim(Pop_mig) <- c(species_no,2)
+dim(Pop_tot) <- species_no
 dim(gene_eq) <- c(gene_no, species_no) #frequency of genes at equilibrium
 dim(eq) <- gene_no
 dim(pi_f_freq) <- c(gene_no, species_no)

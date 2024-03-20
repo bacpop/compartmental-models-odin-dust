@@ -2057,17 +2057,26 @@ ceil_mass_NVT <- rep(0, mass_clusters)
 for (i in 1:mass_clusters){
   ceil_mass_NVT[i] <- ceiling(mean(as.integer(Mass_Samples_accCodes[Mass_Samples_accCodes$SequenceCluster == i-1,"Vaccine Type"]=="NVT")))
 }
+mean_mass_VT_2001 <- rep(0, mass_clusters)
+for (i in 1:mass_clusters){
+  mean_mass_VT_2001[i] <- (mean(as.integer(Mass_Samples_accCodes[Mass_Samples_accCodes$SequenceCluster == i-1 & Mass_Samples_accCodes$`Year of Isolation`==2001,"Vaccine Type"]=="VT")))
+}
+mean_mass_VT_2001[is.nan(mean_mass_VT_2001)] <- 0
+
 mean_mass_VT <- rep(0, mass_clusters)
 for (i in 1:mass_clusters){
   mean_mass_VT[i] <- (mean(as.integer(Mass_Samples_accCodes[Mass_Samples_accCodes$SequenceCluster == i-1,"Vaccine Type"]=="VT")))
 }
 
 mass_clusters <- length(unique(Mass_Samples_accCodes$SequenceCluster))
-VT_mig <- rep(1/mass_clusters, mass_clusters) * ceil_mass_VT * mass_clusters/sum(ceil_mass_NVT + ceil_mass_VT)
-NVT_mig <- rep(1/mass_clusters, mass_clusters) * (ceil_mass_NVT) * mass_clusters/sum(ceil_mass_NVT + ceil_mass_VT)
+#VT_mig <- rep(1/mass_clusters, mass_clusters) * ceil_mass_VT * mass_clusters/sum(ceil_mass_NVT + ceil_mass_VT)
+#NVT_mig <- rep(1/mass_clusters, mass_clusters) * (ceil_mass_NVT) * mass_clusters/sum(ceil_mass_NVT + ceil_mass_VT)
+
+NVT_mig <- rep(1/mass_clusters, mass_clusters) * (ceil_mass_NVT)
+VT_mig <- rep(1/mass_clusters, mass_clusters) * (1-ceil_mass_NVT)
 
 # NVT, VT
-VT_model_start_pop <- matrix(as.double(c(model_start_pop * (1-mean_mass_VT),model_start_pop * mean_mass_VT)), byrow = TRUE, nrow = mass_clusters, ncol = 2)
+VT_model_start_pop <- matrix(as.double(c(model_start_pop * (1-mean_mass_VT_2001),model_start_pop * mean_mass_VT_2001)), byrow = FALSE, nrow = mass_clusters, ncol = 2)
 
 params_VT <- list(dt = 1/36, species_no = mass_clusters,  gene_no = nrow(intermed_gene_presence_absence_consensus)-1, Pop_ini = VT_model_start_pop, Pop_eq = as.double(model_start_pop), capacity = sum(model_start_pop), Genotypes = intermed_gene_presence_absence_consensus_matrix, sigma_f = 0.2193191513, sigma_w = 0.0007111157, prop_f = 0.3735531590, delta = delta_ranking, m = 0.0052207254, migVec = cbind(NVT_mig,VT_mig), vT = c(0,1), v = 0.1321567425, vacc_time = 0)
 ```
@@ -2081,6 +2090,10 @@ WFmodel_VT <- WF_VT$new(pars = params_VT,
 ```
 
 ```{r}
-WFmodel_VT$run(10)
+WFmodel_VT$run(36)[(1:42),]
+WFmodel_VT$run(36)[(2:42),1] # "normal" version, i.e. VT and NVT together
+WFmodel_VT$run(36)[(43:83),1] # NVTs
+WFmodel_VT$run(36)[-(1:83),1] # VTs
+#  WFmodel_VT$run(36)[(43:83),1] + WFmodel_VT$run(36)[-(1:83),1] # should be the same as WFmodel_VT$run(36)[(2:42),1]
 ```
 
