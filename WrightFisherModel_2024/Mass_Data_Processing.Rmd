@@ -219,6 +219,12 @@ for (i in 1:mass_clusters){
 # 1 means VT
 # 0 means NVT
 # if cluster is 50/50 it will count as VT
+
+mass_VT_2001 <- rep(0, mass_clusters)
+for (i in 1:mass_clusters){
+     mass_VT_2001[i] <- ceiling(median(as.integer(Mass_Samples_accCodes[Mass_Samples_accCodes$SequenceCluster == i-1 & Mass_Samples_accCodes$`Year of Isolation`==2001,"Vaccine Type"]=="VT")))
+}
+# does not really work because there are multiple clusters that don't appear in 2001
 ```
 
 ```{r}
