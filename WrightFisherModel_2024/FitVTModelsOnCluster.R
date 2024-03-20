@@ -46,7 +46,7 @@ combined_compare <- function(state, observed, pars = NULL) {
   #data_size <- sum(mass_cluster_freq_1)
   #model_size = 15000
   data_size <- sum(unlist(observed))
-  model_size = sum(unlist(state))
+  model_size = sum(unlist(state[2:mass_clusters+1, , drop = TRUE]))
   
   for (i in 1:mass_clusters){
     result <- result + ll_pois(observed[[as.character(i)]], state[1+i, , drop = TRUE]/model_size * data_size)
