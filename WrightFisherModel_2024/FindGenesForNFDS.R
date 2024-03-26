@@ -102,7 +102,8 @@ FindNFDSgenes <- function(repeats = 100, frac = 0.1){
     
     ### ggCaller PopPUNK 3-param
     delta_bool <- rnd_vect_full
-    params_ggCPP <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = 0.01931485, sigma_w = 0, prop_f = 1, delta_bool = delta_bool, m = 0.03104461, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.15977862, vacc_time = 0)
+    #params_ggCPP <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = 0.01931485, sigma_w = 0, prop_f = 1, delta_bool = delta_bool, m = 0.03104461, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.15977862, vacc_time = 0)
+    params_ggCPP <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = 0.0386297, sigma_w = 0, prop_f = 1, delta_bool = delta_bool, m = 0.03104461, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.15977862, vacc_time = 0)
     WFmodel_ggCPP <- WF$new(pars = params_ggCPP,
                             time = 1,
                             n_particles = 10L,
@@ -123,34 +124,50 @@ FindNFDSgenes <- function(repeats = 100, frac = 0.1){
   best_vec
 }
 
+# first values with fitted parameters from 3-param model
+# second values from same parameter set but sigma_f twice as large (0.0386297)
 best_100_perc_vect <- FindNFDSgenes(repeats = 100, frac = 1)
 # -316.8468
+# -336.6054
 best_90_perc_vect <- FindNFDSgenes(repeats = 100, frac = 0.9)
 # -309.0821
+# -325.0176
 best_80_perc_vect <- FindNFDSgenes(repeats = 100, frac = 0.8)
 # -311.1709
+# -318.3955
 best_70_perc_vect <- FindNFDSgenes(repeats = 100, frac = 0.7)
 # -310.0685
+# -312.7839
 best_60_perc_vect <- FindNFDSgenes(repeats = 100, frac = 0.6)
 # -313.4829
+# -304.5797
 best_50_perc_vect <- FindNFDSgenes(repeats = 100, frac = 0.5)
 # -320.779
+# -303.6713
 best_40_perc_vect <- FindNFDSgenes(repeats = 100, frac = 0.4)
 # -327.5759
+# -303.1324
 best_35_perc_vect <- FindNFDSgenes(repeats = 100, frac = 0.35)
 # -327.4471
+# -307.2633
 best_30_perc_vect <- FindNFDSgenes(repeats = 100, frac = 0.3)
 #  -339.4924
+# -308.8178
 best_25_perc_vect <- FindNFDSgenes(repeats = 100, frac = 0.25)
 # -343.4345
+# -313.2131
 best_20_perc_vect <- FindNFDSgenes(repeats = 100, frac = 0.2)
 # -348.0353
+# -327.1084
 best_15_perc_vect <- FindNFDSgenes(repeats = 100, frac = 0.15)
 # -358.3352
-best_10_perc_vec <- FindNFDSgenes(repeats = 100, frac = 0.15)
+# -337.041
+best_10_perc_vec <- FindNFDSgenes(repeats = 100, frac = 0.10)
 # -354.3937
+# -349.9868
 best_5_perc_vec <- FindNFDSgenes(repeats = 100, frac = 0.05)
 # -376.391
+# -371.9671
 
 
 ### more repeats (doesn't seem to bring a qualitative improvement)
