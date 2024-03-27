@@ -103,7 +103,11 @@ FindNFDSgenes <- function(repeats = 100, frac = 0.1){
     ### ggCaller PopPUNK 3-param
     delta_bool <- rnd_vect_full
     #params_ggCPP <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = 0.01931485, sigma_w = 0, prop_f = 1, delta_bool = delta_bool, m = 0.03104461, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.15977862, vacc_time = 0)
-    params_ggCPP <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = 0.0386297, sigma_w = 0, prop_f = 1, delta_bool = delta_bool, m = 0.03104461, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.15977862, vacc_time = 0)
+    #params_ggCPP <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = 0.0386297, sigma_w = 0, prop_f = 1, delta_bool = delta_bool, m = 0.03104461, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.15977862, vacc_time = 0)
+    #params_ggCPP <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = 0.0772594, sigma_w = 0, prop_f = 1, delta_bool = delta_bool, m = 0.03104461, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.15977862, vacc_time = 0)
+    #params_ggCPP <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = 0.1545188, sigma_w = 0, prop_f = 1, delta_bool = delta_bool, m = 0.03104461, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.15977862, vacc_time = 0)
+    params_ggCPP <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = 0.3090376, sigma_w = 0, prop_f = 1, delta_bool = delta_bool, m = 0.03104461, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.15977862, vacc_time = 0)
+    params_ggCPP <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = 0.6180752, sigma_w = 0, prop_f = 1, delta_bool = delta_bool, m = 0.03104461, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.15977862, vacc_time = 0)
     WFmodel_ggCPP <- WF$new(pars = params_ggCPP,
                             time = 1,
                             n_particles = 10L,
@@ -126,49 +130,107 @@ FindNFDSgenes <- function(repeats = 100, frac = 0.1){
 
 # first values with fitted parameters from 3-param model
 # second values from same parameter set but sigma_f twice as large (0.0386297)
+# third: doubled sigma_f again (0.07725940)
+# fourth: doubled sigma_f again (0.1545188)
+# fifth: doubled sigma_f again (0.3090376)
+# sixth: doubled sigma_f again (0.6180752)
 best_100_perc_vect <- FindNFDSgenes(repeats = 100, frac = 1)
 # -316.8468
 # -336.6054
+# -377.6104
+# -485.8535
+# -1177.413
+# -1710.235
 best_90_perc_vect <- FindNFDSgenes(repeats = 100, frac = 0.9)
 # -309.0821
 # -325.0176
+# -355.2654
+# -382.8643
+# -1247.047
 best_80_perc_vect <- FindNFDSgenes(repeats = 100, frac = 0.8)
 # -311.1709
 # -318.3955
+# -343.2562
+# -366.5913
+# -1180.972
+# -1114.129
 best_70_perc_vect <- FindNFDSgenes(repeats = 100, frac = 0.7)
 # -310.0685
 # -312.7839
+# -336.6817
+# -360.9399
+# -985.3221
+# -1084.834
 best_60_perc_vect <- FindNFDSgenes(repeats = 100, frac = 0.6)
 # -313.4829
 # -304.5797
+# -329.0323
+# -357.7246
+# -486.8475
+# -1053.929
 best_50_perc_vect <- FindNFDSgenes(repeats = 100, frac = 0.5)
 # -320.779
 # -303.6713
+# -322.5524
+# -347.8738
+# -400.3433
+# -724.7756
 best_40_perc_vect <- FindNFDSgenes(repeats = 100, frac = 0.4)
 # -327.5759
 # -303.1324
+# -313.384
+# -331.0309
+# -359.3175
+# -602.6219
 best_35_perc_vect <- FindNFDSgenes(repeats = 100, frac = 0.35)
 # -327.4471
 # -307.2633
+# -308.0027
+# -324.1988
+# -338.6673
+# -477.3307
 best_30_perc_vect <- FindNFDSgenes(repeats = 100, frac = 0.3)
 #  -339.4924
 # -308.8178
+# -306.5803
+# -319.527
+# -343.9595
+# -407.3833
 best_25_perc_vect <- FindNFDSgenes(repeats = 100, frac = 0.25)
 # -343.4345
 # -313.2131
+# -304.1711
+# -307.3205
+# -338.3931
+# -371.6217
 best_20_perc_vect <- FindNFDSgenes(repeats = 100, frac = 0.2)
 # -348.0353
 # -327.1084
+# -308.3151
+# -312.0316
+# -323.8821
+# -344.4585
 best_15_perc_vect <- FindNFDSgenes(repeats = 100, frac = 0.15)
 # -358.3352
 # -337.041
+# -304.6377
+# -303.4799
+# -299.9564
+# -323.5808
 best_10_perc_vec <- FindNFDSgenes(repeats = 100, frac = 0.10)
 # -354.3937
 # -349.9868
+# -329.6862
+# -306.7359
+# -288.273
+# -304.1316
 best_5_perc_vec <- FindNFDSgenes(repeats = 100, frac = 0.05)
 # -376.391
 # -371.9671
-
+# -349.9106
+# -319.9057
+# -312.8814
+# -306.8226
 
 ### more repeats (doesn't seem to bring a qualitative improvement)
 best_90_perc_vect <- FindNFDSgenes(repeats = 500, frac = 0.9)
@@ -179,3 +241,32 @@ best_70_perc_vect <- FindNFDSgenes(repeats = 500, frac = 0.7)
 # -308.3332
 best_60_perc_vect <- FindNFDSgenes(repeats = 500, frac = 0.6)
 # -310.633
+
+NFDSgenes_df <- data.frame(matrix(0, nrow = 8,ncol = 15))
+colnames(NFDSgenes_df)[1] <- "sigma_f"
+NFDSgenes_df[2:7,1] <- c(0.01931485, 0.0386297, 0.07725940, 0.1545188, 0.3090376, 0.6180752)
+NFDSgenes_df[1,-1] <- c(1,0.9,0.8,0.7,0.6,0.5,0.4,0.35,0.3,0.25,0.2,0.15,0.1,0.05)
+rownames(NFDSgenes_df)[1] <- "frac"
+NFDSgenes_df[-1,2] <- c(-316.8468, -336.6054, -377.6104, -485.8535, -1633.545, -1710.235, NA)
+NFDSgenes_df[-1,3] <- c(-309.0821, -325.0176, -355.2654, -382.8643, -1177.413, -1247.047, NA)
+NFDSgenes_df[-1,4] <- c(-311.1709, -318.3955, -343.2562, -366.5913, -1180.972, -1114.129, NA)
+NFDSgenes_df[-1,5] <- c(-310.0685, -312.7839, -336.6817, -360.9399, -985.3221, -1084.834, NA)
+NFDSgenes_df[-1,6] <- c(-313.4829, -304.5797, -329.0323, -357.7246, -486.8475, -1053.929, NA)
+NFDSgenes_df[-1,7] <- c(-320.779, -303.6713, -322.5524, -347.8738, -400.3433, -724.7756, NA)
+NFDSgenes_df[-1,8] <- c(-327.5759, -303.1324, -313.384, -331.0309, -359.3175, -602.6219, NA)
+NFDSgenes_df[-1,9] <- c(-327.4471, -307.2633, -308.0027, -324.1988, -338.6673, -477.3307, NA)
+NFDSgenes_df[-1,10] <- c(-339.4924, -308.8178, -306.5803, -319.527, -343.9595, -407.3833, NA)
+NFDSgenes_df[-1,11] <- c(-343.4345, -313.2131, -304.1711, -307.3205, -338.3931, -371.6217, NA)
+NFDSgenes_df[-1,12] <- c(-348.0353, -327.1084, -308.3151, -312.0316, -323.8821, -344.4585, NA)
+NFDSgenes_df[-1,13] <- c(-358.3352, -337.041, -304.6377, -303.4799, -299.9564, -323.5808, NA)
+NFDSgenes_df[-1,14] <- c(-354.3937, -349.9868, -329.6862, -306.7359, -288.273, -304.1316, NA)
+NFDSgenes_df[-1,15] <- c(-376.391, -371.9671, -349.9106, -319.9057, -312.8814, -306.8226, NA)
+
+matplot(NFDSgenes_df$sigma_f[2:7], NFDSgenes_df[2:7,-1], type = "l", lty = 1, 
+        col = c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#b15928", "#6a3d9a", "#cab2d6", "#fdbf6f", "#fb9a99", "#e31a1c"),
+        ylab = "Likelihood", main = "Likelihood for different fractions of genes under NFDS and various sigma_f values",
+        ylim = c(-600,-250), log="x", xlab = "sigma_f values",xaxt='n')
+axis(side = 1, at = NFDSgenes_df$sigma_f[2:7], labels = NFDSgenes_df$sigma_f[2:7])
+legend("bottomleft", legend = NFDSgenes_df[1,-1],
+       col = c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#b15928", "#6a3d9a", "#cab2d6", "#fdbf6f", "#fb9a99", "#e31a1c"),
+       lty = 1)
