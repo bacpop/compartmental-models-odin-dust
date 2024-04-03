@@ -267,6 +267,7 @@ peri_post <- (mass_gene_freq_2 + mass_gene_freq_3) / (sum(mass_cluster_freq_2) +
 
 # calculate delta statistic (refer to Corander et al. for more info)
 delta_data <- (post_vacc_gene_freq - pre_peri_vacc_gene_freq) ^ 2 / (1 - pre_peri_vacc_gene_freq * (1 - pre_peri_vacc_gene_freq))
+plot(sort(delta_data, decreasing = TRUE))
 delta_ranking <- rank(delta_data)
 
 delta_data2 <- (post_vacc_gene_freq - pre_vacc_gene_freq) ^ 2 / (1 - pre_vacc_gene_freq * (1 - pre_vacc_gene_freq))

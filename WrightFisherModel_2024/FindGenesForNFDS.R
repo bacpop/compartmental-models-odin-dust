@@ -272,3 +272,53 @@ axis(side = 1, at = NFDSgenes_df$sigma_f[2:7], labels = NFDSgenes_df$sigma_f[2:7
 legend("bottomleft", legend = NFDSgenes_df[1,-1],
        col = c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#b15928", "#6a3d9a", "#cab2d6", "#fdbf6f", "#fb9a99", "#e31a1c"),
        lty = 1)
+
+
+
+
+
+### Try finding optimal gene set using simulated annealing
+library(optimization)
+start_vect <- rbinom(nrow(ggCPP_intermed_gene_presence_absence_consensus)-1 -length((group_gene_cl)) ,1, 0.1)
+
+fitting_closure <- function(all_other_params, data1, data2){
+  null_fit_dfoptim <- function(fit_params){
+    unique_genes <- setdiff(1:(nrow(ggCPP_intermed_gene_presence_absence_consensus)-1), names(group_gene_cl))
+    rnd_vect_full <- rep(0, (nrow(ggCPP_intermed_gene_presence_absence_consensus)-1))
+    rnd_vect_full[unique_genes] <- fit_params
+    rnd_vect_full[as.integer(names(group_gene_cl))] <- rnd_vect_full[unname(group_gene_cl)]
+    
+    params$delta_bool = rnd_vect_full
+    WFmodel_ggCPP <- WF$new(pars = params,
+                                time = 1,
+                                n_particles = 10L,
+                                n_threads = 4L,
+                                seed = 1L)
+    n_particles <- 10L
+    n_times <- 73
+    x <- array(NA, dim = c(WFmodel_ggCPP$info()$len, n_particles, n_times))
+    
+    for (t in seq_len(n_times)) {
+      x[ , , t] <- WFmodel_ggCPP$run(t)
+    }
+    time <- x[1, 1, ]
+    x <- x[-1, , ]
+    combined_compare(x[,1,37],data1) + combined_compare(x[,1,73],data2) 
+  }
+}
+
+
+FindGenes_ggCPP_params <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = 0.3090376, sigma_w = 0, prop_f = 1, m = 0.03104461, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.15977862, vacc_time = 0)
+
+fit_FindGenes_ggCPP <- fitting_closure(FindGenes_ggCPP_params, PP_mass_cluster_freq_2, PP_mass_cluster_freq_3)
+
+FindGenes_sa <- optim_sa(fun = fit_FindGenes_ggCPP, start = start_vect, maximization = TRUE, trace = TRUE,lower=rep(0,length(start_vect)), upper=rep(1,length(start_vect)))
+plot(FindGenes_sa$par)
+length(which(FindGenes_sa$par>0.6))
+#[1] 130
+length(which(FindGenes_sa$par>0.6))/length(FindGenes_sa$par)
+#[1] 0.1036683
+
+# that is not really a surprise because I was using the sigma_f that is optimal at 10% NFDS genes, according to my previous investigation
+# but good to corroborate that I guess
+# and the plot really is quite interesting because while the values are not just 0 or 1, most genes cluster at 0.2 and lower or 0.8 and higher
