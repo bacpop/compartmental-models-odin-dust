@@ -303,7 +303,7 @@ fitting_closure <- function(all_other_params, data1, data2){
     }
     time <- x[1, 1, ]
     x <- x[-1, , ]
-    combined_compare(x[,1,37],data1) + combined_compare(x[,1,73],data2) 
+    - combined_compare(x[,1,37],data1) - combined_compare(x[,1,73],data2) 
   }
 }
 
@@ -322,3 +322,29 @@ length(which(FindGenes_sa$par>0.6))/length(FindGenes_sa$par)
 # that is not really a surprise because I was using the sigma_f that is optimal at 10% NFDS genes, according to my previous investigation
 # but good to corroborate that I guess
 # and the plot really is quite interesting because while the values are not just 0 or 1, most genes cluster at 0.2 and lower or 0.8 and higher
+
+simAnn_results <- data.frame(matrix(0, nrow = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1 -length((group_gene_cl)), ncol = 10))
+simAnn_values <- rep(0, 10)
+
+nextfun <- function(x) rbinom(nrow(ggCPP_intermed_gene_presence_absence_consensus)-1 -length((group_gene_cl)) ,1,runif(1))
+
+for (i in 1:10) {
+  FindGenes_sa2 <- optim(fn=fit_FindGenes_ggCPP, par=start_vect, gr=nextfun, method="SANN", 
+                         control=list(maxit=1000,fnscale=1,trace=10))
+  simAnn_results[,i] <- FindGenes_sa2$par
+  simAnn_values[i] <- FindGenes_sa2$value
+}
+
+#FindGenes_sa2 <- optim(fn=fit_FindGenes_ggCPP, par=start_vect, gr=nextfun, method="SANN", 
+#                       control=list(maxit=10,fnscale=1,trace=10))
+plot(rowSums(simAnn_results))
+plot(simAnn_results[,1])
+points(simAnn_results[,2], col = "red")
+colMeans(simAnn_results)
+
+new_start_vec <- rep(0,length(start_vect))
+new_start_vec[which(rowSums(simAnn_results)>=2)] <- 1
+fit_FindGenes_ggCPP(new_start_vec)
+FindGenes_sa3 <- optim(fn=fit_FindGenes_ggCPP, par=new_start_vec, gr=nextfun, method="SANN", 
+                       control=list(maxit=1000,fnscale=1,trace=10))
+plot(FindGenes_sa3$par + new_start_vec)

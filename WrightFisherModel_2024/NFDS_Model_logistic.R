@@ -19,7 +19,7 @@ freq[] <- sum(gene_freq[i,1:species_no]) / Pop_size
 # prop_f becomes the midpoint of the function (x0)
 # sigma_f is the supremum (L)
 # and the sigma_w will be replaced by the steepness of the curve (K)
-delta_log[] <- L / (1 + exp(-K * (delta[i] - x0 * gene_no)))
+delta_log[] <- 1 / (1 + exp(-K * (delta[i] - x0 * gene_no)))
 log_freq[,] <-  Genotypes[i,j] * (eq[i] - freq[i]) * delta_log[i]
 log_genotypes[] <- sum(log_freq[1:gene_no,i])
 #delta_bool[] <- if ((delta[i] <= prop_f * gene_no)) 1 else 0

@@ -2163,6 +2163,15 @@ lines(0.1789665082/(1 + exp(- 0.02 * (1:1774 - 1774*(1-0.3669067334)))))
 lines(0.1789665082/(1 + exp(- 0.01 * (1:1774 - 1774*(1-0.3669067334)))))
 
 #sigma_f = 0.1789665082, sigma_w = 0.0006039627, prop_f = 0.3669067334
-
+#ggCPP fit results in the following logistic values
+ggCPP_log_fit <- 0.11292912/(1 + exp(- 4.95113406 * (1:1774 - 1774*(0.62342733))))
+max(ggCPP_log_fit)
+plot(ggCPP_log_fit)
+length(which(ggCPP_log_fit[which(ggCPP_log_fit<0.99 * max(ggCPP_log_fit))]>0.01))
+# so there is just 1 element that has an intermediate value.
+# question: do I need the steepness value then?
+# is there a similar function that does not need the steepness parameter?
+# there is a different definition of the logistic function, which is 1/(1 + exp(-x)), I could use that as 1/(1 + exp(- 1 *(x - x0)) or 1/(1 + exp(x0 - x))
+plot(1/(1+exp((1774*(0.62342733)-1:1774))))
 ```
 
