@@ -14,19 +14,25 @@ gene_freq[,] <-  Genotypes[i,j] * Pop[j]
 freq[] <- sum(gene_freq[i,1:species_no]) / Pop_size
 
 # overall deviation of loci for genomes
-# idea 1: make a Boolean vector for strongly selected genes
-delta_bool[] <- if ((delta[i] <= prop_f * gene_no)) 1 else 0
-pi_f_freq[,] <-  Genotypes[i,j] * (eq[i] - freq[i]) * delta_bool[i]
-pi_f_genotypes[] <- sum(pi_f_freq[1:gene_no,i])
+# logistic NFDS
+# substitute delta_bool by the logistic function
+# prop_f becomes the midpoint of the function (x0)
+# sigma_f is the supremum (L)
+# and the sigma_w will be replaced by the steepness of the curve (K)
+delta_log[] <- L / (1 + exp(-K * (delta[i] - x0 * gene_no)))
+log_freq[,] <-  Genotypes[i,j] * (eq[i] - freq[i]) * delta_log[i]
+log_genotypes[] <- sum(log_freq[1:gene_no,i])
+#delta_bool[] <- if ((delta[i] <= prop_f * gene_no)) 1 else 0
+#pi_f_freq[,] <-  Genotypes[i,j] * (eq[i] - freq[i]) * delta_bool[i]
+#pi_f_genotypes[] <- sum(pi_f_freq[1:gene_no,i])
 
-pi_w_freq[,] <-  Genotypes[i,j] * (eq[i] - freq[i]) * (1 - delta_bool[i])
-pi_w_genotypes[] <- sum(pi_w_freq[1:gene_no,i])
+#pi_w_freq[,] <-  Genotypes[i,j] * (eq[i] - freq[i]) * (1 - delta_bool[i])
+#pi_w_genotypes[] <- sum(pi_w_freq[1:gene_no,i])
 
 # Genotype specific probability to produce offspring
-# those are the individuals' probabilities multiplied by the number of individuals that have this genotype
-probs[] <- ((1 + sigma_f)^pi_f_genotypes[i] * (1 + sigma_w)^pi_w_genotypes[i]) * Pop[i] * (1- (as.integer(time >= vacc_time) * vaccTypes[i] * v))
-
-
+# those are the individuals' probabilities multiplied by the number of individual that have this genotype
+#probs[] <- ((1 + sigma_f)^pi_f_genotypes[i] * (1 + sigma_w)^pi_w_genotypes[i]) * Pop[i] * (1- (as.integer(time >= vacc_time) * vaccTypes[i] * v))
+probs[] <- (1 + L )^log_genotypes[i] * Pop[i] * (1- (as.integer(time >= vacc_time) * vaccTypes[i] * v))
 
 # The lambda of the poisson distribution then consists of the normalised probability and a factor that describes how close we are to the capacity and a factor for the population size.
 # You could simplify this by cancelling out the Pop_size (which makes sense because we will loose less accuracy but it will make it a bit less easy to interpret.)
@@ -61,9 +67,9 @@ gene_no <- user() # number of genes in the data set
 Pop_ini[] <- user() # initial frequency of Genotypes
 Pop_eq[] <- user()
 capacity <- user()
-sigma_f <- user()
-sigma_w <- user()
-prop_f <- user()
+L <- user()
+K <- user()
+x0 <- user()
 delta[] <- user()
 m <- user() # migration rate
 #GeneFitness[] <- user() # fitness vector for different genes
@@ -81,12 +87,12 @@ dim(Pop_eq) <- species_no
 dim(Pop_mig) <- species_no
 dim(gene_eq) <- c(gene_no, species_no) #frequency of genes at equilibrium
 dim(eq) <- gene_no
-dim(pi_f_freq) <- c(gene_no, species_no)
-dim(pi_f_genotypes) <- species_no
-dim(pi_w_freq) <- c(gene_no, species_no)
-dim(pi_w_genotypes) <- species_no
+dim(log_freq) <- c(gene_no, species_no)
+dim(log_genotypes) <- species_no
+#dim(pi_w_freq) <- c(gene_no, species_no)
+#dim(pi_w_genotypes) <- species_no
 dim(delta) <- gene_no
-dim(delta_bool) <- gene_no
+dim(delta_log) <- gene_no
 #dim(FitnessMatrix) <- c(gene_no,species_no) # a matrix that stores the presence and the fitness for each gene and genotype
 dim(Genotypes) <- c(gene_no, species_no) # we have in each column the genes (present/not present, i.e. 1/0) of one genotype
 dim(Pop) <- species_no

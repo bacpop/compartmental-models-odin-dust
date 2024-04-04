@@ -23,6 +23,7 @@ intermed_gene_presence_absence_consensus <- readRDS(file = "intermed_gene_presen
 intermed_gene_presence_absence_consensus_matrix <- sapply(intermed_gene_presence_absence_consensus[-1,-1],as.double)
 model_start_pop <- readRDS(file = "model_start_pop.rds")
 delta_ranking <- readRDS(file = "delta_ranking.rds")
+inv_delta_ranking <- readRDS(file = "inv_delta_ranking.rds")
 mass_cluster_freq_1 <- readRDS(file = "mass_cluster_freq_1.rds")
 mass_cluster_freq_2 <- readRDS(file = "mass_cluster_freq_2.rds")
 mass_cluster_freq_3 <- readRDS(file = "mass_cluster_freq_3.rds")
@@ -253,6 +254,7 @@ ggC_intermed_gene_presence_absence_consensus <- readRDS(file = "ggC_intermed_gen
 ggC_intermed_gene_presence_absence_consensus_matrix <- sapply(ggC_intermed_gene_presence_absence_consensus[-1,-1],as.double)
 model_start_pop <- readRDS(file = "model_start_pop.rds")
 ggC_delta_ranking <- readRDS(file = "ggC_delta_ranking.rds")
+ggC_inv_delta_ranking <- readRDS(file = "ggC_inv_delta_ranking.rds")
 mass_cluster_freq_1 <- readRDS(file = "mass_cluster_freq_1.rds")
 mass_cluster_freq_2 <- readRDS(file = "mass_cluster_freq_2.rds")
 mass_cluster_freq_3 <- readRDS(file = "mass_cluster_freq_3.rds")
@@ -2095,5 +2097,72 @@ WFmodel_VT$run(36)[(2:42),1] # "normal" version, i.e. VT and NVT together
 WFmodel_VT$run(36)[(43:83),1] # NVTs
 WFmodel_VT$run(36)[-(1:83),1] # VTs
 #  WFmodel_VT$run(36)[(43:83),1] + WFmodel_VT$run(36)[-(1:83),1] # should be the same as WFmodel_VT$run(36)[(2:42),1]
+```
+
+
+### PCA
+```{r}
+pca_results <- prcomp(t(sapply(ggCPP_intermed_gene_presence_absence_consensus[-1,-1],as.double)))
+summary(pca_results)
+```
+
+```{r}
+var_explained = pca_results$sdev^2 / sum(pca_results$sdev^2)
+
+#library(ggplot2)
+ggplot(data = data.frame( comp = 1:length(var_explained), explained_var = var_explained), aes(y=explained_var, x=comp)) + 
+  geom_line() + 
+  geom_point() +
+  xlab("Principal Component") + 
+  ylab("Variance Explained") +
+  ggtitle("Elbow Plot") +
+  ylim(0, 1)
+```
+
+```{r}
+ggplot(data.frame(pca_results$rotation),aes(PC1, PC2))+ 
+  geom_point()
+```
+
+```{r}
+fviz_eig(pca_results, addlabels = TRUE)
+```
+
+### WF model with logistic NFDS function
+
+```{r}
+WF_log <- odin.dust::odin_dust("NFDS_Model_logistic.R")
+# copy of WrightFisherModel/WrightFisher_newData_nGenotypes_haploid_PopsizeVariablePois.R
+```
+
+#define parameters for the model:
+```{r}
+log_ggCPP_params <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, L = 0.3735531590, K = 0.2, x0 = (nrow(ggCPP_intermed_gene_presence_absence_consensus)-1) * (1-0.3669067334), delta = ggC_inv_delta_ranking, m = 0.0078524723, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v =0.1103623064, vacc_time = 0)
+```
+
+### Running the model:
+```{r}
+WFmodel_log <- WF_log$new(pars = log_ggCPP_params,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+```
+
+```{r}
+WFmodel_log$run(72)
+```
+
+```{r}
+plot(0.1789665082/(1 + exp(- 2 * (ggC_inv_delta_ranking - 1774*0.2))))
+
+# sigma_f, sigma_w step function and possible logistic functions to mimic the values
+plot(c(rep(0.0006039627, 1774 * (1-0.3669067334)), rep(0.1789665082, 1774 * 0.3669067334)))
+lines(0.1789665082/(1 + exp(- 0.2 * (1:1774 - 1774*(1-0.3669067334)))))
+lines(0.1789665082/(1 + exp(- 0.02 * (1:1774 - 1774*(1-0.3669067334)))))
+lines(0.1789665082/(1 + exp(- 0.01 * (1:1774 - 1774*(1-0.3669067334)))))
+
+#sigma_f = 0.1789665082, sigma_w = 0.0006039627, prop_f = 0.3669067334
+
 ```
 
