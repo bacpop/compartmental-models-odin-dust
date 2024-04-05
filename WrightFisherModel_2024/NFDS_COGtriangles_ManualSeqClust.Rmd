@@ -2173,6 +2173,17 @@ length(which(ggCPP_log_fit[which(ggCPP_log_fit<0.99 * max(ggCPP_log_fit))]>0.01)
 # is there a similar function that does not need the steepness parameter?
 # there is a different definition of the logistic function, which is 1/(1 + exp(-x)), I could use that as 1/(1 + exp(- 1 *(x - x0)) or 1/(1 + exp(x0 - x))
 plot(1/(1+exp((1774*(0.62342733)-1:1774))))
+
+
+# comparison ggC + manSeqCl for step function and logistic function
+plot(0.309057542/(1 + exp(- 4.681828437 * (1:1774 - 1774*(0.809096221)))))
+lines(c(rep(0.0003669121 , 1774 * (1-0.2161135322)), rep(0.1882242231 , 1774 * 0.2161135322)))
+
+# comparison ggC + PP for step function and logistic function
+plot(0.11292912/(1 + exp(- 4.95113406 * (1:1774 - 1774*(0.62342733)))), ylim = c(0, 0.12), main = "Comparison ggCPP for step function and logistic function NFDS", xlab = "Genes", ylab = "Selection Strength")
+lines(c(rep(0.0004164005 , 1774 * (1-0.3803173188)), rep(0.1180783495 , 1774 * 0.3803173188)), col = "red")
+legend(0, 0.1, legend=c("logistic function", "step function"),
+       col=c("black", "red"), lty=1, cex=0.8)
 ```
 
 ```{r}
