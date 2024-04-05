@@ -129,10 +129,12 @@ det_filter <- particle_deterministic$new(data = fitting_mass_data,
 
 # Using MCMC to infer parameters
 pmcmc_L <- mcstate::pmcmc_parameter("L", 0.15, min = 0, max = 1)
-pmcmc_K <- mcstate::pmcmc_parameter("K", 0.02, min = 0, max = 10)
-pmcmc_x0 <- mcstate::pmcmc_parameter("x0", 0.2, min = 0, max = 1)
+#pmcmc_K <- mcstate::pmcmc_parameter("K", 0.02, min = 0, max = 10)
+#pmcmc_x0 <- mcstate::pmcmc_parameter("x0", 0.2, min = 0, max = 1)
 pmcmc_m <- mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 1)
 pmcmc_v <- mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)
+K <- 1
+x0 = 0
 species_no <- mass_clusters
 no_clusters <- mass_clusters
 gene_no <- nrow(intermed_gene_presence_absence_consensus_matrix)
@@ -148,7 +150,7 @@ vacc_time <- 0
 dt <- 1/36
 migVec <- avg_cluster_freq
 
-complex_params <- c(Pop_ini, Pop_eq, Genotypes, capacity, delta, vaccTypes, species_no, gene_no, vacc_time, dt, migVec)
+complex_params <- c(Pop_ini, Pop_eq, Genotypes, capacity, delta, vaccTypes, species_no, gene_no, vacc_time, dt, migVec, K, x0)
 
 make_transform <- function(p) {
   function(theta){
@@ -162,13 +164,15 @@ make_transform <- function(p) {
            gene_no = p[(((2 * mass_clusters + 1) + (gene_no * species_no) - 1) + 2 + gene_no) + no_clusters + 1],
            vacc_time = p[(((2 * mass_clusters + 1) + (gene_no * species_no) - 1) + 2 + gene_no) + no_clusters + 2],
            dt = p[(((2 * mass_clusters + 1) + (gene_no * species_no) - 1) + 2 + gene_no) + no_clusters + 3],
-           migVec = p[((((2 * mass_clusters + 1) + (gene_no * species_no) - 1) + 2 + gene_no) + no_clusters + 4):((((2 * mass_clusters + 1) + (gene_no * species_no) - 1) + 2 + gene_no) + no_clusters + 4 + species_no - 1)]), as.list(theta))
+           migVec = p[((((2 * mass_clusters + 1) + (gene_no * species_no) - 1) + 2 + gene_no) + no_clusters + 4):((((2 * mass_clusters + 1) + (gene_no * species_no) - 1) + 2 + gene_no) + no_clusters + 4 + species_no - 1)],
+           K = p[((((2 * mass_clusters + 1) + (gene_no * species_no) - 1) + 2 + gene_no) + no_clusters + 4 + species_no)],
+           x0 = p[((((2 * mass_clusters + 1) + (gene_no * species_no) - 1) + 2 + gene_no) + no_clusters + 4 + species_no + 1)]), as.list(theta))
   }
 }
 
 transform <- function(x) {
   make_transform(complex_params)}
-proposal_matrix <- diag(0.1, 5) # the proposal matrix defines the covariance-variance matrix for a mult normal dist
+proposal_matrix <- diag(0.1, 3) # the proposal matrix defines the covariance-variance matrix for a mult normal dist
 # here, all parameters are proposed independently. 
 # think about this, this might not actually be true
 #mcmc_pars <- mcstate::pmcmc_parameters$new(list(pmcmc_sigma_f, pmcmc_sigma_w, pmcmc_prop_f, pmcmc_m, pmcmc_v), proposal_matrix, transform)
@@ -181,7 +185,7 @@ proposal_matrix <- diag(0.1, 5) # the proposal matrix defines the covariance-var
 # it explains how to not fit all parameters but just the ones I want
 # non-scalar parameters have to be transformed for this.
 
-mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("L", 0.1432, min = 0, max = 1), mcstate::pmcmc_parameter("K", 1, min = 0, max = 10), mcstate::pmcmc_parameter("x0", 0.2, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 0.2), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 0.5)), proposal_matrix, make_transform(complex_params))
+mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("L", 0.1432, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 0.2), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 0.5)), proposal_matrix, make_transform(complex_params))
 mcmc_pars$initial()
 
 det_filter <- particle_deterministic$new(data = fitting_mass_data,
@@ -215,7 +219,7 @@ print("det_mcmc_1 mean log likelihood")
 mean(processed_chains$probabilities[,2])
 det_proposal_matrix <- cov(processed_chains$pars)
 #det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0.075, max = 0.22), mcstate::pmcmc_parameter("sigma_w", 0.05, min = 0.000001, max = 0.0749), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 0.2), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 0.5)), det_proposal_matrix, make_transform(complex_params))
-det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("L", parameter_mean_hpd[1], min = 0, max = 1), mcstate::pmcmc_parameter("K", 1, min = 0, max = 10), mcstate::pmcmc_parameter("x0", parameter_mean_hpd[3], min = 0, max = 1), mcstate::pmcmc_parameter("m", parameter_mean_hpd[4], min = 0, max = 0.2), mcstate::pmcmc_parameter("v", parameter_mean_hpd[5], min = 0, max = 0.5)), det_proposal_matrix, make_transform(complex_params))
+det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("L", parameter_mean_hpd[1], min = 0, max = 1), mcstate::pmcmc_parameter("m", parameter_mean_hpd[2], min = 0, max = 0.2), mcstate::pmcmc_parameter("v", parameter_mean_hpd[3], min = 0, max = 0.5)), det_proposal_matrix, make_transform(complex_params))
 
 det_filter <- particle_deterministic$new(data = fitting_mass_data,
                                          model = WF,

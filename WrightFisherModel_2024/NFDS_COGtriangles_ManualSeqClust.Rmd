@@ -2175,3 +2175,61 @@ length(which(ggCPP_log_fit[which(ggCPP_log_fit<0.99 * max(ggCPP_log_fit))]>0.01)
 plot(1/(1+exp((1774*(0.62342733)-1:1774))))
 ```
 
+```{r}
+plot(0.305665235/(1+exp((1774*(0.805942099)-(1:1774)))), main = "Logistic Model Fit with ggCaller and manSeqCl", xlab = "Genes", ylab = "Selection Strength")
+points(0.309057542/(1+exp(4.681828437 *(1774*(0.809096221)-(1:1774)))), col = "red")
+legend(0, 0.3, legend=c("4 parameter model", "5 parameter model"),
+       col=c("black", "red"), lty=1, cex=0.8)
+```
+
+# Likelihood ratio test
+#  lambda = -2*(x_1-x_2).
+# pvalue_testing_null=1-pchisq(lambda,difference_in_degrees_of_freedom) 
+```{r}
+LL_4param <- -207.7955
+LL_5param <- -207.6401
+lambda <- -2 * (LL_4param - LL_5param)
+pchisq(lambda, 1,lower.tail = FALSE)
+
+# the model with 5 parameters as compared to the model with 4 parameters is not significantly better
+# therefore, having the fifth parameter is not meaningful
+
+#AIC_1 = 2*-207.7955 + 2*4
+#AIC_2 = 2*-207.6401 + 2*5
+```
+
+```{r}
+# compare 3-param model to 5-param model
+# ggCaller and PopPUNK
+LL_3param <- -335.9657
+LL_5param <- -264.7959
+lambda <- -2 * (LL_3param - LL_5param)
+pchisq(lambda, 5-3, lower.tail = FALSE)
+
+# significant!
+# the 5-param model is significantly better than the 3-param model
+
+# compare null model to 5-param model
+LL_null <- -335.0503
+LL_5param <- -264.7959
+lambda <- -2 * (LL_null - LL_5param)
+pchisq(lambda, 5-2, lower.tail = FALSE)
+
+# compare null model to 3-param model
+lambda <- -2 * (LL_null - LL_3param)
+pchisq(lambda, 3-2, lower.tail = FALSE)
+
+# compare 4-param logistic model to null model
+LL_4param <- -262.2601
+lambda <- -2 * (LL_null - LL_4param)
+pchisq(lambda, 4-2, lower.tail = FALSE)
+
+# compare 4-param logistic model to 3-param model
+lambda <- -2 * (LL_3param - LL_4param)
+pchisq(lambda, 4-3, lower.tail = FALSE)
+```
+
+# alternative:
+# logistic 3-param model
+# == fixing x0=0
+# plot(0.305665235/(1+exp(-(1:1774))))
