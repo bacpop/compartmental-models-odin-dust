@@ -2187,10 +2187,18 @@ legend(0, 0.1, legend=c("logistic function", "step function"),
 ```
 
 ```{r}
-plot(0.305665235/(1+exp((1774*(0.805942099)-(1:1774)))), main = "Logistic Model Fit with ggCaller and manSeqCl", xlab = "Genes", ylab = "Selection Strength")
-points(0.309057542/(1+exp(4.681828437 *(1774*(0.809096221)-(1:1774)))), col = "red")
-legend(0, 0.3, legend=c("4 parameter model", "5 parameter model"),
-       col=c("black", "red"), lty=1, cex=0.8)
+col_clb <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7") #8 colorblind friendly colors
+
+plot(0.11292912/(1+exp(4.95113406 *(1774*(0.62342733)-(1:1774)))), main = "Logistic Model Fit with ggCaller and PopPUNK", xlab = "Genes", ylab = "Selection Strength", col = col_clb[1], ylim = c(0, 0.12))
+points(0.1144311/(1+exp((1774*(0.6243419)-(1:1774)))), col = col_clb[2])
+points(0.03503935/(1+exp(1 *(1774*(0)-(1:1774)))), col = col_clb[3])
+points(c(rep(0.0004164005 , 1774 * (1-0.3803173188)), rep(0.1180783495, 1774 * 0.3803173188)), col = col_clb[4])
+points(rep(0.01931485 , 1774 * (1)), col = col_clb[5])
+legend(0, 0.12, legend=c("Logistic, 5 params", "Logistic, 4 params", "Logistic, 3 params", "step function, 5 params", "step function, 3 params"),
+       col=col_clb, lty=1, cex=0.8)
+
+
+
 ```
 
 # Likelihood ratio test
@@ -2244,3 +2252,13 @@ pchisq(lambda, 4-3, lower.tail = FALSE)
 # logistic 3-param model
 # == fixing x0=0
 # plot(0.305665235/(1+exp(-(1:1774))))
+
+
+# investigate more details of runs, e.g., effective sample size
+```{r}
+# path to results: 
+results_path <- "/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_04_15"
+# saved_det_mcmc2 <- readRDS(paste(results_path, "xxx.rds",sep=""))
+# coda::effectiveSize(saved_det_mcmc2)
+```
+
