@@ -2257,8 +2257,62 @@ pchisq(lambda, 4-3, lower.tail = FALSE)
 # investigate more details of runs, e.g., effective sample size
 ```{r}
 # path to results: 
-results_path <- "/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_04_15"
+results_path <- "/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_04_15/"
 # saved_det_mcmc2 <- readRDS(paste(results_path, "xxx.rds",sep=""))
 # coda::effectiveSize(saved_det_mcmc2)
+COGmanSeqCl_det_mcmc2 <- readRDS(paste(results_path, "COGtriangles_manSeqClusters_det_mcmc2.rds",sep=""))
+coda::effectiveSize(COGmanSeqCl_det_mcmc2)
+# log_prior log_likelihood  log_posterior        sigma_f        sigma_w         prop_f 
+#       0.00000      432.48728      432.48728      144.33072      323.82097       70.52254 
+#            m              v 
+#     525.46322      481.06586 
+
+# effective sample size differs a lot between the parameters!
+1 - coda::rejectionRate(COGmanSeqCl_det_mcmc2)
+# acceptance rate is good
+summary(COGmanSeqCl_det_mcmc2)
+
+combinedchains = mcmc.list(coda::as.mcmc(COGmanSeqCl_det_mcmc2[1:20000,-(1:3)]), coda::as.mcmc(COGmanSeqCl_det_mcmc2[20001:40000,-(1:3)]),coda::as.mcmc(COGmanSeqCl_det_mcmc2[40001:60000,-(1:3)]),coda::as.mcmc(COGmanSeqCl_det_mcmc2[60001:80000,-(1:3)]))
+gelman.plot(combinedchains)
+
+combinedchains = mcmc.list(coda::as.mcmc(COGmanSeqCl_det_mcmc2[1001:20000,-(1:3)]), coda::as.mcmc(COGmanSeqCl_det_mcmc2[21001:40000,-(1:3)]),coda::as.mcmc(COGmanSeqCl_det_mcmc2[41001:60000,-(1:3)]),coda::as.mcmc(COGmanSeqCl_det_mcmc2[61001:80000,-(1:3)]))
+gelman.plot(combinedchains)
+
+combinedchains = mcmc.list(coda::as.mcmc(COGmanSeqCl_det_mcmc2[5001:20000,-(1:3)]), coda::as.mcmc(COGmanSeqCl_det_mcmc2[25001:40000,-(1:3)]),coda::as.mcmc(COGmanSeqCl_det_mcmc2[45001:60000,-(1:3)]),coda::as.mcmc(COGmanSeqCl_det_mcmc2[65001:80000,-(1:3)]))
+gelman.plot(combinedchains)
+
+parameter_mean_hpd <- apply(COGmanSeqCl_det_mcmc2[c(5001:20000,25001:40000,45001:60000,65001:80000),-(1:3)], 2, mean)
+parameter_mean_hpd
 ```
 
+```{r}
+COGPP_det_mcmc2 <- readRDS(paste(results_path, "COGtriangles_PopPUNK_det_mcmc2.rds",sep=""))
+coda::effectiveSize(COGPP_det_mcmc2)
+# much better effective sample size!
+1 - coda::rejectionRate(COGPP_det_mcmc2)
+
+combinedchains = mcmc.list(coda::as.mcmc(COGPP_det_mcmc2[1:20000,-(1:3)]), coda::as.mcmc(COGPP_det_mcmc2[20001:40000,-(1:3)]),coda::as.mcmc(COGPP_det_mcmc2[40001:60000,-(1:3)]),coda::as.mcmc(COGPP_det_mcmc2[60001:80000,-(1:3)]))
+gelman.plot(combinedchains)
+
+combinedchains = mcmc.list(coda::as.mcmc(COGPP_det_mcmc2[1001:20000,-(1:3)]), coda::as.mcmc(COGPP_det_mcmc2[21001:40000,-(1:3)]),coda::as.mcmc(COGPP_det_mcmc2[41001:60000,-(1:3)]),coda::as.mcmc(COGPP_det_mcmc2[61001:80000,-(1:3)]))
+gelman.plot(combinedchains)
+
+parameter_mean_hpd <- apply(COGPP_det_mcmc2[,-(1:3)], 2, mean)
+parameter_mean_hpd
+
+parameter_mean_hpd <- apply(COGPP_det_mcmc2[c(14001:20000, 34001:40000, 54001:60000, 74001:80000),-(1:3)], 2, mean)
+parameter_mean_hpd
+
+# maybe thinning
+#COGPP_det_mcmc2_thinned <- coda::mcmc(COGPP_det_mcmc2, thin = 2)
+```
+
+```{r}
+ggCmanSeqCl_det_mcmc2 <- readRDS(paste(results_path, "ggCaller_manSeqClusters_det_mcmc2.rds",sep=""))
+coda::effectiveSize(ggCmanSeqCl_det_mcmc2)
+# effective sample size better than COGmanSeqCl but could be better
+1 - coda::rejectionRate(ggCmanSeqCl_det_mcmc2)
+
+combinedchains = mcmc.list(coda::as.mcmc(ggCmanSeqCl_det_mcmc2[1001:20000,-(1:3)]), coda::as.mcmc(ggCmanSeqCl_det_mcmc2[21001:40000,-(1:3)]),coda::as.mcmc(ggCmanSeqCl_det_mcmc2[41001:60000,-(1:3)]),coda::as.mcmc(ggCmanSeqCl_det_mcmc2[61001:80000,-(1:3)]))
+gelman.plot(combinedchains)
+```
