@@ -162,11 +162,43 @@ lollipop_cluster_freqs_VTandNVT <- function(year = "year unknown", plot_title = 
     ggtitle(year) +
     ylab("Frequency") +
     xlab("Clusters") +
-    theme(axis.title  = element_text(size = 20), axis.text = element_text(size = 20), plot.title = element_text(size = 25,hjust = 0.5))  +
+    theme(axis.title  = element_text(size = 20), axis.text = element_text(size = 15), plot.title = element_text(size = 25,hjust = 0.5))  +
     ylim(0, max(max(lollipop_data_1$model_1)))
   grid.arrange(lollipop_plot_1 + scale_y_continuous(limits = c(NA,0.2)) + theme(plot.margin = unit(c(.5,0.5,1,0.5), "cm"),axis.text.y = element_blank()), ncol = 1, nrow=1, top = textGrob(plot_title,gp=gpar(fontsize=20,font=3)))
 }
 
+# Creating a joint Lollipop plot for VTs and NVTs
+lollipop_cluster_freqs_VTandNVT_labelSero <- function(year = "year unknown", plot_title = "Generic Plot Title",data1, model_name_1 ="Model 1", model1, VT_vec){
+  lollipop_data_1 <- data.frame(
+    x=1:length(data1),
+    model_1=model1,
+    data_1=as.numeric(data1),
+    Vaccine_Types <- sapply(VT_vec, function(x) if(x==1){"VT"}else{"NVT"})
+  )
+  # Change baseline
+  lollipop_plot_1 <- ggplot(lollipop_data_1) +
+    geom_segment( aes(x=x, xend=x, y=model_1, yend=data_1), color="grey") +
+    geom_point( aes(x=x, y=model_1, color=model_name_1, shape = Vaccine_Types), size=3, stroke = 2) +
+    geom_point( aes(x=x, y=data_1, color="Data",shape = Vaccine_Types), size=3,  stroke = 2) +
+    #geom_point( aes(x=x, y=model_1, color=model_name_1), size=5, alpha = 0.7) +
+    #geom_point( aes(x=x, y=data_1, color="Data"), size=5, alpha = 0.7) +
+    #geom_point(aes(x=x, y=model_2, color=model_name_2), size=5, alpha = 0.7) +
+    scale_color_manual(values = c("#E69F00","#56B4E9","#CC79A7"),
+                       guide  = guide_legend(), 
+                       name   = "Group") +
+    scale_shape_manual(values=c(19, 1))+
+    coord_flip()+
+    #theme_ipsum() +
+    theme(legend.position = c(.8,.8),legend.text = element_text(size = 20),legend.title = element_text(size = 20)) +
+    ggtitle(year) +
+    ylab("Frequency") +
+    xlab("Clusters") +
+    theme(axis.title  = element_text(size = 20), axis.text.y = element_text(size = 12), axis.text.x = element_text(size = 20), plot.title = element_text(size = 25,hjust = 0.5))  +
+    ylim(0, max(max(lollipop_data_1$model_1)))
+  grid.arrange(lollipop_plot_1 + scale_y_continuous(limits = c(NA,0.2))  + scale_x_continuous(breaks = 1:length(data1), labels = 1:length(data1), sec.axis = dup_axis(name = "Serotypes", labels = PP_serotype_comp))+ theme(plot.margin = unit(c(.5,0.5,1,0.5), "cm")), ncol = 1, nrow=1, top = textGrob(plot_title,gp=gpar(fontsize=20,font=3)))
+}
+
+#scale_x_discrete(breaks=(1:62), labels=as.character(2:63))
 # Creating a joint Lollipop plot for VTs and NVTs and two models
 lollipop_cluster_freqs_2x2_VTandNVT <- function(year = "year unknown", plot_title = "Generic Plot Title",data1, model_name_1 ="Model 1", model1, model_name_2 ="Model 2", model2, VT_vec){
   lollipop_data_1 <- data.frame(

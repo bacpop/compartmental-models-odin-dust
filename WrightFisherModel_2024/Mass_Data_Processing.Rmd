@@ -347,6 +347,14 @@ names(SeqYear_dict) <- Mass_Samples_accCodes$`Isolate Name`
 PopPUNK_clusters$SeqYear <- SeqYear_dict[PopPUNK_clusters$IsolateName]
 ```
 
+```{r}
+# Add Serotype Information
+Serotype_dict <- Mass_Samples_accCodes$Serotype
+names(Serotype_dict) <- Mass_Samples_accCodes$`Isolate Name`
+
+PopPUNK_clusters$Serotype <- Serotype_dict[PopPUNK_clusters$IsolateName]
+```
+
 
 ```{r}
 #save model start population

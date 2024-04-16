@@ -2277,7 +2277,7 @@ lambda <- -2 * (log_LL_3param - log_LL_4param)
 pchisq(lambda, 4-3, lower.tail = FALSE)
 # significant!
 # the 4-param model is significantly better than the 3-param model
-lambda <- -2 * (log_LL_3param - log_LL_5param)
+lambda <- -2 * (log_LL_4param - log_LL_5param)
 pchisq(lambda, 5-4, lower.tail = FALSE)
 # not significant: 5-parameter model not significantly better than 4-parameter model
 lambda <- -2 * (step_LL_null - log_LL_3param)
@@ -2297,6 +2297,8 @@ pchisq(lambda, 5-4, lower.tail = FALSE)
 lambda <- -2 * (log_LL_3param - log_LL_yshift)
 pchisq(lambda, 5-3, lower.tail = FALSE)
 # but yshift model better than 3-param model
+lambda <- -2 * (step_LL_null - log_LL_yshift)
+pchisq(lambda, 5-2, lower.tail = FALSE)
 ```
 
 # alternative:
@@ -2424,3 +2426,43 @@ parameter_mean_hpd <- apply(processed_chains$pars, 2, mean)
 parameter_mean_hpd
 ```
 
+
+# Visualise Serotype Cluster composition
+```{r}
+# how to get from manual sequence clusters to serotypes: (example for cluster 0)
+unique(Mass_Samples_accCodes$Serotype[which(Mass_Samples_accCodes$SequenceCluster==0)])
+# how to get from PP clusters to manual sequence clusters
+PP_to_manSeq_dict
+# usage together e.g.
+unique(Mass_Samples_accCodes$Serotype[which(Mass_Samples_accCodes$SequenceCluster==PP_to_manSeq_dict[1])])
+
+
+#PP_serotype_comp <- list()
+#for (i in 1:PP_mass_clusters) {
+#  PP_serotype_comp[[i]] <- unique(Mass_Samples_accCodes$Serotype[which(Mass_Samples_accCodes$SequenceCluster==PP_to_manSeq_dict[i])])
+#}
+
+#PP_serotype_comp <- rep(0,PP_mass_clusters)
+#for (i in 1:PP_mass_clusters) {
+#  PP_serotype_comp[i] <- paste(unique(Mass_Samples_accCodes$Serotype[which(Mass_Samples_accCodes$SequenceCluster==PP_to_manSeq_dict[i])]), collapse = ", ")
+#}
+
+
+### not necessary anymore, I added the Serotype information to the PopPUNK data frame
+
+# use this instead:
+#unique(PopPUNK_clusters$Serotype[which(PopPUNK_clusters$Cluster==1)])
+PP_serotype_comp <- rep(0,PP_mass_clusters)
+for (i in 1:PP_mass_clusters) {
+  PP_serotype_comp[i] <- paste(unique(PopPUNK_clusters$Serotype[which(PopPUNK_clusters$Cluster==i)]), collapse = ", ")
+}
+```
+
+```{r}
+source("CreateLollipopPlot.R")
+
+#ggCPP_model_val1
+lollipop_cluster_freqs_VTandNVT_labelSero(year = "2001", plot_title = "PopPUNK and ggCaller", data1 = PP_mass_cluster_freq_1/sum(PP_mass_cluster_freq_1), model_name_1 ="Model", model1 = PP_model_start_pop/sum(PP_model_start_pop), PP_mass_VT)
+lollipop_cluster_freqs_VTandNVT(year = "2004", plot_title = "PopPUNK and ggCaller", data1 = PP_mass_cluster_freq_2/sum(PP_mass_cluster_freq_2), model_name_1 ="Model", model1 = simMeanggCPP2/sum(simMeanggCPP2), PP_mass_VT)
+lollipop_cluster_freqs_VTandNVT(year = "2007", plot_title = "PopPUNK and ggCaller", data1 = PP_mass_cluster_freq_3/sum(PP_mass_cluster_freq_3), model_name_1 ="Model", model1 = simMeanggCPP3/sum(simMeanggCPP3), PP_mass_VT)
+```
