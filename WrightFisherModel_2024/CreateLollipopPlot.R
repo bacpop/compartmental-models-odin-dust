@@ -168,7 +168,7 @@ lollipop_cluster_freqs_VTandNVT <- function(year = "year unknown", plot_title = 
 }
 
 # Creating a joint Lollipop plot for VTs and NVTs
-lollipop_cluster_freqs_VTandNVT_labelSero <- function(year = "year unknown", plot_title = "Generic Plot Title",data1, model_name_1 ="Model 1", model1, VT_vec){
+lollipop_cluster_freqs_VTandNVT_labelSero <- function(year = "year unknown", plot_title = "Generic Plot Title",data1, model_name_1 ="Model 1", model1, VT_vec, SeroLabel){
   lollipop_data_1 <- data.frame(
     x=1:length(data1),
     model_1=model1,
@@ -178,6 +178,12 @@ lollipop_cluster_freqs_VTandNVT_labelSero <- function(year = "year unknown", plo
   # Change baseline
   lollipop_plot_1 <- ggplot(lollipop_data_1) +
     geom_segment( aes(x=x, xend=x, y=model_1, yend=data_1), color="grey") +
+    geom_vline(xintercept = 10, color = "white", size = 1.5) +
+    geom_vline(xintercept = 20, color = "white", size = 1.5) +
+    geom_vline(xintercept = 30, color = "white", size = 1.5) +
+    geom_vline(xintercept = 40, color = "white", size = 1.5) +
+    geom_vline(xintercept = 50, color = "white", size = 1.5) +
+    geom_vline(xintercept = 60, color = "white", size = 1.5) +
     geom_point( aes(x=x, y=model_1, color=model_name_1, shape = Vaccine_Types), size=3, stroke = 2) +
     geom_point( aes(x=x, y=data_1, color="Data",shape = Vaccine_Types), size=3,  stroke = 2) +
     #geom_point( aes(x=x, y=model_1, color=model_name_1), size=5, alpha = 0.7) +
@@ -195,7 +201,7 @@ lollipop_cluster_freqs_VTandNVT_labelSero <- function(year = "year unknown", plo
     xlab("Clusters") +
     theme(axis.title  = element_text(size = 20), axis.text.y = element_text(size = 12), axis.text.x = element_text(size = 20), plot.title = element_text(size = 25,hjust = 0.5))  +
     ylim(0, max(max(lollipop_data_1$model_1)))
-  grid.arrange(lollipop_plot_1 + scale_y_continuous(limits = c(NA,0.2))  + scale_x_continuous(breaks = 1:length(data1), labels = 1:length(data1), sec.axis = dup_axis(name = "Serotypes", labels = PP_serotype_comp))+ theme(plot.margin = unit(c(.5,0.5,1,0.5), "cm")), ncol = 1, nrow=1, top = textGrob(plot_title,gp=gpar(fontsize=20,font=3)))
+  grid.arrange(lollipop_plot_1 + scale_y_continuous(limits = c(NA,0.175))  + scale_x_continuous(breaks = 1:length(data1), labels = 1:length(data1), sec.axis = dup_axis(name = "Serotypes", labels = SeroLabel))+ theme(plot.margin = unit(c(.5,0.5,1,0.5), "cm")), ncol = 1, nrow=1, top = textGrob(plot_title,gp=gpar(fontsize=20,font=3)))
 }
 
 #scale_x_discrete(breaks=(1:62), labels=as.character(2:63))

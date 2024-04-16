@@ -2461,8 +2461,26 @@ for (i in 1:PP_mass_clusters) {
 ```{r}
 source("CreateLollipopPlot.R")
 
-#ggCPP_model_val1
-lollipop_cluster_freqs_VTandNVT_labelSero(year = "2001", plot_title = "PopPUNK and ggCaller", data1 = PP_mass_cluster_freq_1/sum(PP_mass_cluster_freq_1), model_name_1 ="Model", model1 = PP_model_start_pop/sum(PP_model_start_pop), PP_mass_VT)
-lollipop_cluster_freqs_VTandNVT(year = "2004", plot_title = "PopPUNK and ggCaller", data1 = PP_mass_cluster_freq_2/sum(PP_mass_cluster_freq_2), model_name_1 ="Model", model1 = simMeanggCPP2/sum(simMeanggCPP2), PP_mass_VT)
-lollipop_cluster_freqs_VTandNVT(year = "2007", plot_title = "PopPUNK and ggCaller", data1 = PP_mass_cluster_freq_3/sum(PP_mass_cluster_freq_3), model_name_1 ="Model", model1 = simMeanggCPP3/sum(simMeanggCPP3), PP_mass_VT)
+
+# ggCPP fit (step function model)
+### ggCaller PopPUNK
+params_ggCPP <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = 0.1133391187, sigma_w = 0.0003826182, prop_f = 0.3803189582, delta = ggC_delta_ranking, m = 0.0108386117, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.1441624728, vacc_time = 0)
+WFmodel_ggCPP <- WF_nG_h_vP$new(pars = params_ggCPP,
+                                   time = 1,
+                                   n_particles = 10L,
+                                   n_threads = 4L,
+                                   seed = 1L)
+simMeanggCPP2 <- rowMeans(WFmodel_ggCPP$run(36)[-1,])
+simMeanggCPP3 <- rowMeans(WFmodel_ggCPP$run(72)[-1,])
+
+lollipop_cluster_freqs_VTandNVT_labelSero(year = "2001", plot_title = "PopPUNK and ggCaller", data1 = PP_mass_cluster_freq_1/sum(PP_mass_cluster_freq_1), model_name_1 ="Model", model1 = PP_model_start_pop/sum(PP_model_start_pop), PP_mass_VT, SeroLabel = PP_serotype_comp)
+lollipop_cluster_freqs_VTandNVT_labelSero(year = "2004", plot_title = "PopPUNK and ggCaller", data1 = PP_mass_cluster_freq_2/sum(PP_mass_cluster_freq_2), model_name_1 ="Model", model1 = simMeanggCPP2/sum(simMeanggCPP2), PP_mass_VT, SeroLabel = PP_serotype_comp)
+lollipop_cluster_freqs_VTandNVT_labelSero(year = "2007", plot_title = "PopPUNK and ggCaller", data1 = PP_mass_cluster_freq_3/sum(PP_mass_cluster_freq_3), model_name_1 ="Model", model1 = simMeanggCPP3/sum(simMeanggCPP3), PP_mass_VT, SeroLabel = PP_serotype_comp)
 ```
+
+```{r}
+# ggCPP fit (logistic function model)
+
+
+```
+
