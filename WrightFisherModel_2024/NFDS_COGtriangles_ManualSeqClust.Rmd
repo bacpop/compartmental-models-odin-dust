@@ -2189,17 +2189,29 @@ legend(0, 0.1, legend=c("logistic function", "step function"),
 ```{r}
 col_clb <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7") #8 colorblind friendly colors
 
-plot(0.11292912/(1+exp(4.95113406 *(1774*(0.62342733)-(1:1774)))), main = "Logistic Model Fit with ggCaller and PopPUNK", xlab = "Genes", ylab = "Selection Strength", col = col_clb[1], ylim = c(0, 0.12))
-points(0.1144311/(1+exp((1774*(0.6243419)-(1:1774)))), col = col_clb[2])
-points(0.03503935/(1+exp(1 *(1774*(0)-(1:1774)))), col = col_clb[3])
-points(c(rep(0.0004164005 , 1774 * (1-0.3803173188)), rep(0.1180783495, 1774 * 0.3803173188)), col = col_clb[4])
-points(rep(0.01931485 , 1774 * (1)), col = col_clb[5])
-legend(0, 0.12, legend=c("Logistic, 5 params", "Logistic, 4 params", "Logistic, 3 params", "step function, 5 params", "step function, 3 params"),
+plot(0.11292912/(1+exp(4.95113406 *(1774*(0.62342733)-(1:1774)))), main = "Logistic vs Step Function Model Fit with ggCaller and PopPUNK", xlab = "Genes", ylab = "Selection Strength", col = col_clb[1], ylim = c(0, 0.12), cex = 1)
+points(0.1144311/(1+exp((1774*(0.6243419)-(1:1774)))), col = col_clb[2], cex = 1)
+points(0.03503935/(1+exp(1 *(1774*(0)-(1:1774)))), col = col_clb[3], cex = 1)
+points(c(rep(0.0004164005 , 1774 * (1-0.3803173188)), rep(0.1180783495, 1774 * 0.3803173188)), col = col_clb[4], cex = 1)
+points(c(rep(0 , 1774 * (1-0.37657870)), rep(0.11313856, 1774 * 0.37657870)), col = col_clb[5], cex = 1)
+points(rep(0.01931485 , 1774 * (1)), col = col_clb[6], cex = 1)
+legend(0, 0.12, legend=c("Logistic, 5 params", "Logistic, 4 params", "Logistic, 3 params", "step function, 5 params", "step function, 4 params", "step function, 3 params"),
        col=col_clb, lty=1, cex=0.8)
-
-
-
 ```
+
+```{r}
+col_clb <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7") #8 colorblind friendly colors
+
+plot(0.21696863/(1+exp(5.03946007 *(1774*(0.57776473)-(1:1774)))), main = "Logistic vs Step Function Model Fit with COG and PopPUNK", xlab = "Genes", ylab = "Selection Strength", col = col_clb[1], ylim = c(0, 0.22), cex = 1)
+points(0.21712951/(1+exp((1774*(0.57739554)-(1:1774)))), col = col_clb[2], cex = 1)
+points(0.004120443/(1+exp(1 *(1774*(0)-(1:1774)))), col = col_clb[3], cex = 1)
+points(c(rep(0.0006359267 , 1774 * (1-0.4202932608)), rep(0.2169393333, 1774 * 0.4202932608)), col = col_clb[4], cex = 1)
+points(c(rep(0 , 1774 * (1-0.4207139)), rep(0.2170153, 1774 * 0.4207139)), col = col_clb[5], cex = 1)
+points(rep(0.004034883, 1774 * (1)), col = col_clb[6], cex = 1)
+legend(0, 0.12, legend=c("Logistic, 5 params", "Logistic, 4 params", "Logistic, 3 params", "step function, 5 params", "step function, 4 params", "step function, 3 params"),
+       col=col_clb, lty=1, cex=0.8)
+```
+
 
 # Likelihood ratio test
 #  lambda = -2*(x_1-x_2).
@@ -2218,34 +2230,73 @@ pchisq(lambda, 1,lower.tail = FALSE)
 ```
 
 ```{r}
+# Step Function Models (original)
 # compare 3-param model to 5-param model
 # ggCaller and PopPUNK
-LL_3param <- -335.9657
-LL_5param <- -264.7959
-lambda <- -2 * (LL_3param - LL_5param)
+step_LL_3param <- -334.3289
+step_LL_5param <- -263.4791
+step_LL_4param <- -262.268
+step_LL_null <- -335.0503
+lambda <- -2 * (step_LL_3param - step_LL_5param)
 pchisq(lambda, 5-3, lower.tail = FALSE)
-
 # significant!
 # the 5-param model is significantly better than the 3-param model
-
-# compare null model to 5-param model
-LL_null <- -335.0503
-LL_5param <- -264.7959
-lambda <- -2 * (LL_null - LL_5param)
-pchisq(lambda, 5-2, lower.tail = FALSE)
-
-# compare null model to 3-param model
-lambda <- -2 * (LL_null - LL_3param)
-pchisq(lambda, 3-2, lower.tail = FALSE)
-
-# compare 4-param logistic model to null model
-LL_4param <- -262.2601
-lambda <- -2 * (LL_null - LL_4param)
-pchisq(lambda, 4-2, lower.tail = FALSE)
-
-# compare 4-param logistic model to 3-param model
-lambda <- -2 * (LL_3param - LL_4param)
+lambda <- -2 * (step_LL_3param - step_LL_4param)
 pchisq(lambda, 4-3, lower.tail = FALSE)
+# significant!
+# the 4-param model is significantly better than the 3-param model
+lambda <- -2 * (step_LL_4param - step_LL_5param)
+pchisq(lambda, 5-4, lower.tail = FALSE)
+# not significant: 5-parameter model not significantly better than 4-parameter model
+lambda <- -2 * (step_LL_null - step_LL_3param)
+pchisq(lambda, 3-2, lower.tail = FALSE)
+# not significant: 3-parameter model not significantly better than 2-parameter model
+lambda <- -2 * (step_LL_null - step_LL_4param)
+pchisq(lambda, 4-2, lower.tail = FALSE)
+# significant: 4-param model better than null model
+lambda <- -2 * (step_LL_null - step_LL_5param)
+pchisq(lambda, 5-2, lower.tail = FALSE)
+# significant: 5-param model better than null model
+```
+
+
+```{r}
+# Logistic Function Models
+# ggCaller and PopPUNK
+log_LL_3param <- -335.3469
+log_LL_5param <- -262.2021
+log_LL_4param <- -262.2601
+log_LL_yshift <- -263.3581 # 5 params
+step_LL_null <- -335.0503
+
+lambda <- -2 * (log_LL_3param - log_LL_5param)
+pchisq(lambda, 5-3, lower.tail = FALSE)
+# significant!
+# the 5-param model is significantly better than the 3-param model
+lambda <- -2 * (log_LL_3param - log_LL_4param)
+pchisq(lambda, 4-3, lower.tail = FALSE)
+# significant!
+# the 4-param model is significantly better than the 3-param model
+lambda <- -2 * (log_LL_3param - log_LL_5param)
+pchisq(lambda, 5-4, lower.tail = FALSE)
+# not significant: 5-parameter model not significantly better than 4-parameter model
+lambda <- -2 * (step_LL_null - log_LL_3param)
+pchisq(lambda, 3-2, lower.tail = FALSE)
+# not significant: 3-parameter model not significantly better than 2-parameter model
+lambda <- -2 * (step_LL_null - log_LL_4param)
+pchisq(lambda, 4-2, lower.tail = FALSE)
+# significant: 4-param model better than null model
+lambda <- -2 * (step_LL_null - log_LL_5param)
+pchisq(lambda, 5-2, lower.tail = FALSE)
+# significant: 5-param model better than null model
+
+# yshift model:
+lambda <- -2 * (log_LL_4param - log_LL_yshift)
+pchisq(lambda, 5-4, lower.tail = FALSE)
+# yshift model not significantly better than 4-param model
+lambda <- -2 * (log_LL_3param - log_LL_yshift)
+pchisq(lambda, 5-3, lower.tail = FALSE)
+# but yshift model better than 3-param model
 ```
 
 # alternative:
