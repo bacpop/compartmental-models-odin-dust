@@ -2137,7 +2137,7 @@ WF_log <- odin.dust::odin_dust("NFDS_Model_logistic.R")
 
 #define parameters for the model:
 ```{r}
-log_ggCPP_params <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, L = 0.3735531590, K = 0.2, x0 = (nrow(ggCPP_intermed_gene_presence_absence_consensus)-1) * (1-0.3669067334), delta = ggC_inv_delta_ranking, m = 0.0078524723, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v =0.1103623064, vacc_time = 0)
+log_ggCPP_params <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, L = 0.3735531590, K = 0.2, x0 = (1-0.3669067334), delta = ggC_inv_delta_ranking, m = 0.0078524723, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v =0.1103623064, vacc_time = 0)
 ```
 
 ### Running the model:
@@ -2192,11 +2192,20 @@ col_clb <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "
 plot(0.11292912/(1+exp(4.95113406 *(1774*(0.62342733)-(1:1774)))), main = "Logistic vs Step Function Model Fit with ggCaller and PopPUNK", xlab = "Genes", ylab = "Selection Strength", col = col_clb[1], ylim = c(0, 0.12), cex = 1)
 points(0.1144311/(1+exp((1774*(0.6243419)-(1:1774)))), col = col_clb[2], cex = 1)
 points(0.03503935/(1+exp(1 *(1774*(0)-(1:1774)))), col = col_clb[3], cex = 1)
-points(c(rep(0.0004164005 , 1774 * (1-0.3803173188)), rep(0.1180783495, 1774 * 0.3803173188)), col = col_clb[4], cex = 1)
-points(c(rep(0 , 1774 * (1-0.37657870)), rep(0.11313856, 1774 * 0.37657870)), col = col_clb[5], cex = 1)
-points(rep(0.01931485 , 1774 * (1)), col = col_clb[6], cex = 1)
-legend(0, 0.12, legend=c("Logistic, 5 params", "Logistic, 4 params", "Logistic, 3 params", "step function, 5 params", "step function, 4 params", "step function, 3 params"),
-       col=col_clb, lty=1, cex=0.8)
+points(0.111690097/(1+exp((1774*(0.624229293)-(1:1774)))) + 0.003764143, col = col_clb[4], cex = 1)
+points(c(rep(0.0004164005 , 1774 * (1-0.3803173188)), rep(0.1180783495, 1774 * 0.3803173188)), col = col_clb[5], cex = 1)
+points(c(rep(0 , 1774 * (1-0.37657870)), rep(0.11313856, 1774 * 0.37657870)), col = col_clb[6], cex = 1)
+points(rep(0.01931485 , 1774 * (1)), col = col_clb[7], cex = 1)
+legend(0, 0.12, legend=c("Logistic, 5 params", "Logistic, 4 params", "Logistic, 3 params", "Logistic, Y shift","step function, 5 params", "step function, 4 params", "step function, 3 params"),col=col_clb, lty=1, cex=1.2)
+```
+
+```{r}
+col_clb <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7") #8 colorblind friendly colors
+
+plot(0.11292912/(1+exp(4.95113406 *(1774*(0.62342733)-(1:1774)))), main = "Logistic vs Step Function Model Fit with ggCaller and PopPUNK", xlab = "Genes", ylab = "Selection Strength", col = col_clb[1], ylim = c(0, 0.12), cex = 1)
+points(c(rep(0.0004164005 , 1774 * (1-0.3803173188)), rep(0.1180783495, 1774 * 0.3803173188)), col = col_clb[5], cex = 1)
+
+legend(0, 0.12, legend=c("Logistic, 5 params", "step function, 5 params"),col=col_clb, lty=1, cex=1.2)
 ```
 
 ```{r}
@@ -2480,7 +2489,33 @@ lollipop_cluster_freqs_VTandNVT_labelSero(year = "2007", plot_title = "PopPUNK a
 
 ```{r}
 # ggCPP fit (logistic function model)
+WF_log <- odin.dust::odin_dust("NFDS_Model_logistic.R")
+log_ggCPP_params <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, L = 0.11292912, K = 4.95113406
+, x0 = 0.62342733, delta = ggC_inv_delta_ranking, m = 0.01107836, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v =0.14464825, vacc_time = 0)
+logWFmodel_ggCPP <- WF_log$new(pars = log_ggCPP_params,
+                                   time = 1,
+                                   n_particles = 10L,
+                                   n_threads = 4L,
+                                   seed = 1L)
+simMeanggCPP2_log <- rowMeans(logWFmodel_ggCPP$run(36)[-1,])
+simMeanggCPP3_log <- rowMeans(logWFmodel_ggCPP$run(72)[-1,])
 
+lollipop_cluster_freqs_VTandNVT_labelSero(year = "2001", plot_title = "PopPUNK and ggCaller", data1 = PP_mass_cluster_freq_1/sum(PP_mass_cluster_freq_1), model_name_1 ="Model", model1 = PP_model_start_pop/sum(PP_model_start_pop), PP_mass_VT, SeroLabel = PP_serotype_comp)
+lollipop_cluster_freqs_VTandNVT_labelSero(year = "2004", plot_title = "PopPUNK and ggCaller", data1 = PP_mass_cluster_freq_2/sum(PP_mass_cluster_freq_2), model_name_1 ="Model", model1 = simMeanggCPP2_log/sum(simMeanggCPP2_log), PP_mass_VT, SeroLabel = PP_serotype_comp)
+lollipop_cluster_freqs_VTandNVT_labelSero(year = "2007", plot_title = "PopPUNK and ggCaller", data1 = PP_mass_cluster_freq_3/sum(PP_mass_cluster_freq_3), model_name_1 ="Model", model1 = simMeanggCPP3_log/sum(simMeanggCPP3_log), PP_mass_VT, SeroLabel = PP_serotype_comp)
 
+#combined_compare(simMeanggCPP2_log,PP_mass_cluster_freq_2) + combined_compare(simMeanggCPP3_log,PP_mass_cluster_freq_3)
+#combined_compare(simMeanggCPP2,PP_mass_cluster_freq_2) + combined_compare(simMeanggCPP3,PP_mass_cluster_freq_3)
+```
+
+```{r}
+lollipop_cluster_freqs_2x2_VTandNVT_labelSero(year = "2001", plot_title = "PopPUNK and ggCaller", data_name = "Data", data1 = PP_mass_cluster_freq_1/sum(PP_mass_cluster_freq_1), model_name_1 ="Step Function", model1 = PP_model_start_pop/sum(PP_model_start_pop), model_name_2 ="Logistic Function", model2 = PP_model_start_pop/sum(PP_model_start_pop), PP_mass_VT, SeroLabel = PP_serotype_comp)
+lollipop_cluster_freqs_2x2_VTandNVT_labelSero(year = "2004", plot_title = "PopPUNK and ggCaller", data_name = "Data", data1 = PP_mass_cluster_freq_2/sum(PP_mass_cluster_freq_2), model_name_1 ="Step Function", model1 = simMeanggCPP2/sum(simMeanggCPP2), model_name_2 ="Logistic Function", model2 = simMeanggCPP2_log/sum(simMeanggCPP2_log), PP_mass_VT, SeroLabel = PP_serotype_comp)
+lollipop_cluster_freqs_2x2_VTandNVT_labelSero(year = "2007", plot_title = "PopPUNK and ggCaller", data_name = "Data", data1 = PP_mass_cluster_freq_3/sum(PP_mass_cluster_freq_3), model_name_1 ="Step Function", model1 = simMeanggCPP3/sum(simMeanggCPP3), model_name_2 ="Logistic Function", model2 = simMeanggCPP3_log/sum(simMeanggCPP3_log), PP_mass_VT, SeroLabel = PP_serotype_comp)
+
+```
+
+```{r}
+lollipop_cluster_freqs_2x2_VTandNVT_labelSero(year = "all time points", plot_title = "Data only", data_name = "2001", data1 = PP_mass_cluster_freq_1/sum(PP_mass_cluster_freq_1), model_name_1 ="2004", model1 = PP_mass_cluster_freq_2/sum(PP_mass_cluster_freq_2), model_name_2 ="2007", model2 = PP_mass_cluster_freq_3/sum(PP_mass_cluster_freq_3), PP_mass_VT, SeroLabel = PP_serotype_comp)
 ```
 
