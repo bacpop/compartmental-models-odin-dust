@@ -2385,7 +2385,7 @@ coda::effectiveSize(ggCPP_det_mcmc2)
 # effective sample size better than COGmanSeqCl but could be better
 1 - coda::rejectionRate(ggCPP_det_mcmc2)
 
-combinedchains = mcmc.list(coda::as.mcmc(ggCPP_det_mcmc2[5001:20000,-(1:3)]), coda::as.mcmc(ggCPP_det_mcmc2[25001:40000,-(1:3)]),coda::as.mcmc(ggCPP_det_mcmc2[45001:60000,-(1:3)]),coda::as.mcmc(ggCPP_det_mcmc2[65001:80000,-(1:3)]))
+combinedchains = coda::mcmc.list(coda::as.mcmc(ggCPP_det_mcmc2[5001:20000,-(1:3)]), coda::as.mcmc(ggCPP_det_mcmc2[25001:40000,-(1:3)]),coda::as.mcmc(ggCPP_det_mcmc2[45001:60000,-(1:3)]),coda::as.mcmc(ggCPP_det_mcmc2[65001:80000,-(1:3)]))
 gelman.plot(combinedchains)
 
 parameter_mean_hpd <- apply(ggCPP_det_mcmc2[c(1001:20000, 21001:40000, 41001:60000, 61001:80000),-(1:3)], 2, mean)
@@ -2395,6 +2395,18 @@ mean(ggCPP_det_mcmc2[c(1001:20000, 21001:40000, 41001:60000, 61001:80000),2])
 parameter_mean_hpd <- apply(ggCPP_det_mcmc2[c(5001:20000, 25001:40000, 45001:60000, 65001:80000),-(1:3)], 2, mean)
 parameter_mean_hpd
 mean(ggCPP_det_mcmc2[c(5001:20000, 25001:40000, 45001:60000, 65001:80000),2])
+
+
+plot(coda::as.mcmc(ggCPP_det_mcmc2[1001:20000,]))
+lines(coda::as.mcmc(ggCPP_det_mcmc2[21001:40000,]))
+
+coda::autocorr.plot(ggCPP_det_mcmc2)
+
+
+library(tigerstats)
+combinedchains2 = coda::mcmc.list(coda::as.mcmc(ggCPP_det_mcmc2[1001:20000,-c(1,3)]), coda::as.mcmc(ggCPP_det_mcmc2[21001:40000,-c(1,3)]),coda::as.mcmc(ggCPP_det_mcmc2[41001:60000,-c(1,3)]),coda::as.mcmc(ggCPP_det_mcmc2[61001:80000,-c(1,3)]))
+xyplot(combinedchains2)
+
 ```
 
 ### Log models
@@ -2433,6 +2445,10 @@ gelman.plot(combinedchains)
 processed_chains <- mcstate::pmcmc_thin(log4_ggCPP_pmcmc2, burnin = 5000, thin = 2)
 parameter_mean_hpd <- apply(processed_chains$pars, 2, mean)
 parameter_mean_hpd
+
+library(tigerstats)
+log_combinedchains2 = coda::mcmc.list(coda::as.mcmc(log_ggCPP_det_mcmc2[1001:20000,-c(1,3)]), coda::as.mcmc(log_ggCPP_det_mcmc2[21001:40000,-c(1,3)]),coda::as.mcmc(log_ggCPP_det_mcmc2[41001:60000,-c(1,3)]),coda::as.mcmc(log_ggCPP_det_mcmc2[61001:80000,-c(1,3)]))
+xyplot(log_combinedchains2)
 ```
 
 
@@ -2517,5 +2533,12 @@ lollipop_cluster_freqs_2x2_VTandNVT_labelSero(year = "2007", plot_title = "PopPU
 
 ```{r}
 lollipop_cluster_freqs_2x2_VTandNVT_labelSero(year = "all time points", plot_title = "Data only", data_name = "2001", data1 = PP_mass_cluster_freq_1/sum(PP_mass_cluster_freq_1), model_name_1 ="2004", model1 = PP_mass_cluster_freq_2/sum(PP_mass_cluster_freq_2), model_name_2 ="2007", model2 = PP_mass_cluster_freq_3/sum(PP_mass_cluster_freq_3), PP_mass_VT, SeroLabel = PP_serotype_comp)
+```
+
+```{r}
+# think about delta again
+# logistic fit doesn't seem to make much sense
+# think about using x^3 or so again (and try to find notes from ~ 22nd of August)
+plot(sort(ggC_delta_data3)[1:1500])
 ```
 
