@@ -2540,5 +2540,69 @@ lollipop_cluster_freqs_2x2_VTandNVT_labelSero(year = "all time points", plot_tit
 # logistic fit doesn't seem to make much sense
 # think about using x^3 or so again (and try to find notes from ~ 22nd of August)
 plot(sort(ggC_delta_data3)[1:1500])
+lines(((0:200)/10000)^3)
+0.2
+
+delta_df <- data.frame(cbind(1:length(ggC_delta_data3), sort(ggC_delta_data3)))
+
+lm(log(X2) ~ X1, data = delta_df)
+
+plot(log(sort(ggC_delta_data3)))
+lines(-10.338049 + 0.004083 * (1:length(ggC_delta_data3)))
+
+plot((sort(ggC_delta_data3)))
+lines(exp(-10.338049 + 0.004083 *  (1:length(ggC_delta_data3))), col = "red")
+
+plot(((ggC_delta_data3)))
+points(exp(-10.338049 + 0.004083 *  ((ggC_delta_ranking))), col = "red")
+
+plot((1 + (ggC_delta_data3)), ylim = c(1,1.01))
+points(1 + exp(-10.338049 + 0.004083 *  ((ggC_delta_ranking))), col = "red")
+points((1 + (3.237743e-05 * exp(0.004083 *  ((ggC_delta_ranking))))), col = "blue")
+
+# this is a fit that replicates the variation
+# but I basically want the invers because the more variation the less selection
+# can I just use the ggC_inv_delta_ranking?
+
+# the logistic model for comparison:
+#points((0.11292912 / (1 + exp(-1 * (ggC_delta_ranking - 0.62342733 * length(ggC_delta_data3))))), col = "blue")
+#points((1 / (1 + exp(-1 * (ggC_delta_ranking - 0.62342733 * length(ggC_delta_data3))))), col = "blue")
+
+plot(((ggC_delta_data3)))
+points(exp(-10.338049 + 0.004083 *  ((ggC_delta_ranking))), col = "red")
+
+plot((sort(0.5 - ggC_delta_data3)))
+points(sort(0.5 - exp(-10.338049 + 0.004083 *  ((ggC_delta_ranking)))), col = "red")
 ```
+
+# for future reference: (1+L)^... is an approcimation (?) of (1+L)/(1+exp...)
+# plot(1 + (0.11292912 / (1 + exp(-1 * (ggC_delta_ranking - 0.62342733 * length(ggC_delta_data3))))), col = "red")
+# points((1+0.11292912)^(1 / (1 + exp(-1 * (ggC_delta_ranking - 0.62342733 * length(ggC_delta_data3))))), col = "blue")
+
+### WF model with logistic NFDS function
+
+```{r}
+WF_exp <- odin.dust::odin_dust("NFDS_Model_exp.R")
+# copy of WrightFisherModel/WrightFisher_newData_nGenotypes_haploid_PopsizeVariablePois.R
+```
+
+#define parameters for the model:
+```{r}
+exp_ggCPP_params <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, L = 0, x0 = -10, K = 0.004, delta = ggC_delta_ranking, m = 0.0078524723, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v =0.1103623064, vacc_time = 0)
+```
+
+### Running the model:
+```{r}
+WFmodel_exp <- WF_exp$new(pars = exp_ggCPP_params,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+```
+
+```{r}
+WFmodel_exp$run(1)
+```
+
+
 
