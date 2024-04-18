@@ -2601,7 +2601,7 @@ WFmodel_exp <- WF_exp$new(pars = exp_ggCPP_params,
 ```
 
 ```{r}
-WFmodel_exp$run(1)
+WFmodel_exp$run(2)
 ```
 
 

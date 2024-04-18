@@ -27,7 +27,7 @@ if(length(args)==0){
 
 
 # read in model from file
-WF <- odin.dust::odin_dust("NFDS_Model_logistic.R")
+WF <- odin.dust::odin_dust("NFDS_Model_exp.R")
 
 # likelihood for fitting:
 ll_pois <- function(obs, model) {
@@ -61,14 +61,14 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   intermed_gene_presence_absence_consensus <- readRDS(file = "ggCPP_intermed_gene_presence_absence_consensus.rds")
   intermed_gene_presence_absence_consensus_matrix <- sapply(intermed_gene_presence_absence_consensus[-1,-1],as.double)
   model_start_pop <- readRDS(file = "PP_model_start_pop.rds")
-  delta_ranking <- readRDS(file = "ggC_inv_delta_ranking.rds")
+  delta_ranking <- readRDS(file = "ggC_delta_ranking.rds")
   mass_cluster_freq_1 <- readRDS(file = "PP_mass_cluster_freq_1.rds")
   mass_cluster_freq_2 <- readRDS(file = "PP_mass_cluster_freq_2.rds")
   mass_cluster_freq_3 <- readRDS(file = "PP_mass_cluster_freq_3.rds")
   mass_VT <- readRDS(file = "PP_mass_VT.rds")
   mass_clusters <- length(unique(seq_clusters$Cluster))
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
-  output_filename <- "ggCaller_PopPUNK_log"
+  output_filename <- "ggCaller_PopPUNK_exp"
 } else if(args[1] == "COGtriangles" & args[2] == "PopPUNK"){
   seq_clusters <- readRDS("PopPUNK_clusters.rds")
   intermed_gene_presence_absence_consensus <- readRDS(file = "PP_intermed_gene_presence_absence_consensus.rds")
@@ -81,7 +81,7 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   mass_VT <- readRDS(file = "PP_mass_VT.rds")
   mass_clusters <- length(unique(seq_clusters$Cluster))
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
-  output_filename <- "COGtriangles_PopPUNK_log"
+  output_filename <- "COGtriangles_PopPUNK_exp"
 } else if(args[1] == "ggCaller" & args[2] == "manualSeqClusters"){
   seq_clusters <- readRDS("Mass_Samples_accCodes.rds")
   intermed_gene_presence_absence_consensus <- readRDS(file = "ggC_intermed_gene_presence_absence_consensus.rds")
@@ -94,7 +94,7 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   mass_VT <- readRDS(file = "mass_VT.rds")
   mass_clusters <- length(unique(seq_clusters$SequenceCluster))
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
-  output_filename <- "ggCaller_manSeqClusters_log"
+  output_filename <- "ggCaller_manSeqClusters_exp"
 } else if(args[1] == "COGtriangles" & args[2] == "manualSeqClusters"){
   seq_clusters <- readRDS("Mass_Samples_accCodes.rds")
   intermed_gene_presence_absence_consensus <- readRDS(file = "intermed_gene_presence_absence_consensus.rds")
@@ -107,7 +107,7 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   mass_VT <- readRDS(file = "mass_VT.rds")
   mass_clusters <- length(unique(seq_clusters$SequenceCluster))
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
-  output_filename <- "COGtriangles_manSeqClusters_log"
+  output_filename <- "COGtriangles_manSeqClusters_exp"
 }
 
 
@@ -181,7 +181,7 @@ proposal_matrix <- diag(0.1, 5) # the proposal matrix defines the covariance-var
 # it explains how to not fit all parameters but just the ones I want
 # non-scalar parameters have to be transformed for this.
 
-mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("L", 0.1432, min = 0, max = 1), mcstate::pmcmc_parameter("K", 1, min = 0, max = 10), mcstate::pmcmc_parameter("x0", 0.2, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 1), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), proposal_matrix, make_transform(complex_params))
+mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("L", 0.5, min = 0, max = 1), mcstate::pmcmc_parameter("K", 0.004, min = 0, max = 10),mcstate::pmcmc_parameter("x0", -10, min = -100, max = 10), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 1), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), proposal_matrix, make_transform(complex_params))
 mcmc_pars$initial()
 
 det_filter <- particle_deterministic$new(data = fitting_mass_data,
@@ -215,7 +215,7 @@ print("det_mcmc_1 mean log likelihood")
 mean(processed_chains$probabilities[,2])
 det_proposal_matrix <- cov(processed_chains$pars)
 #det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0.075, max = 0.22), mcstate::pmcmc_parameter("sigma_w", 0.05, min = 0.000001, max = 0.0749), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 0.2), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 0.5)), det_proposal_matrix, make_transform(complex_params))
-det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("L", parameter_mean_hpd[1], min = 0, max = 1), mcstate::pmcmc_parameter("K", parameter_mean_hpd[2], min = 0, max = 10), mcstate::pmcmc_parameter("x0", parameter_mean_hpd[3], min = 0, max = 1), mcstate::pmcmc_parameter("m", parameter_mean_hpd[4], min = 0, max = 1), mcstate::pmcmc_parameter("v", parameter_mean_hpd[5], min = 0, max = 1)), det_proposal_matrix, make_transform(complex_params))
+det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("L", parameter_mean_hpd[1], min = 0, max = 1), mcstate::pmcmc_parameter("K", parameter_mean_hpd[2], min = 0, max = 10), mcstate::pmcmc_parameter("x0", parameter_mean_hpd[3], min = -100, max = 10), mcstate::pmcmc_parameter("m", parameter_mean_hpd[4], min = 0, max = 1), mcstate::pmcmc_parameter("v", parameter_mean_hpd[5], min = 0, max = 1)), det_proposal_matrix, make_transform(complex_params))
 
 det_filter <- particle_deterministic$new(data = fitting_mass_data,
                                          model = WF,
