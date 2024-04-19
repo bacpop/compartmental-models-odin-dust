@@ -2617,5 +2617,132 @@ WFmodel_exp <- WF_exp$new(pars = exp_ggCPP_params,
 WFmodel_exp$run(2)
 ```
 
+### grid search for prop_f and sigma_f
+```{r}
+# parameters from ggCPP fit with 4 parameter model (15.4.2024)
+# but with transformed sigma_f, sigma_w and m because that is the current version of my model
+ggCPP_params <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = log(0.11313856), sigma_w = -1000, prop_f = 0.37657870, delta = ggC_delta_ranking, m = log(0.01107152), migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.14340557, vacc_time = 0)
+WFmodel_ggCPP <- WF_nG_h_vP$new(pars = ggCPP_params,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+```
 
+```{r}
+gridSearch <- function(sigma_f_vals, prop_f_vals){
+  likelihood_vals <- data.frame(matrix(0, nrow = length(sigma_f_vals), ncol = length(prop_f_vals)))
+  for (i in 1:length(sigma_f_vals)) {
+    for (j in 1:length(prop_f_vals)) {
+      ggCPP_params <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = log(sigma_f_vals[i]), sigma_w = -1000, prop_f = prop_f_vals[j], delta = ggC_delta_ranking, m = log(0.01107152), migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.14340557, vacc_time = 0)
+      WFmodel_ggCPP <- WF_nG_h_vP$new(pars = ggCPP_params,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+      n_particles <- 10L
+      n_times <- 73
+      x <- array(NA, dim = c(WFmodel_ggCPP$info()$len, n_particles, n_times))
+
+      for (t in seq_len(n_times)) {
+        x[ , , t] <- WFmodel_ggCPP$run(t)
+      }
+      time <- x[1, 1, ]
+      x <- x[-1, , ]
+  
+      likelihood_vals[i,j] <- combined_compare(x[,1,37],PP_mass_cluster_freq_2) + combined_compare(x[,1,73],PP_mass_cluster_freq_3)
+    }
+  }
+  likelihood_vals
+}
+```
+
+```{r}
+likelihood_grid <- gridSearch(sigma_f_vals = (1:20)/20, prop_f_vals = (1:20)/20)
+rownames(likelihood_grid) <- (1:20)/20
+colnames(likelihood_grid) <- (1:20)/20
+# max: -240.126 for sigma_f_vals = 0.1, prop_f_vals = 0.4
+saveRDS(likelihood_grid,"likelihood_grid.rds")
+# 2nd largest: -243.5468, sigma_f_vals = 0.35, prop_f_vals = 0.2
+
+# make grid around max values
+likelihood_grid2 <- gridSearch(sigma_f_vals = ((10:30)/200), prop_f_vals = ((70:90)/200))
+rownames(likelihood_grid2) <- ((10:30)/200)
+colnames(likelihood_grid2) <- ((70:90)/200)
+# max: -232.2814 for sigma_f_vals = 0.105, prop_f_vals = 0.38
+saveRDS(likelihood_grid2,"likelihood_grid2.rds")
+
+# make grid around 2nd max values
+likelihood_grid3 <- gridSearch(sigma_f_vals = ((60:80)/200), prop_f_vals = ((30:50)/200))
+rownames(likelihood_grid3) <- ((60:80)/200)
+colnames(likelihood_grid3) <- ((30:50)/200)
+# max: -232.2814 for sigma_f_vals = 0.105, prop_f_vals = 0.38
+saveRDS(likelihood_grid3,"likelihood_grid3.rds")
+# max: -239.1502, sigma_f_vals = 0.35, prop_f_vals = 0.195
+```
+
+```{r}
+plot(as.numeric(rownames(likelihood_grid)), as.numeric(colnames(likelihood_grid)), xlab = "sigma_f", ylab = "prop_f", xaxt='n')
+```
+
+```{r}
+grid_results_df <- data.frame(matrix(0, nrow = 400, ncol = 3))
+colnames(grid_results_df) <- c("sigma_f","prop_f","likelihood")
+grid_results_df$sigma_f <- rep(((1:20)/20),20)
+grid_results_df$prop_f <- sort(rep(((1:20)/20),20))
+grid_results_df$likelihood <- c(likelihood_grid[,1],likelihood_grid[,2],likelihood_grid[,3],likelihood_grid[,4], likelihood_grid[,5],likelihood_grid[,6],likelihood_grid[,7],likelihood_grid[,8], likelihood_grid[,9],likelihood_grid[,10], likelihood_grid[,11],likelihood_grid[,12], likelihood_grid[,13],likelihood_grid[,14], likelihood_grid[,15],likelihood_grid[,16], likelihood_grid[,17],likelihood_grid[,18], likelihood_grid[,19],likelihood_grid[,20])
+
+ggplot(grid_results_df, aes(x=sigma_f, y=prop_f) ) +
+  geom_point(aes(color = likelihood)) 
+
+ggplot(grid_results_df[1:200,], aes(x=sigma_f, y=prop_f) ) +
+  geom_point(aes(color = likelihood)) 
+```
+
+```{r}
+grid_results_df2 <- data.frame(matrix(0, nrow = 441, ncol = 3))
+colnames(grid_results_df2) <- c("sigma_f","prop_f","likelihood")
+grid_results_df2$sigma_f <- rep(((10:30)/200),21)
+grid_results_df2$prop_f <- sort(rep(((70:90)/200),21))
+grid_results_df2$likelihood <- c(likelihood_grid2[,1],likelihood_grid2[,2],likelihood_grid2[,3],likelihood_grid2[,4], likelihood_grid2[,5],likelihood_grid2[,6],likelihood_grid2[,7],likelihood_grid2[,8], likelihood_grid2[,9],likelihood_grid2[,10], likelihood_grid2[,11],likelihood_grid2[,12], likelihood_grid2[,13],likelihood_grid2[,14], likelihood_grid2[,15],likelihood_grid2[,16], likelihood_grid2[,17],likelihood_grid2[,18], likelihood_grid2[,19],likelihood_grid2[,20], likelihood_grid2[,21])
+
+ggplot(grid_results_df2, aes(x=sigma_f, y=prop_f) ) +
+  geom_point(aes(color = likelihood)) 
+```
+
+
+```{r}
+col_clb <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7") #8 colorblind friendly colors
+
+plot(as.numeric(rownames(likelihood_grid)),likelihood_grid$"0.05", type = "l", ylim = c(-500, -240), xlab = "sigma_f", ylab = "likelihood", xaxt='n')
+axis(1,at=(1:20)/20)
+lines(as.numeric(rownames(likelihood_grid)),likelihood_grid$"0.1", col = col_clb[2])
+lines(as.numeric(rownames(likelihood_grid)),likelihood_grid$"0.15", col = col_clb[3])
+lines(as.numeric(rownames(likelihood_grid)),likelihood_grid$"0.2", col = col_clb[4])
+lines(as.numeric(rownames(likelihood_grid)),likelihood_grid$"0.25", col = col_clb[5])
+lines(as.numeric(rownames(likelihood_grid)),likelihood_grid$"0.3", col = col_clb[6])
+lines(as.numeric(rownames(likelihood_grid)),likelihood_grid$"0.35", col = col_clb[7])
+lines(as.numeric(rownames(likelihood_grid)),likelihood_grid$"0.4", col = col_clb[8])
+legend(0, -400, legend=c("prop_f 0.05", "prop_f 0.1", "prop_f 0.15", "prop_f 0.2", "prop_f 0.25", "prop_f 0.3", "prop_f 0.35", "prop_f 0.4"),
+       col=col_clb, lty=1, cex=0.8)
+```
+
+```{r}
+plot(as.numeric(rownames(likelihood_grid)),likelihood_grid$"0.05", ylim = c(-500, -240), xlab = "sigma_f", ylab = "likelihood", xaxt='n')
+axis(1,at=(1:20)/20)
+points(as.numeric(rownames(likelihood_grid)),likelihood_grid$"0.1", col = col_clb[2])
+points(as.numeric(rownames(likelihood_grid)),likelihood_grid$"0.15", col = col_clb[3])
+points(as.numeric(rownames(likelihood_grid)),likelihood_grid$"0.2", col = col_clb[4])
+points(as.numeric(rownames(likelihood_grid)),likelihood_grid$"0.25", col = col_clb[5])
+points(as.numeric(rownames(likelihood_grid)),likelihood_grid$"0.3", col = col_clb[6])
+points(as.numeric(rownames(likelihood_grid)),likelihood_grid$"0.35", col = col_clb[7])
+points(as.numeric(rownames(likelihood_grid)),likelihood_grid$"0.4", col = col_clb[8])
+legend(0, -400, legend=c("prop_f 0.05", "prop_f 0.1", "prop_f 0.15", "prop_f 0.2", "prop_f 0.25", "prop_f 0.3", "prop_f 0.35", "prop_f 0.4"),
+       col=col_clb, lty=1, cex=0.8)
+```
+
+```{r}
+ggplot(likelihood_grid, aes(x = x, y = y)) +
+  geom_density_2d(aes(color = ..level..))
+```
 

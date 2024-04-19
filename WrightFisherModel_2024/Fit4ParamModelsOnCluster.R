@@ -252,3 +252,5 @@ print("det_mcmc_2 final log likelihood")
 processed_chains$probabilities[nrow(processed_chains$probabilities),2]
 print("det_mcmc_2 mean log likelihood")
 mean(processed_chains$probabilities[,2])
+
+saveRDS(det_pmcmc_run2, paste(output_filename, "_det_pmcmc_run2.rds", sep = ""))
