@@ -32,13 +32,14 @@ probs[] <- ((1 + exp(sigma_w) + exp(sigma_f))^pi_f_genotypes[i] * (1 + exp(sigma
 # You could simplify this by cancelling out the Pop_size (which makes sense because we will loose less accuracy but it will make it a bit less easy to interpret.)
 
 y[] <- if (probs[i]/sum(probs[1:species_no]) < 1) #not strictly necessary for poisson but probs>1 should be avoided anyway
-  rpois(capacity * (probs[i] / sum(probs[1:species_no])) * (1-m) ) else rpois(capacity * 1 *(1-m) )
+  rpois(capacity * (probs[i] / sum(probs[1:species_no])) * (1-exp(m)) ) else rpois(capacity * 1 *(1-exp(m)) )
 
 
 # m is the migration rate
 # fitness of individuals in the community is reduced by this rate
 # determining migration number:
-mig_num <- rbinom(capacity, m)
+#mig_num <- rbinom(capacity, m)
+mig_num <- rbinom(capacity, exp(m))
 Pop_mig[] <- rbinom(mig_num, migVec[i])
 # this is a very simple implementation of migration. It does not care what the rates of the different genotypes are and just makes uniform, random draws from all existing genotypes.
 

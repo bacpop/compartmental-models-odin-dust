@@ -33,6 +33,7 @@ exp_genotypes[] <- sum(exp_freq[1:gene_no,i])
 # those are the individuals' probabilities multiplied by the number of individual that have this genotype
 #probs[] <- ((1 + sigma_f)^pi_f_genotypes[i] * (1 + sigma_w)^pi_w_genotypes[i]) * Pop[i] * (1- (as.integer(time >= vacc_time) * vaccTypes[i] * v))
 probs[] <- (1 + L) ^ exp_genotypes[i] * Pop[i] * (1- (as.integer(time >= vacc_time) * vaccTypes[i] * v))
+#probs[] <- max(exp_genotypes[i],2.935635e-05) * Pop[i] * (1- (as.integer(time >= vacc_time) * vaccTypes[i] * v))
 
 # The lambda of the poisson distribution then consists of the normalised probability and a factor that describes how close we are to the capacity and a factor for the population size.
 # You could simplify this by cancelling out the Pop_size (which makes sense because we will loose less accuracy but it will make it a bit less easy to interpret.)

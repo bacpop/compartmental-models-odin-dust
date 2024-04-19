@@ -2407,6 +2407,19 @@ library(tigerstats)
 combinedchains2 = coda::mcmc.list(coda::as.mcmc(ggCPP_det_mcmc2[1001:20000,-c(1,3)]), coda::as.mcmc(ggCPP_det_mcmc2[21001:40000,-c(1,3)]),coda::as.mcmc(ggCPP_det_mcmc2[41001:60000,-c(1,3)]),coda::as.mcmc(ggCPP_det_mcmc2[61001:80000,-c(1,3)]))
 xyplot(combinedchains2)
 
+# prop_f and sigma_f
+plot(ggCPP_det_mcmc2[1001:20000,4],ggCPP_det_mcmc2[1001:20000,6])
+lines(ggCPP_det_mcmc2[1001:20000,4],ggCPP_det_mcmc2[1001:20000,6], col = "grey")
+points(ggCPP_det_mcmc2[1001:20000,4],ggCPP_det_mcmc2[1001:20000,6])
+
+# sigma_w and sigma_f
+plot(ggCPP_det_mcmc2[1001:20000,4],ggCPP_det_mcmc2[1001:20000,5], xlim = c(0, 0.35))
+lines(ggCPP_det_mcmc2[1001:20000,4],ggCPP_det_mcmc2[1001:20000,5], col = "grey")
+points(ggCPP_det_mcmc2[1001:20000,4],ggCPP_det_mcmc2[1001:20000,5])
+
+plot(ggCPP_det_mcmc2[1001:20000,4],ggCPP_det_mcmc2[1001:20000,2], xlim = c(0,0.35))
+
+
 ```
 
 ### Log models
@@ -2575,7 +2588,7 @@ plot((sort(0.5 - ggC_delta_data3)))
 points(sort(0.5 - exp(-10.338049 + 0.004083 *  ((ggC_delta_ranking)))), col = "red")
 ```
 
-# for future reference: (1+L)^... is an approcimation (?) of (1+L)/(1+exp...)
+# for future reference: (1+L)^... is an approximation (?) of (1+L)/(1+exp...)
 # plot(1 + (0.11292912 / (1 + exp(-1 * (ggC_delta_ranking - 0.62342733 * length(ggC_delta_data3))))), col = "red")
 # points((1+0.11292912)^(1 / (1 + exp(-1 * (ggC_delta_ranking - 0.62342733 * length(ggC_delta_data3))))), col = "blue")
 
