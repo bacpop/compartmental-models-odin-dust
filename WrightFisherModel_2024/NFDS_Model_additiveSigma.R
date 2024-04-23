@@ -24,7 +24,7 @@ pi_w_genotypes[] <- sum(pi_w_freq[1:gene_no,i])
 
 # Genotype specific probability to produce offspring
 # those are the individuals' probabilities multiplied by the number of individuals that have this genotype
-probs[] <- ((1 + exp(sigma_w) + exp(sigma_f))^pi_f_genotypes[i] * (1 + exp(sigma_w))^pi_w_genotypes[i]) * Pop[i] * (1- (as.integer(time >= vacc_time) * vaccTypes[i] * v))
+probs[] <- ((1 + exp(sigma_w + sigma_f))^pi_f_genotypes[i] * (1 + exp(sigma_w))^pi_w_genotypes[i]) * Pop[i] * (1- (as.integer(time >= vacc_time) * vaccTypes[i] * v))
 
 
 

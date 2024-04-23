@@ -2746,3 +2746,77 @@ ggplot(likelihood_grid, aes(x = x, y = y)) +
   geom_density_2d(aes(color = ..level..))
 ```
 
+# check convergence to some equilibrium
+```{r fig.height=5, fig.width=7}
+# parameters from ggCPP fit with 4 parameter model (15.4.2024)
+# but with transformed sigma_f, sigma_w and m because that is the current version of my model
+ggCPP_params <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = log(0.11313856), sigma_w = -1000, prop_f = 0.37657870, delta = ggC_delta_ranking, m = log(0.01107152), migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.14340557, vacc_time = 0)
+WFmodel_ggCPP <- WF_nG_h_vP$new(pars = ggCPP_params,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+par(mfrow=c(1,1))
+n_times <- 1800
+n_times <- 73*4
+x <- array(NA, dim = c(WFmodel_ggCPP$info()$len, n_particles, n_times))
+
+for (t in seq_len(n_times)) {
+  x[ , , t] <- WFmodel_ggCPP$run(t)
+}
+time <- x[1, 1, ]
+x <- x[-1, , ]
+
+
+
+par(mar = c(4.1, 5.1, 0.5, 0.5), las = 1)
+if (length(x[,1,1]) <= 8){
+  cols <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7") #8 colorblind friendly colors
+} else {
+  cols <- rainbow(length(x[,1,1]))
+}
+
+
+library(dplyr)
+library(zoo)
+par(ask = FALSE)
+matplot(time,(x[1,1 , ]), type = "l",
+         xlab = "Time", ylab = "Number of individuals",
+         col = cols[1], lty = 1, ylim = range(x))
+for (species in 2:length(x[,1,1])) {
+  matlines(time, (x[species,1 , ]), col = cols[species], lty = 1)
+}
+
+
+legend("bottomright", lwd = 1, col = cols[1:length(x[,1,1])], legend = 1:length(x[,1,1]), bty = "n")
+
+# yes, looks like we're reaching some sort of an equilibrium (with random variation and migration effects)
+```
+
+```{r}
+
+ggCPP_params <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = log(0.11313856), sigma_w = -1000, prop_f = 0.37657870, delta = ggC_delta_ranking, m = log(0.01107152), migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.14340557, vacc_time = 0)
+WFmodel_ggCPP <- WF_nG_h_vP$new(pars = ggCPP_params,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+n_particles <- 10L
+n_times <- 73
+x <- array(NA, dim = c(WFmodel_ggCPP$info()$len, n_particles, n_times))
+
+for (t in seq_len(n_times)) {
+  x[ , , t] <- WFmodel_ggCPP$run(t)
+}
+time <- x[1, 1, ]
+x <- x[-1, , ]
+combined_compare(x[,1,37],PP_mass_cluster_freq_2) + combined_compare(x[,1,73],PP_mass_cluster_freq_3)
+
+# post-pre
+# [1] -252.3691
+# peri_post - pre
+# [1] -252.3514
+
+# maybe concerning that it does not change anything even though the ordering is quite different?
+```
+
