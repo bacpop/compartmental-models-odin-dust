@@ -2820,3 +2820,64 @@ combined_compare(x[,1,37],PP_mass_cluster_freq_2) + combined_compare(x[,1,73],PP
 # maybe concerning that it does not change anything even though the ordering is quite different?
 ```
 
+### try directly using delta values
+```{r}
+WF_delta <- odin.dust::odin_dust("NFDS_Model_directDelta.R")
+```
+
+```{r}
+ggCPP_params <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = log(0.11313856), delta = ggC_delta_data2, m = log(0.01107152), migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.14340557, vacc_time = 0)
+WFmodel_delta <- WF_delta$new(pars = ggCPP_params,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+
+n_particles <- 10L
+n_times <- 73
+x <- array(NA, dim = c(WFmodel_delta$info()$len, n_particles, n_times))
+
+for (t in seq_len(n_times)) {
+  x[ , , t] <- WFmodel_delta$run(t)
+}
+time <- x[1, 1, ]
+x <- x[-1, , ]
+combined_compare(x[,1,37],PP_mass_cluster_freq_2) + combined_compare(x[,1,73],PP_mass_cluster_freq_3)
+```
+
+```{r}
+sigma_f_vals <- (201:300)/200
+sigma_f_likelihoods <- rep(0,100)
+for (i in 1:100) {
+  ggCPP_params <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = log(sigma_f_vals[i]), delta = ggC_delta_data2, m = log(0.01107152), migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.14340557, vacc_time = 0)
+WFmodel_delta <- WF_delta$new(pars = ggCPP_params,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+
+n_particles <- 10L
+n_times <- 73
+x <- array(NA, dim = c(WFmodel_delta$info()$len, n_particles, n_times))
+
+for (t in seq_len(n_times)) {
+  x[ , , t] <- WFmodel_delta$run(t)
+}
+time <- x[1, 1, ]
+x <- x[-1, , ]
+sigma_f_likelihoods[i] <- combined_compare(x[,1,37],PP_mass_cluster_freq_2) + combined_compare(x[,1,73],PP_mass_cluster_freq_3)
+}
+
+max(sigma_f_likelihoods)
+# -1025.874
+# -1093.985
+# -1007.493
+sigma_f_vals[which.max(sigma_f_likelihoods)]
+# 0.085
+# 0.78
+# 1.03
+plot(sigma_f_vals,sigma_f_likelihoods)
+
+# really weird distribution for best sigma_f values and all maxima are quite bad compared to the ones with the other models
+```
+
