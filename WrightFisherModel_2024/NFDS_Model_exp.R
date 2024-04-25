@@ -19,7 +19,7 @@ freq[] <- sum(gene_freq[i,1:species_no]) / Pop_size
 # prop_f becomes the midpoint of the function (x0)
 # sigma_f is the supremum (L)
 # and the sigma_w will be replaced by the steepness of the curve (K)
-delta_exp[] <- 1 - exp(x0 + K *  ((delta[i])))
+delta_exp[] <- exp(L) - exp(x0 + K *  ((delta[i])))
 exp_freq[,] <-  Genotypes[i,j] * (eq[i] - freq[i]) * delta_exp[i]
 exp_genotypes[] <- sum(exp_freq[1:gene_no,i])
 #delta_bool[] <- if ((delta[i] <= prop_f * gene_no)) 1 else 0
@@ -32,8 +32,8 @@ exp_genotypes[] <- sum(exp_freq[1:gene_no,i])
 # Genotype specific probability to produce offspring
 # those are the individuals' probabilities multiplied by the number of individual that have this genotype
 #probs[] <- ((1 + sigma_f)^pi_f_genotypes[i] * (1 + sigma_w)^pi_w_genotypes[i]) * Pop[i] * (1- (as.integer(time >= vacc_time) * vaccTypes[i] * v))
-probs[] <- (1 + L) ^ exp_genotypes[i] * Pop[i] * (1- (as.integer(time >= vacc_time) * vaccTypes[i] * v))
-#probs[] <- max(exp_genotypes[i],2.935635e-05) * Pop[i] * (1- (as.integer(time >= vacc_time) * vaccTypes[i] * v))
+#probs[] <- (1 + L) ^ exp_genotypes[i] * Pop[i] * (1- (as.integer(time >= vacc_time) * vaccTypes[i] * v))
+probs[] <- max(exp_genotypes[i],2.935635e-05) * Pop[i] * (1- (as.integer(time >= vacc_time) * vaccTypes[i] * v))
 
 # The lambda of the poisson distribution then consists of the normalised probability and a factor that describes how close we are to the capacity and a factor for the population size.
 # You could simplify this by cancelling out the Pop_size (which makes sense because we will loose less accuracy but it will make it a bit less easy to interpret.)

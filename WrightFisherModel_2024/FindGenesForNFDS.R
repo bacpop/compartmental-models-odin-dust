@@ -90,6 +90,8 @@ WF <- odin.dust::odin_dust("NFDS_Model_FindGenes.R")
 FindNFDSgenes <- function(repeats = 100, frac = 0.1){
   best_vec <- rep(0, nrow(ggCPP_intermed_gene_presence_absence_consensus)-1)
   best_like <- -100000
+  
+  best_vec_df <- data.frame(matrix(0, nrow = repeats, ncol = nrow(ggCPP_intermed_gene_presence_absence_consensus)))
   for (i in 1:repeats) {
     # create vector of length 1174 - 520 with randomly distributed 0s and 1s
     rnd_vect <- rbinom(nrow(ggCPP_intermed_gene_presence_absence_consensus)-1 -length((group_gene_cl)) ,1,frac)
@@ -123,10 +125,13 @@ FindNFDSgenes <- function(repeats = 100, frac = 0.1){
       best_like <- local_like
       best_vec <- rnd_vect_full
     }
+    best_vec_df[i,1] <- local_like
+    best_vec_df[i,-1] <- rnd_vect_full
     #print(local_like)
   }
   print(best_like)
-  best_vec
+  #best_vec
+  best_vec_df
 }
 
 # first values with fitted parameters from 3-param model
@@ -243,6 +248,17 @@ best_70_perc_vect <- FindNFDSgenes(repeats = 500, frac = 0.7)
 # -308.3332
 best_60_perc_vect <- FindNFDSgenes(repeats = 500, frac = 0.6)
 # -310.633
+
+
+# changed the FindNFDSgenes function slightly to produce data frame
+best_10_perc_vec_df <- FindNFDSgenes(repeats = 1000, frac = 0.10)
+
+# 10% best likelihood
+which(best_10_perc_vec_df$X1>(max(best_10_perc_vec_df$X1) + (min(best_10_perc_vec_df$X1) - max(best_10_perc_vec_df$X1))/10))
+colMeans(best_10_perc_vec_df[which(best_10_perc_vec_df$X1>(max(best_10_perc_vec_df$X1) + (min(best_10_perc_vec_df$X1) - max(best_10_perc_vec_df$X1))/10)),])
+which(colMeans(best_10_perc_vec_df[which(best_10_perc_vec_df$X1>(max(best_10_perc_vec_df$X1) + (min(best_10_perc_vec_df$X1) - max(best_10_perc_vec_df$X1))/10)),])>0.2)
+# not even one is present in more than 20% of the vectors. looks like they are just randomly turned on/off
+plot(colMeans(best_10_perc_vec_df[which(best_10_perc_vec_df$X1>(max(best_10_perc_vec_df$X1) + (min(best_10_perc_vec_df$X1) - max(best_10_perc_vec_df$X1))/10)),-1]))
 
 NFDSgenes_df <- data.frame(matrix(0, nrow = 8,ncol = 15))
 colnames(NFDSgenes_df)[1] <- "sigma_f"

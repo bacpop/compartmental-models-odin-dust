@@ -2404,13 +2404,21 @@ coda::autocorr.plot(ggCPP_det_mcmc2)
 
 
 library(tigerstats)
-combinedchains2 = coda::mcmc.list(coda::as.mcmc(ggCPP_det_mcmc2[1001:20000,-c(1,3)]), coda::as.mcmc(ggCPP_det_mcmc2[21001:40000,-c(1,3)]),coda::as.mcmc(ggCPP_det_mcmc2[41001:60000,-c(1,3)]),coda::as.mcmc(ggCPP_det_mcmc2[61001:80000,-c(1,3)]))
+combinedchains2 = coda::mcmc.list(coda::as.mcmc(ggCPP_det_mcmc2[1:20000,-c(1,3)]), coda::as.mcmc(ggCPP_det_mcmc2[20001:40000,-c(1,3)]),coda::as.mcmc(ggCPP_det_mcmc2[40001:60000,-c(1,3)]),coda::as.mcmc(ggCPP_det_mcmc2[60001:80000,-c(1,3)]))
 xyplot(combinedchains2)
+# --> burn-in of 5000 sensible
 
 # prop_f and sigma_f
-plot(ggCPP_det_mcmc2[1001:20000,4],ggCPP_det_mcmc2[1001:20000,6])
+plot(ggCPP_det_mcmc2[1001:20000,4],ggCPP_det_mcmc2[1001:20000,6], ylab = "prop_f",xlab = "sigma_f")
 lines(ggCPP_det_mcmc2[1001:20000,4],ggCPP_det_mcmc2[1001:20000,6], col = "grey")
 points(ggCPP_det_mcmc2[1001:20000,4],ggCPP_det_mcmc2[1001:20000,6])
+
+ggCPP_det_mcmc2_df <- data.frame(cbind(ggCPP_det_mcmc2[1001:20000,4],ggCPP_det_mcmc2[1001:20000,6],ggCPP_det_mcmc2[1001:20000,2]))
+colnames(ggCPP_det_mcmc2_df) <- c("sigma_f","prop_f","likelihood")
+
+# combine trace plot with 2d contour density plot
+v <- ggplot(NULL, aes(sigma_f, prop_f, z = log(-(likelihood))))
+v + geom_contour_filled(data = grid_results_df) + labs(fill = "log neg Likelihood") + theme(legend.title = element_text(size = 16),legend.text = element_text(size = 16), axis.title = element_text(size = 16),axis.text = element_text(size = 16)) + geom_point(data = ggCPP_det_mcmc2_df, col = "red")
 
 # sigma_w and sigma_f
 plot(ggCPP_det_mcmc2[1001:20000,4],ggCPP_det_mcmc2[1001:20000,5], xlim = c(0, 0.35))
@@ -2420,7 +2428,67 @@ points(ggCPP_det_mcmc2[1001:20000,4],ggCPP_det_mcmc2[1001:20000,5])
 plot(ggCPP_det_mcmc2[1001:20000,4],ggCPP_det_mcmc2[1001:20000,2], xlim = c(0,0.35))
 
 
+summary(coda::as.mcmc(ggCPP_det_mcmc2[c(5001:20000,25001:40000,45001:60000,65001:80000),]))
+#                     Mean        SD  Naive SE Time-series SE
+#log_prior       0.000e+00 0.0000000 0.000e+00      0.0000000
+#log_likelihood -2.633e+02 2.1542694 8.795e-03      0.0725237
+#log_posterior  -2.633e+02 2.1542694 8.795e-03      0.0725237
+#sigma_f         1.109e-01 0.0292186 1.193e-04      0.0009632
+#sigma_w         3.823e-04 0.0003979 1.625e-06      0.0000128
+#prop_f          3.861e-01 0.0451591 1.844e-04      0.0013191
+#m               1.101e-02 0.0043000 1.755e-05      0.0001459
+#v               1.466e-01 0.0254677 1.040e-04      0.0008980
+summa_ggCPP_run <- summary(coda::as.mcmc(ggCPP_det_mcmc2[c(5001:20000,25001:40000,45001:60000,65001:80000),]))
+summa_ggCPP_run_df <- data.frame(summa_ggCPP_run$statistics[-(1:3),])
+
+qplot(x    = factor(rownames(summa_ggCPP_run_df)) ,
+      y    = Mean,
+      data = summa_ggCPP_run_df) +
+
+geom_errorbar(aes(ymin  = summa_ggCPP_run_df$Mean - summa_ggCPP_run_df$SD,
+                   ymax  = summa_ggCPP_run_df$Mean + summa_ggCPP_run_df$SD,
+                   width = 0.15))
+
 ```
+
+```{r}
+results_path_25 <- "/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_04_25/"
+ggCPP_det_mcmc2_4param <- readRDS(paste(results_path_25, "4param_ggCaller_PopPUNK_det_pmcmc_run2.rds",sep=""))
+ggCPP_det_mcmc2_4param_coda <- coda::as.mcmc(cbind(ggCPP_det_mcmc2_4param$probabilities, ggCPP_det_mcmc2_4param$pars))
+coda::effectiveSize(ggCPP_det_mcmc2_4param_coda)
+# effective sample size better than COGmanSeqCl but could be better
+1 - coda::rejectionRate(ggCPP_det_mcmc2_4param_coda)
+
+plot(ggCPP_det_mcmc2_4param_coda)
+summary(ggCPP_det_mcmc2_4param_coda)
+#                     Mean      SD  Naive SE Time-series SE
+#log_prior         0.0000 0.00000 0.000e+00      0.0000000
+#log_likelihood -261.9913 1.74362 6.165e-03      0.0362201
+#log_posterior  -261.9913 1.74362 6.165e-03      0.0362201
+#sigma_f          -2.3508 0.30121 1.065e-03      0.0064184
+#prop_f            0.3807 0.04316 1.526e-04      0.0009558
+#m                -4.7577 0.37118 1.312e-03      0.0072638
+#v                 0.1342 0.02311 8.169e-05      0.0004660
+
+library(tigerstats)
+combinedchains2 = coda::mcmc.list(coda::as.mcmc(ggCPP_det_mcmc2_4param_coda[1:20000,-c(1,3)]), coda::as.mcmc(ggCPP_det_mcmc2_4param_coda[20001:40000,-c(1,3)]),coda::as.mcmc(ggCPP_det_mcmc2_4param_coda[40001:60000,-c(1,3)]),coda::as.mcmc(ggCPP_det_mcmc2_4param_coda[60001:80000,-c(1,3)]))
+xyplot(combinedchains2)
+# --> burn-in of 5000 sensible
+
+# prop_f and sigma_f
+plot(ggCPP_det_mcmc2_4param_coda[1001:20000,4],ggCPP_det_mcmc2_4param_coda[1001:20000,5], ylab = "prop_f",xlab = "sigma_f")
+lines(ggCPP_det_mcmc2_4param_coda[1001:20000,4],ggCPP_det_mcmc2_4param_coda[1001:20000,5], col = "grey")
+points(ggCPP_det_mcmc2_4param_coda[1001:20000,4],ggCPP_det_mcmc2_4param_coda[1001:20000,5])
+
+ggCPP_det_mcmc2_4param_df <- data.frame(cbind(exp(ggCPP_det_mcmc2_4param_coda[1001:20000,4]),ggCPP_det_mcmc2_4param_coda[1001:20000,5],ggCPP_det_mcmc2_4param_coda[1001:20000,2]))
+colnames(ggCPP_det_mcmc2_4param_df) <- c("sigma_f","prop_f","likelihood")
+
+# combine trace plot with 2d contour density plot
+v <- ggplot(NULL, aes(sigma_f, prop_f, z = log(-(likelihood))))
+v + geom_contour_filled(data = grid_results_df) + labs(fill = "log neg Likelihood") + theme(legend.title = element_text(size = 16),legend.text = element_text(size = 16), axis.title = element_text(size = 16),axis.text = element_text(size = 16)) + geom_point(data = ggCPP_det_mcmc2_4param_df, col = "red")
+```
+
+
 
 ### Log models
 ```{r}
@@ -2442,6 +2510,18 @@ processed_chains <- mcstate::pmcmc_thin(log_ggCPP_pmcmc2, burnin = 5000, thin = 
 parameter_mean_hpd <- apply(processed_chains$pars, 2, mean)
 parameter_mean_hpd
 
+log_summa_ggCPP_run <- summary(coda::as.mcmc(log_ggCPP_det_mcmc2[c(5001:20000,25001:40000,45001:60000,65001:80000),]))
+log_summa_ggCPP_run_df <- data.frame(log_summa_ggCPP_run$statistics[-(1:3),])
+
+qplot(x    = factor(rownames(log_summa_ggCPP_run_df)) ,
+      y    = Mean,
+      data = log_summa_ggCPP_run_df) +
+
+geom_errorbar(aes(ymin  = log_summa_ggCPP_run_df$Mean - log_summa_ggCPP_run_df$SD,
+                   ymax  = log_summa_ggCPP_run_df$Mean + log_summa_ggCPP_run_df$SD,
+                   width = 0.15))
+
+
 # 4 params
 log4_ggCPP_pmcmc2 <- readRDS(paste(results_path, "ggCaller_PopPUNK_log4_det_pmcmc_run2.rds",sep=""))
 log4_ggCPP_det_mcmc2 <- coda::as.mcmc(cbind(log4_ggCPP_pmcmc2$probabilities, log4_ggCPP_pmcmc2$pars))
@@ -2462,6 +2542,27 @@ parameter_mean_hpd
 library(tigerstats)
 log_combinedchains2 = coda::mcmc.list(coda::as.mcmc(log_ggCPP_det_mcmc2[1001:20000,-c(1,3)]), coda::as.mcmc(log_ggCPP_det_mcmc2[21001:40000,-c(1,3)]),coda::as.mcmc(log_ggCPP_det_mcmc2[41001:60000,-c(1,3)]),coda::as.mcmc(log_ggCPP_det_mcmc2[61001:80000,-c(1,3)]))
 xyplot(log_combinedchains2)
+```
+
+```{r}
+# 5 params
+results_path_19 <- "/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_04_19/"
+log_ggCPP_pmcmc2_FittingExp <- readRDS(paste(results_path_19, "ggCaller_PopPUNK_log_det_pmcmc_run2_FittingExp.rds",sep=""))
+#summary(log_ggCPP_pmcmc2_FittingExp)
+
+log_ggCPP_pmcmc2_FittingExp_coda <- coda::as.mcmc(cbind(
+  log_ggCPP_pmcmc2_FittingExp$probabilities, log_ggCPP_pmcmc2_FittingExp$pars))
+
+summary(log_ggCPP_pmcmc2_FittingExp_coda)
+#                    Mean      SD  Naive SE Time-series SE
+#log_prior         0.0000 0.00000 0.000e+00      0.0000000
+#log_likelihood -262.0847 1.66200 5.876e-03      0.0331368
+#log_posterior  -262.0847 1.66200 5.876e-03      0.0331368
+#L                -2.3392 0.29739 1.051e-03      0.0058976
+#K                 2.9875 4.01001 1.418e-02      0.0878405
+#x0                0.6230 0.04243 1.500e-04      0.0009312
+#m                -4.7596 0.36295 1.283e-03      0.0068953
+#v                 0.1337 0.02264 8.005e-05      0.0004395
 ```
 
 
@@ -2585,7 +2686,7 @@ plot(((ggC_delta_data3)))
 points(exp(-10.338049 + 0.004083 *  ((ggC_delta_ranking))), col = "red")
 
 plot((sort(0.5 - ggC_delta_data3)))
-points(sort(0.5 - exp(-10.338049 + 0.004083 *  ((ggC_delta_ranking)))), col = "red")
+points(sort(0.5 - 10 *exp(-10.338049 + 0.004083 *  ((ggC_delta_ranking)))), col = "red")
 ```
 
 # for future reference: (1+L)^... is an approximation (?) of (1+L)/(1+exp...)
@@ -2658,9 +2759,9 @@ gridSearch <- function(sigma_f_vals, prop_f_vals){
 ```
 
 ```{r}
-likelihood_grid <- gridSearch(sigma_f_vals = (1:20)/20, prop_f_vals = (1:20)/20)
-rownames(likelihood_grid) <- (1:20)/20
-colnames(likelihood_grid) <- (1:20)/20
+likelihood_grid <- gridSearch(sigma_f_vals = c(0,(1:20)/20), prop_f_vals = c(0,(1:20)/20))
+rownames(likelihood_grid) <- c(0,(1:20)/20)
+colnames(likelihood_grid) <- c(0,(1:20)/20)
 # max: -240.126 for sigma_f_vals = 0.1, prop_f_vals = 0.4
 saveRDS(likelihood_grid,"likelihood_grid.rds")
 # 2nd largest: -243.5468, sigma_f_vals = 0.35, prop_f_vals = 0.2
@@ -2676,7 +2777,6 @@ saveRDS(likelihood_grid2,"likelihood_grid2.rds")
 likelihood_grid3 <- gridSearch(sigma_f_vals = ((60:80)/200), prop_f_vals = ((30:50)/200))
 rownames(likelihood_grid3) <- ((60:80)/200)
 colnames(likelihood_grid3) <- ((30:50)/200)
-# max: -232.2814 for sigma_f_vals = 0.105, prop_f_vals = 0.38
 saveRDS(likelihood_grid3,"likelihood_grid3.rds")
 # max: -239.1502, sigma_f_vals = 0.35, prop_f_vals = 0.195
 ```
@@ -2686,17 +2786,42 @@ plot(as.numeric(rownames(likelihood_grid)), as.numeric(colnames(likelihood_grid)
 ```
 
 ```{r}
-grid_results_df <- data.frame(matrix(0, nrow = 400, ncol = 3))
+library(viridis)
+grid_results_df <- data.frame(matrix(0, nrow = 441, ncol = 3))
 colnames(grid_results_df) <- c("sigma_f","prop_f","likelihood")
-grid_results_df$sigma_f <- rep(((1:20)/20),20)
-grid_results_df$prop_f <- sort(rep(((1:20)/20),20))
-grid_results_df$likelihood <- c(likelihood_grid[,1],likelihood_grid[,2],likelihood_grid[,3],likelihood_grid[,4], likelihood_grid[,5],likelihood_grid[,6],likelihood_grid[,7],likelihood_grid[,8], likelihood_grid[,9],likelihood_grid[,10], likelihood_grid[,11],likelihood_grid[,12], likelihood_grid[,13],likelihood_grid[,14], likelihood_grid[,15],likelihood_grid[,16], likelihood_grid[,17],likelihood_grid[,18], likelihood_grid[,19],likelihood_grid[,20])
+grid_results_df$sigma_f <- rep(c(0,((1:20)/20)),21)
+grid_results_df$prop_f <- sort(rep(c(0,((1:20)/20)),21))
+grid_results_df$likelihood <- c(likelihood_grid[,1],likelihood_grid[,2],likelihood_grid[,3],likelihood_grid[,4], likelihood_grid[,5],likelihood_grid[,6],likelihood_grid[,7],likelihood_grid[,8], likelihood_grid[,9],likelihood_grid[,10], likelihood_grid[,11],likelihood_grid[,12], likelihood_grid[,13],likelihood_grid[,14], likelihood_grid[,15],likelihood_grid[,16], likelihood_grid[,17],likelihood_grid[,18], likelihood_grid[,19],likelihood_grid[,20],likelihood_grid[,21])
 
 ggplot(grid_results_df, aes(x=sigma_f, y=prop_f) ) +
-  geom_point(aes(color = likelihood)) 
+  geom_point(aes(color = likelihood, size = likelihood)) +
+  scale_size_continuous(range = c(3, 7)) +
+  scale_color_viridis(option = "D")
+
+ggplot(grid_results_df, aes(x=sigma_f, y=likelihood) ) +
+  geom_point(aes(color = prop_f, size = 2)) +
+  scale_color_viridis(option = "D")
+
+ggplot(grid_results_df, aes(x=sigma_f, y=prop_f) ) +
+  geom_point(aes(size = log(abs(likelihood)),color = log(abs(likelihood)))) +
+  scale_size_continuous(range = c(3, 7)) +
+  scale_color_viridis(option = "D")
 
 ggplot(grid_results_df[1:200,], aes(x=sigma_f, y=prop_f) ) +
   geom_point(aes(color = likelihood)) 
+
+
+ggplot(grid_results_df, aes(sigma_f, prop_f)) +
+  geom_density_2d()
+
+v <- ggplot(grid_results_df, aes(sigma_f, prop_f, z = -likelihood))
+v + geom_contour_filled() + labs(fill = "- Likelihood") + theme(legend.title = element_text(size = 16),legend.text = element_text(size = 16), axis.title = element_text(size = 16),axis.text = element_text(size = 16))
+
+v <- ggplot(grid_results_df, aes(sigma_f, prop_f, z = log(-(likelihood))))
+v + geom_contour_filled() + labs(fill = "log neg Likelihood") + theme(legend.title = element_text(size = 16),legend.text = element_text(size = 16), axis.title = element_text(size = 16),axis.text = element_text(size = 16))
+
+v <- ggplot(grid_results_df, aes(sigma_f, prop_f, z = log(-(likelihood))))
+v + geom_contour_filled() + labs(fill = "log neg Likelihood") + theme(legend.title = element_text(size = 16),legend.text = element_text(size = 16), axis.title = element_text(size = 16),axis.text = element_text(size = 16)) + geom_point(aes(x=0.1, y=0.4), colour="red", size = 3) + geom_point(aes(x= 0.35, y=0.2), colour="orange", size = 3)
 ```
 
 ```{r}
@@ -2708,6 +2833,33 @@ grid_results_df2$likelihood <- c(likelihood_grid2[,1],likelihood_grid2[,2],likel
 
 ggplot(grid_results_df2, aes(x=sigma_f, y=prop_f) ) +
   geom_point(aes(color = likelihood)) 
+
+ggplot(grid_results_df2, aes(x=sigma_f, y=prop_f) ) +
+  geom_point(aes(size = (likelihood),color = (likelihood))) +
+  scale_size_continuous(range = c(3, 7)) +
+  scale_color_viridis(option = "D")
+
+v <- ggplot(grid_results_df2, aes(sigma_f, prop_f, z = -likelihood)) + scale_x_continuous(breaks = (unique(grid_results_df2$sigma_f))) + scale_y_continuous(breaks = (unique(grid_results_df2$prop_f)))
+v + geom_contour_filled() + labs(fill = "- Likelihood") + theme(legend.title = element_text(size = 16),legend.text = element_text(size = 16), axis.title = element_text(size = 16),axis.text = element_text(size = 12))
+```
+
+```{r}
+grid_results_df3 <- data.frame(matrix(0, nrow = 441, ncol = 3))
+colnames(grid_results_df3) <- c("sigma_f","prop_f","likelihood")
+grid_results_df3$sigma_f <- rep(((60:80)/200),21)
+grid_results_df3$prop_f <- sort(rep(((30:50)/200),21))
+grid_results_df3$likelihood <- c(likelihood_grid3[,1],likelihood_grid3[,2],likelihood_grid3[,3],likelihood_grid3[,4], likelihood_grid3[,5],likelihood_grid3[,6],likelihood_grid3[,7],likelihood_grid3[,8], likelihood_grid3[,9],likelihood_grid3[,10], likelihood_grid3[,11],likelihood_grid3[,12], likelihood_grid3[,13],likelihood_grid3[,14], likelihood_grid3[,15],likelihood_grid3[,16], likelihood_grid3[,17],likelihood_grid3[,18], likelihood_grid3[,19],likelihood_grid3[,20], likelihood_grid3[,21])
+
+#ggplot(grid_results_df3, aes(x=sigma_f, y=prop_f) ) +
+#  geom_point(aes(color = likelihood)) 
+
+ggplot(grid_results_df3, aes(x=sigma_f, y=prop_f) ) +
+  geom_point(aes(size = (likelihood),color = (likelihood))) +
+  scale_size_continuous(range = c(3, 7)) +
+  scale_color_viridis(option = "D")
+
+v <- ggplot(grid_results_df3, aes(sigma_f, prop_f, z = -likelihood)) + scale_x_continuous(breaks = (unique(grid_results_df3$sigma_f))) + scale_y_continuous(breaks = (unique(grid_results_df3$prop_f)))
+v + geom_contour_filled() + labs(fill = "- Likelihood") + theme(legend.title = element_text(size = 16),legend.text = element_text(size = 16), axis.title = element_text(size = 16),axis.text = element_text(size = 12))
 ```
 
 
@@ -2739,11 +2891,6 @@ points(as.numeric(rownames(likelihood_grid)),likelihood_grid$"0.35", col = col_c
 points(as.numeric(rownames(likelihood_grid)),likelihood_grid$"0.4", col = col_clb[8])
 legend(0, -400, legend=c("prop_f 0.05", "prop_f 0.1", "prop_f 0.15", "prop_f 0.2", "prop_f 0.25", "prop_f 0.3", "prop_f 0.35", "prop_f 0.4"),
        col=col_clb, lty=1, cex=0.8)
-```
-
-```{r}
-ggplot(likelihood_grid, aes(x = x, y = y)) +
-  geom_density_2d(aes(color = ..level..))
 ```
 
 # check convergence to some equilibrium
