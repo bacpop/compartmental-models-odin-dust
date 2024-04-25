@@ -624,7 +624,8 @@ ggC_delta_ranking2 <- rank(ggC_delta_data2)
 ggC_delta_data4 <- (ggC_peri_vacc_gene_freq - ggC_pre_vacc_gene_freq) ^ 2 / (1 - ggC_pre_vacc_gene_freq * (1 - ggC_pre_vacc_gene_freq))
 ggC_delta_ranking4 <- rank(ggC_delta_data4)
 
-
+ggC_delta_data5 <- (ggC_post_vacc_gene_freq - ggC_peri_vacc_gene_freq) ^ 2 / (1 - ggC_peri_vacc_gene_freq * (1 - ggC_peri_vacc_gene_freq))
+ggC_delta_ranking5 <- rank(ggC_delta_data5)
 
 ggC_delta_data3 <- (ggC_peri_post - ggC_pre_vacc_gene_freq) ^ 2 / (1 - ggC_pre_vacc_gene_freq * (1 - ggC_pre_vacc_gene_freq))
 ggC_delta_ranking3 <- rank(ggC_delta_data3)
@@ -652,6 +653,7 @@ legend(0,0.07, title = "delta", c("peri_post - pre", "post - pre"),fill = c("bla
 #saveRDS(ggC_delta_ranking4, file = "ggC_delta_ranking_peri-pre.rds")
 #saveRDS(ggC_delta_ranking2, file = "ggC_delta_ranking_post-pre.rds")
 saveRDS(ggC_delta_data2, file = "ggC_delta_data_post-pre.rds")
+saveRDS(ggC_delta_data3, file = "ggC_delta_data3.rds")
 ```
 
 ```{r}

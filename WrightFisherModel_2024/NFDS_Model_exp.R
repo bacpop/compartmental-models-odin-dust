@@ -19,7 +19,8 @@ freq[] <- sum(gene_freq[i,1:species_no]) / Pop_size
 # prop_f becomes the midpoint of the function (x0)
 # sigma_f is the supremum (L)
 # and the sigma_w will be replaced by the steepness of the curve (K)
-delta_exp[] <- exp(L) - exp(x0 + K *  ((delta[i])))
+#delta_exp[] <- exp(L) - exp(x0 + K *  ((delta[i])))
+delta_exp[] <- exp(L) - K *  (delta[i])
 exp_freq[,] <-  Genotypes[i,j] * (eq[i] - freq[i]) * delta_exp[i]
 exp_genotypes[] <- sum(exp_freq[1:gene_no,i])
 #delta_bool[] <- if ((delta[i] <= prop_f * gene_no)) 1 else 0
@@ -70,7 +71,7 @@ Pop_eq[] <- user()
 capacity <- user()
 L <- user()
 K <- user()
-x0 <- user()
+#x0 <- user()
 delta[] <- user()
 m <- user() # migration rate
 #GeneFitness[] <- user() # fitness vector for different genes

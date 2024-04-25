@@ -61,7 +61,8 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   intermed_gene_presence_absence_consensus <- readRDS(file = "ggCPP_intermed_gene_presence_absence_consensus.rds")
   intermed_gene_presence_absence_consensus_matrix <- sapply(intermed_gene_presence_absence_consensus[-1,-1],as.double)
   model_start_pop <- readRDS(file = "PP_model_start_pop.rds")
-  delta_ranking <- readRDS(file = "ggC_inv_delta_ranking.rds")
+  #delta_ranking <- readRDS(file = "ggC_inv_delta_ranking.rds")
+  delta_ranking <- readRDS(file = "ggC_delta_data3.rds")
   mass_cluster_freq_1 <- readRDS(file = "PP_mass_cluster_freq_1.rds")
   mass_cluster_freq_2 <- readRDS(file = "PP_mass_cluster_freq_2.rds")
   mass_cluster_freq_3 <- readRDS(file = "PP_mass_cluster_freq_3.rds")
@@ -168,7 +169,7 @@ make_transform <- function(p) {
 
 transform <- function(x) {
   make_transform(complex_params)}
-proposal_matrix <- diag(0.1, 5) # the proposal matrix defines the covariance-variance matrix for a mult normal dist
+proposal_matrix <- diag(0.1, 4) # the proposal matrix defines the covariance-variance matrix for a mult normal dist
 # here, all parameters are proposed independently. 
 # think about this, this might not actually be true
 #mcmc_pars <- mcstate::pmcmc_parameters$new(list(pmcmc_sigma_f, pmcmc_sigma_w, pmcmc_prop_f, pmcmc_m, pmcmc_v), proposal_matrix, transform)
@@ -181,7 +182,9 @@ proposal_matrix <- diag(0.1, 5) # the proposal matrix defines the covariance-var
 # it explains how to not fit all parameters but just the ones I want
 # non-scalar parameters have to be transformed for this.
 
-mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("L", -2, min =-1000, max = 0), mcstate::pmcmc_parameter("K", 0.004, min = 0, max = 10),mcstate::pmcmc_parameter("x0", -10, min = -100, max = 0), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 1), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), proposal_matrix, make_transform(complex_params))
+#mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("L", -2, min =-1000, max = 0), mcstate::pmcmc_parameter("K", 0.004, min = 0, max = 10),mcstate::pmcmc_parameter("x0", -10, min = -100, max = 0), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 1), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), proposal_matrix, make_transform(complex_params))
+mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("L", -2, min =-1000, max = 0), mcstate::pmcmc_parameter("K", 10, min = 0, max = 1000),mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 1), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), proposal_matrix, make_transform(complex_params))
+
 mcmc_pars$initial()
 
 det_filter <- particle_deterministic$new(data = fitting_mass_data,
