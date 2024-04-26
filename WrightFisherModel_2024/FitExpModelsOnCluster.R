@@ -218,7 +218,8 @@ print("det_mcmc_1 mean log likelihood")
 mean(processed_chains$probabilities[,2])
 det_proposal_matrix <- cov(processed_chains$pars)
 #det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0.075, max = 0.22), mcstate::pmcmc_parameter("sigma_w", 0.05, min = 0.000001, max = 0.0749), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 0.2), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 0.5)), det_proposal_matrix, make_transform(complex_params))
-det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("L", parameter_mean_hpd[1], min = -1000, max = 0), mcstate::pmcmc_parameter("K", parameter_mean_hpd[2], min = 0, max = 10), mcstate::pmcmc_parameter("x0", parameter_mean_hpd[3], min = -100, max = 0), mcstate::pmcmc_parameter("m", parameter_mean_hpd[4], min = 0, max = 1), mcstate::pmcmc_parameter("v", parameter_mean_hpd[5], min = 0, max = 1)), det_proposal_matrix, make_transform(complex_params))
+#det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("L", parameter_mean_hpd[1], min = -1000, max = 0), mcstate::pmcmc_parameter("K", parameter_mean_hpd[2], min = 0, max = 10), mcstate::pmcmc_parameter("x0", parameter_mean_hpd[3], min = -100, max = 0), mcstate::pmcmc_parameter("m", parameter_mean_hpd[4], min = 0, max = 1), mcstate::pmcmc_parameter("v", parameter_mean_hpd[5], min = 0, max = 1)), det_proposal_matrix, make_transform(complex_params))
+det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("L", parameter_mean_hpd[1], min = -1000, max = 0), mcstate::pmcmc_parameter("K", parameter_mean_hpd[2], min = 0, max = 1000), mcstate::pmcmc_parameter("m", parameter_mean_hpd[3], min = 0, max = 1), mcstate::pmcmc_parameter("v", parameter_mean_hpd[4], min = 0, max = 1)), det_proposal_matrix, make_transform(complex_params))
 
 det_filter <- particle_deterministic$new(data = fitting_mass_data,
                                          model = WF,
@@ -254,4 +255,4 @@ processed_chains$probabilities[nrow(processed_chains$probabilities),2]
 print("det_mcmc_2 mean log likelihood")
 mean(processed_chains$probabilities[,2])
 
-saveRDS(det_pmcmc_run2, paste(output_filename, "_det_pmcmc_run2.rds", sep = ""))
+saveRDS(det_mcmc2, paste(output_filename, "_det_mcmc2.rds", sep = ""))

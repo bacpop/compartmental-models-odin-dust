@@ -3059,3 +3059,51 @@ plot(sigma_f_vals,sigma_f_likelihoods)
 # really weird distribution for best sigma_f values and all maxima are quite bad compared to the ones with the other models
 ```
 
+```{r}
+library(ggplot2)
+library(viridis)
+
+library(gtools)
+
+library(dplyr)
+
+mixedsort(unique(PopPUNK_clusters$Serotype))
+mixedorder(unique(PopPUNK_clusters$Serotype))
+
+PopPUNK_clusters$Serotype= factor(PopPUNK_clusters$Serotype,levels=mixedsort(unique(PopPUNK_clusters$Serotype)))
+ggplot(data = PopPUNK_clusters, aes(x = Cluster)) + geom_bar(stat = "count", aes(fill = Serotype))  + 
+  scale_x_continuous("Cluster", labels = as.character(PopPUNK_clusters$Cluster), breaks = PopPUNK_clusters$Cluster) + 
+  scale_fill_viridis(option = "D", discrete = TRUE) +
+  ggtitle("PopPUNK clusters coloured by Serotype")
+
+
+ggplot(data = PopPUNK_clusters[which(PopPUNK_clusters$SeqYear=="2001"),], aes(x = Cluster)) + geom_bar(stat = "count", aes(fill = Serotype))  + 
+  scale_x_continuous("Cluster", labels = as.character(PopPUNK_clusters$Cluster), breaks = PopPUNK_clusters$Cluster) + 
+  scale_fill_viridis(option = "D", discrete = TRUE) +
+  ggtitle("PopPUNK clusters coloured by Serotype 2001")
+ggplot(data = PopPUNK_clusters[which(PopPUNK_clusters$SeqYear=="2004"),], aes(x = Cluster)) + geom_bar(stat = "count", aes(fill = Serotype))  + 
+  scale_x_continuous("Cluster", labels = as.character(PopPUNK_clusters$Cluster), breaks = PopPUNK_clusters$Cluster) + 
+  scale_fill_viridis(option = "D", discrete = TRUE) +
+  ggtitle("PopPUNK clusters coloured by Serotype 2004")
+ggplot(data = PopPUNK_clusters[which(PopPUNK_clusters$SeqYear=="2007"),], aes(x = Cluster)) + geom_bar(stat = "count", aes(fill = Serotype))  + 
+  scale_x_continuous("Cluster", labels = as.character(PopPUNK_clusters$Cluster), breaks = PopPUNK_clusters$Cluster) + 
+  scale_fill_viridis(option = "D", discrete = TRUE) +
+  ggtitle("PopPUNK clusters coloured by Serotype 2004")
+
+
+# PopPUNK clusters coloured by BAPS clusters (confusing)
+ggplot(data = PopPUNK_clusters, aes(x = Cluster)) + geom_bar(stat = "count", aes(fill = as.factor(PP_to_manSeq_dict[Cluster]))) +
+  scale_x_continuous("Cluster", labels = as.character(PopPUNK_clusters$Cluster), breaks = PopPUNK_clusters$Cluster) + 
+  scale_fill_viridis(option = "D", discrete = TRUE)
+
+
+
+
+
+
+ggplot(data = PopPUNK_clusters, aes(x = Cluster)) + geom_bar(stat = "count", aes(fill = Serotype))
+
+ggplot(grid_results_df, aes(sigma_f, prop_f, z = -likelihood))
+v + geom_contour_filled() + labs(fill = "- Likelihood") + theme(legend.title = element_text(size = 16),legend.text = element_text(size = 16), axis.title = element_text(size = 16),axis.text = element_text(size = 16))
+```
+
