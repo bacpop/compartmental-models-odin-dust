@@ -1030,5 +1030,8 @@ for (ggCaller_name in FuncAnnOnly_ggCaller$X1[-1]) {
   FuncAnnOnly_ggCaller[iter,2] <- ggCaller_anno
 }
 
+# which(ggC_filter==1)
+# I can't use the filtering of the older ggCaller run because the gene ordering won't be the same
+# I will need to intermediate-gene filtering again and then, down the line, also re-do my fits.
 ```
 
