@@ -659,6 +659,10 @@ legend(0,0.07, title = "delta", c("peri_post - pre", "post - pre"),fill = c("bla
 plot((ggC_delta_data3)[names(sort(ggC_delta_data3))], main = "Different delta stats sorted by self values")
 points((ggC_delta_data2)[names(sort(ggC_delta_data2))], col = "blue")
 legend(0,0.07, title = "delta", c("peri_post - pre", "post - pre"),fill = c("black", "blue"), cex = 1)
+
+plot(sort(ggC_delta_data3), ylab = "Variation of gene frequencies",xlab = "gene index sorted by variation")
+plot(ggC_delta_data3[names(sort(ggC_pre_vacc_gene_freq))], ylab = "Variation of gene frequencies")
+plot(sort(ggC_pre_vacc_gene_freq),(1 - sort(ggC_pre_vacc_gene_freq) * (1 - sort(ggC_pre_vacc_gene_freq))), ylab = "Denominator of Delta statistic", xlab = "Gene Frequencies")
 ```
 
 ```{r}
@@ -728,6 +732,25 @@ ggCPP_intermed_gene_presence_absence_consensus_2007[-1,1] <- ggC_intermed_gene_p
 #saveRDS(ggCPP_intermed_gene_presence_absence_consensus_2004, file = "ggCPP_intermed_gene_presence_absence_consensus_2004.rds")
 #saveRDS(ggCPP_intermed_gene_presence_absence_consensus_2007, file = "ggCPP_intermed_gene_presence_absence_consensus_2007.rds")
 ```
+
+# checkin whether the gene variation and whether genes occur in VTs is correlated
+# variation in genes that do not occur in VTs seems to be higher
+# variation in genes that occur in VTs generally seems lower 
+# but it's not a super strong correlation
+# and because it's this way around, everything should be fine
+
+```{r}
+ggC_mass_genesInVT <- apply(ggCPP_intermed_gene_presence_absence_consensus[-1,which(PP_mass_VT==1) + 1],1,max)
+```
+
+```{r}
+local_colours <- c("#E69F00","black")
+
+plot(sort(ggC_delta_data3), main = "Different delta stats sort by peri_post - pre", col = local_colours[(as.integer(ggC_mass_genesInVT)+1)])
+#points(names(ggC_delta_data3[which(ggC_mass_genesInVT==0)]),(ggC_delta_data3[which(ggC_mass_genesInVT==0)]),col = "red")
+```
+
+
 
 ### Filtering PopPUNK for clusters of sizes larger than 1 in at least one time point:
 ```{r}
@@ -966,5 +989,46 @@ mass_seq_VT <- as.integer(Mass_Samples_accCodes$`Vaccine Type`=="VT")
 
 ```{r}
 saveRDS(mass_seq_VT, file = "mass_seq_VT.rds")
+```
+
+
+### ggCaller Functional Annotation
+
+```{r}
+# reading in the gene presence absence matrix produced by ggCaller
+FuncAnn_ggCaller_gene_presence_absence <- read.csv(paste(path_to_data, "Massachusetts_ggcaller/run_withFuncAnn/ggCaller_output/gene_presence_absence.csv", sep = ""), header=FALSE)
+
+FuncAnnOnly_ggCaller <- data.frame(cbind(FuncAnn_ggCaller_gene_presence_absence[,3],rep(NA,length(FuncAnn_ggCaller_gene_presence_absence[,3]))))
+FuncAnnOnly_ggCaller[1,2] <- "Functional Annotation"
+```
+
+# read in functional annoation
+```{r}
+library(readxl)
+Annotation_IntermediateFreqGenes <- read_excel(paste(path_to_data, "Massachusetts_data_NickCroucher/SupplementaryDataPaper/IntermediateFreqGenesAnnotation.xlsx", sep = ""))
+View(Annotation_IntermediateFreqGenes)
+
+FuncAnn_dict <- Annotation_IntermediateFreqGenes$Annotation
+names(FuncAnn_dict) <- Annotation_IntermediateFreqGenes$COG
+```
+
+```{r}
+FuncAnnOnly_ggCaller[2,1]
+strsplit(strsplit(FuncAnnOnly_ggCaller[2,1],";")[[1]],"CLS")
+
+iter <- 1
+for (ggCaller_name in FuncAnnOnly_ggCaller$X1[-1]) {
+  iter <- iter + 1
+  ggCaller_anno <- ""
+  annotations <- strsplit(ggCaller_name,";")[[1]]
+  for (annots in annotations) {
+    CLSname <- strsplit(annots,"CLS")[[1]][2]
+    CLSname <- paste("CLS",CLSname,sep = "")
+    ggCaller_anno <- paste(ggCaller_anno, paste(FuncAnn_dict[CLSname],"; ",sep=""), sep = "")
+  }
+  print(ggCaller_anno)
+  FuncAnnOnly_ggCaller[iter,2] <- ggCaller_anno
+}
+
 ```
 
