@@ -3184,7 +3184,12 @@ ggplot(data = PopPUNK_clusters, aes(x = Cluster)) + geom_bar(stat = "count", aes
 
 
 
+ggplot(data = Mass_Samples_accCodes, aes(x = SequenceCluster)) + geom_bar(stat = "count", aes(fill = as.factor(SequenceCluster))) +
+  scale_x_continuous("Clusters (BAPS)", labels = as.character(Mass_Samples_accCodes$SequenceCluster), breaks = Mass_Samples_accCodes$SequenceCluster) + scale_fill_viridis(option = "D", discrete = TRUE)
 
+ggplot(data = PopPUNK_clusters, aes(x = factor(Cluster, level = (1:62)[order(PP_to_manSeq_dict[1:62])]))) + geom_bar(stat = "count", aes(fill = as.factor(PP_to_manSeq_dict[Cluster]))) + scale_fill_viridis(option = "D", discrete = TRUE) + scale_x_discrete("Clusters (BAPS)", labels = as.character(sort(PP_to_manSeq_dict[1:62])),breaks = (1:62)[order(PP_to_manSeq_dict[1:62])])
+
+ggplot(data = PopPUNK_clusters, aes(x = factor(Cluster, level = (1:62)[order(PP_to_manSeq_dict[1:62])]))) + geom_bar(stat = "count", aes(fill = as.factor(PP_to_manSeq_dict[Cluster]))) + scale_fill_viridis(option = "D", discrete = TRUE) + scale_x_discrete("Clusters (PopPUNK)", labels = as.character((1:62)[order(PP_to_manSeq_dict[1:62])]),breaks = (1:62)[order(PP_to_manSeq_dict[1:62])])
 
 
 ggplot(data = PopPUNK_clusters, aes(x = Cluster)) + geom_bar(stat = "count", aes(fill = Serotype))
