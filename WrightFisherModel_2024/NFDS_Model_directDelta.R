@@ -15,6 +15,7 @@ freq[] <- sum(gene_freq[i,1:species_no]) / Pop_size
 
 # overall deviation of loci for genomes
 # idea 1: make a Boolean vector for strongly selected genes
+#delta_bool[] <- 1 - prop_f * delta[i]
 delta_bool[] <- exp(sigma_f) - prop_f * delta[i]
 # here delta is the value not the ranking
 #if ((delta[i] <= prop_f * gene_no)) 1 else 0
@@ -27,8 +28,8 @@ pi_f_genotypes[] <- sum(pi_f_freq[1:gene_no,i])
 # Genotype specific probability to produce offspring
 # those are the individuals' probabilities multiplied by the number of individuals that have this genotype
 #probs[] <- ((1 + sigma_f)^pi_f_genotypes[i] * (1 + sigma_w)^pi_w_genotypes[i]) * Pop[i] * (1- (as.integer(time >= vacc_time) * vaccTypes[i] * v))
-#probs[] <- ((1 + exp(sigma_f))^pi_f_genotypes[i] * (1 + exp(sigma_w))^pi_w_genotypes[i]) * Pop[i] * (1- (as.integer(time >= vacc_time) * vaccTypes[i] * v))
-probs[] <- max(pi_f_genotypes[i], 2.935635e-05) * Pop[i] * (1- (as.integer(time >= vacc_time) * vaccTypes[i] * v))
+probs[] <- ((1 + exp(sigma_f))^pi_f_genotypes[i]) * Pop[i] * (1- (as.integer(time >= vacc_time) * vaccTypes[i] * v))
+#probs[] <- max(pi_f_genotypes[i], 2.935635e-05) * Pop[i] * (1- (as.integer(time >= vacc_time) * vaccTypes[i] * v))
 
 
 

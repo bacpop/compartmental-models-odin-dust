@@ -61,7 +61,9 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   intermed_gene_presence_absence_consensus <- readRDS(file = "ggCPP_intermed_gene_presence_absence_consensus.rds")
   intermed_gene_presence_absence_consensus_matrix <- sapply(intermed_gene_presence_absence_consensus[-1,-1],as.double)
   model_start_pop <- readRDS(file = "PP_model_start_pop.rds")
-  delta_ranking <- readRDS(file = "ggC_delta_data_post-pre.rds")
+  delta_ranking <- sort(readRDS(file = "ggC_delta_data_post-pre.rds"))
+  #delta_ranking <- sort(readRDS(file = "ggC_delta_data8.rds"))
+  #delta_ranking <- sort(readRDS(file = "ggC_delta_data3.rds"))
   mass_cluster_freq_1 <- readRDS(file = "PP_mass_cluster_freq_1.rds")
   mass_cluster_freq_2 <- readRDS(file = "PP_mass_cluster_freq_2.rds")
   mass_cluster_freq_3 <- readRDS(file = "PP_mass_cluster_freq_3.rds")
@@ -195,7 +197,7 @@ proposal_matrix <- diag(0.1, 4) # the proposal matrix defines the covariance-var
 # non-scalar parameters have to be transformed for this.
 
 #mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.1432, min = 0, max = 1), mcstate::pmcmc_parameter("sigma_w", 0.0011, min = 0, max = 1), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 1), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), proposal_matrix, make_transform(complex_params))
-mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", -2, min =-1000, max = 0), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", -4, min =-1000, max = 0), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), proposal_matrix, make_transform(complex_params))
+mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", -2, min =-1000, max = 0), mcstate::pmcmc_parameter("prop_f", 5, min = 0, max = 100), mcstate::pmcmc_parameter("m", -4, min =-1000, max = 0), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), proposal_matrix, make_transform(complex_params))
 mcmc_pars$initial()
 
 det_filter <- particle_deterministic$new(data = fitting_mass_data,
@@ -227,15 +229,34 @@ print("det_mcmc_1 log likelihood")
 processed_chains$probabilities[nrow(processed_chains$probabilities),2]
 print("det_mcmc_1 mean log likelihood")
 mean(processed_chains$probabilities[,2])
+
+# this was with delta_data3, my standard delta stat.
+#   sigma_f     prop_f          m          v 
+#-2.9913656  4.8175330 -3.2543873  0.3309456 
+#> mean(processed_chains$probabilities[,2])
+#[1] -347.3686
+
+# with delta2
+#    sigma_f      prop_f           m           v 
+#-4.85451104  4.30358074 -4.23323918  0.09404484 
+#> mean(processed_chains$probabilities[,2])
+#[1] -334.8735
+
+# delta 2 with exp(sigma) - ... instead of 1 - ...
+#sigma_f      prop_f           m           v 
+#-2.53890393  5.35418384 -4.63545583  0.06113727 
+#> mean(processed_chains$probabilities[,2])
+#[1] -328.3944
+
 det_proposal_matrix <- cov(processed_chains$pars)
 #det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0.075, max = 0.22), mcstate::pmcmc_parameter("sigma_w", 0.05, min = 0.000001, max = 0.0749), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 0.2), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 0.5)), det_proposal_matrix, make_transform(complex_params))
-det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", parameter_mean_hpd[1], min =-1000, max = 0), mcstate::pmcmc_parameter("prop_f", parameter_mean_hpd[2], min = 0, max = 1), mcstate::pmcmc_parameter("m", parameter_mean_hpd[3], min =-1000, max = 0), mcstate::pmcmc_parameter("v", parameter_mean_hpd[4], min = 0, max = 1)), det_proposal_matrix, make_transform(complex_params))
+det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", parameter_mean_hpd[1], min =-1000, max = 0), mcstate::pmcmc_parameter("prop_f", parameter_mean_hpd[2], min = 0, max = 10), mcstate::pmcmc_parameter("m", parameter_mean_hpd[3], min =-1000, max = 0), mcstate::pmcmc_parameter("v", parameter_mean_hpd[4], min = 0, max = 1)), det_proposal_matrix, make_transform(complex_params))
 
 det_filter <- particle_deterministic$new(data = fitting_mass_data,
                                          model = WF,
                                          compare = combined_compare)
 
-n_steps <- 20000
+n_steps <- 2000
 n_burnin <- 0
 
 

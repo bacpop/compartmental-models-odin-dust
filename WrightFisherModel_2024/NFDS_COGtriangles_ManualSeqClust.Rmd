@@ -3340,5 +3340,27 @@ for (i in 1:length(unique(merged_mass_clusters))) {
 # COG + BAPS
 combined_compare(simMean2_merged,merged_cluster_freq_2) + combined_compare(simMean3_merged,merged_cluster_freq_3)
 # -43.32019
+
+all_params <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(PP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = PP_intermed_gene_presence_absence_consensus_matrix, sigma_f = log(0.2169393333), sigma_w = log(0.0006359267), prop_f = 0.4202932608, delta = delta_ranking, m = log(0.0123196210), migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.1176109076, vacc_time = 0)
+WFmodel <- WF_nG_h_vP$new(pars = all_params,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+
+simMean2 <- rowMeans(WFmodel$run(36)[-1,])
+simMean3 <- rowMeans(WFmodel$run(72)[-1,])
+
+simMean2_merged <- rep(0, length(unique(merged_mass_clusters)))
+simMean3_merged <- rep(0, length(unique(merged_mass_clusters)))
+for (i in 1:length(names(PP_to_manSeq_dict))) {
+  simMean2_merged[merged_mass_clusters[as.character(PP_to_manSeq_dict[i])]+1] <- simMean2_merged[merged_mass_clusters[as.character(PP_to_manSeq_dict[i])]+1] + simMean2[i]
+  simMean3_merged[merged_mass_clusters[as.character(PP_to_manSeq_dict[i])]+1] <- simMean3_merged[merged_mass_clusters[as.character(PP_to_manSeq_dict[i])]+1] + simMean3[i]
+}
+
+
+# COG + BAPS
+combined_compare(simMean2_merged,merged_cluster_freq_2) + combined_compare(simMean3_merged,merged_cluster_freq_3)
+# -43.46789
 ```
 
