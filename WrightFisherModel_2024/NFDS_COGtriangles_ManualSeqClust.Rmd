@@ -6,9 +6,13 @@ editor_options:
 ---
 
 ```{r}
+#library(devtools)
+#install_github("mrc-ide/dust")
 # install.packages("drat") # -- if you don't have drat installed
 # drat:::add("ncov-ic")
-# install.packages("odin.dust")
+# or manually download the dust repo, then install from source
+# install.packages("/Users/llorenz/Downloads/dust-master", repos = NULL, type="source")
+#install.packages("odin.dust",repos = c("https://mrc-ide.r-universe.dev", "https://cloud.r-project.org"))
 library(odin.dust)
 #install.packages("mcstate")
 library(mcstate)
@@ -3182,7 +3186,9 @@ ggplot(data = PopPUNK_clusters, aes(x = Cluster)) + geom_bar(stat = "count", aes
   scale_x_continuous("Cluster", labels = as.character(PopPUNK_clusters$Cluster), breaks = PopPUNK_clusters$Cluster) + 
   scale_fill_viridis(option = "D", discrete = TRUE)
 
-
+# BAPS clusters coloured by serotype
+ggplot(data = Mass_Samples_accCodes, aes(x = SequenceCluster)) + geom_bar(stat = "count", aes(fill = Serotype))  + 
+  scale_x_continuous("Cluster", labels = as.character(Mass_Samples_accCodes$SequenceCluster), breaks = Mass_Samples_accCodes$SequenceCluster) + ggtitle("PopPUNK clusters coloured by Serotype") + scale_fill_viridis(option = "D", discrete = TRUE)
 
 ggplot(data = Mass_Samples_accCodes, aes(x = SequenceCluster)) + geom_bar(stat = "count", aes(fill = as.factor(SequenceCluster))) +
   scale_x_continuous("Clusters (BAPS)", labels = as.character(Mass_Samples_accCodes$SequenceCluster), breaks = Mass_Samples_accCodes$SequenceCluster) + scale_fill_viridis(option = "D", discrete = TRUE)
@@ -3196,5 +3202,143 @@ ggplot(data = PopPUNK_clusters, aes(x = Cluster)) + geom_bar(stat = "count", aes
 
 ggplot(grid_results_df, aes(sigma_f, prop_f, z = -likelihood))
 v + geom_contour_filled() + labs(fill = "- Likelihood") + theme(legend.title = element_text(size = 16),legend.text = element_text(size = 16), axis.title = element_text(size = 16),axis.text = element_text(size = 16))
+```
+
+# create super clusters that allow for comparing serotypes and cluster likelihoods
+```{r}
+for (i in 1:mass_clusters) {
+  print(Mass_Samples_accCodes$Serotype[which(Mass_Samples_accCodes$SequenceCluster==i-1)])
+}
+
+for (i in 1:length(unique(Mass_Samples_accCodes$Serotype))) {
+  st <- unique(Mass_Samples_accCodes$Serotype)[i]
+  print(st)
+  print(Mass_Samples_accCodes$SequenceCluster[which(Mass_Samples_accCodes$Serotype==st)])
+}
+
+merged_mass_clusters <- c()
+merged_mass_clusters["0"] <- 0
+merged_mass_clusters["1"] <- 0
+merged_mass_clusters["2"] <- 0
+merged_mass_clusters["3"] <- 0
+merged_mass_clusters["5"] <- 0
+merged_mass_clusters["6"] <- 0
+merged_mass_clusters["8"] <- 0
+merged_mass_clusters["9"] <- 0
+merged_mass_clusters["10"] <- 0
+merged_mass_clusters["11"] <- 0
+merged_mass_clusters["12"] <- 0
+merged_mass_clusters["13"] <- 0
+merged_mass_clusters["14"] <- 0
+merged_mass_clusters["15"] <- 0
+merged_mass_clusters["17"] <- 0
+merged_mass_clusters["18"] <- 0
+merged_mass_clusters["20"] <- 0
+merged_mass_clusters["21"] <- 0
+merged_mass_clusters["23"] <- 0
+merged_mass_clusters["24"] <- 0
+merged_mass_clusters["25"] <- 0
+merged_mass_clusters["26"] <- 0
+merged_mass_clusters["28"] <- 0
+merged_mass_clusters["29"] <- 0
+merged_mass_clusters["31"] <- 0
+merged_mass_clusters["32"] <- 0
+merged_mass_clusters["34"] <- 0
+merged_mass_clusters["35"] <- 0
+merged_mass_clusters["36"] <- 0
+merged_mass_clusters["37"] <- 0
+merged_mass_clusters["39"] <- 0
+merged_mass_clusters["40"] <- 0
+
+merged_mass_clusters["4"] <- 1
+
+merged_mass_clusters["7"] <- 2
+merged_mass_clusters["30"] <- 2
+merged_mass_clusters["33"] <- 2
+
+merged_mass_clusters["16"] <- 3
+
+merged_mass_clusters["19"] <- 4
+
+merged_mass_clusters["22"] <- 5
+
+merged_mass_clusters["27"] <- 6
+
+merged_mass_clusters["38"] <- 7
+
+
+# checking that each serotype correspond to only one super cluster
+for (i in 1:length(unique(Mass_Samples_accCodes$Serotype))) {
+  st <- unique(Mass_Samples_accCodes$Serotype)[i]
+  print(st)
+  print(merged_mass_clusters[as.character(Mass_Samples_accCodes$SequenceCluster[which(Mass_Samples_accCodes$Serotype==st)])])
+}
+
+#saveRDS(merged_mass_clusters, "merged_mass_clusters.rds")
+
+sero_to_mergedClust <- rep(0, length(unique(Mass_Samples_accCodes$Serotype)))
+names(sero_to_mergedClust) <- (unique(Mass_Samples_accCodes$Serotype))
+for (i in 1:length(unique(Mass_Samples_accCodes$Serotype))) {
+  sero_to_mergedClust[i] <- merged_mass_clusters[as.character(Mass_Samples_accCodes$SequenceCluster[which(Mass_Samples_accCodes$Serotype==names(sero_to_mergedClust)[i])])][1]
+}
+#saveRDS(sero_to_mergedClust, "sero_to_mergedClust.rds")
+```
+
+```{r}
+merged_mass_clusters <- readRDS("merged_mass_clusters.rds")
+# aggregate data to super clusters as well
+merged_cluster_freq_2 <- rep(0,length(unique(merged_mass_clusters)))
+merged_cluster_freq_3 <- rep(0,length(unique(merged_mass_clusters)))
+for (i in 1:length(unique(merged_mass_clusters))) {
+  merged_cluster_freq_2[i] <- sum(mass_cluster_freq_2[as.integer(names(which(merged_mass_clusters==i-1)))+1])
+  merged_cluster_freq_3[i] <- sum(mass_cluster_freq_3[as.integer(names(which(merged_mass_clusters==i-1)))+1])
+}
+
+
+
+
+
+all_params <- list(dt = 1/36, species_no = mass_serotypes,  gene_no = nrow(Sero_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(Sero_model_start_pop), Pop_eq = as.double(Sero_model_start_pop), capacity = sum(Sero_model_start_pop), Genotypes = Sero_intermed_gene_presence_absence_consensus_matrix, sigma_f = log(0.092853976), sigma_w = log(0.001272531), prop_f = (0.279026024), delta = delta_ranking, m = log(0.003294931), migVec = avg_sero_freq, vaccTypes = Sero_mass_VT, v = (0.104832549), vacc_time = 0)
+WFmodel <- WF_nG_h_vP$new(pars = all_params,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+
+simMean2 <- rowMeans(WFmodel$run(36)[-1,])
+simMean3 <- rowMeans(WFmodel$run(72)[-1,])
+
+simMean2_merged <- rep(0, length(unique(merged_mass_clusters)))
+simMean3_merged <- rep(0, length(unique(merged_mass_clusters)))
+for (i in 1:length(names(sero_to_mergedClust))) {
+  simMean2_merged[sero_to_mergedClust[i]+1] <- simMean2_merged[sero_to_mergedClust[i]+1] + simMean2[i]
+  simMean3_merged[sero_to_mergedClust[i]+1] <- simMean3_merged[sero_to_mergedClust[i]+1] + simMean3[i]
+}
+
+# COG + serotypes
+combined_compare(simMean2_merged,merged_cluster_freq_2) + combined_compare(simMean3_merged,merged_cluster_freq_3)
+# [1] -44.67209
+
+
+params_n_vP <- list(dt = 1/36, species_no = mass_clusters,  gene_no = nrow(intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(model_start_pop), Pop_eq = as.double(model_start_pop), capacity = sum(model_start_pop), Genotypes = intermed_gene_presence_absence_consensus_matrix, sigma_f = log(0.5725576970), sigma_w = log(0.0006811699), prop_f = 0.2041288111 , delta = delta_ranking, m = log(0.0057202667) , migVec = avg_cluster_freq, vaccTypes = mass_VT, v = 0.1204141788, vacc_time = 0)
+WFmodel <- WF_nG_h_vP$new(pars = params_n_vP,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+
+simMean2 <- rowMeans(WFmodel$run(36)[-1,])
+simMean3 <- rowMeans(WFmodel$run(72)[-1,])
+
+simMean2_merged <- rep(0, length(unique(merged_mass_clusters)))
+simMean3_merged <- rep(0, length(unique(merged_mass_clusters)))
+for (i in 1:length(unique(merged_mass_clusters))) {
+  simMean2_merged[i] <- sum(simMean2[as.integer(names(which(merged_mass_clusters==i-1)))+1])
+  simMean3_merged[i] <- sum(simMean3[as.integer(names(which(merged_mass_clusters==i-1)))+1])
+}
+
+# COG + BAPS
+combined_compare(simMean2_merged,merged_cluster_freq_2) + combined_compare(simMean3_merged,merged_cluster_freq_3)
+# -43.32019
 ```
 

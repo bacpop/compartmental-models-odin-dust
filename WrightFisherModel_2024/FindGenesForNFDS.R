@@ -109,8 +109,8 @@ FindNFDSgenes <- function(repeats = 100, frac = 0.1){
     #params_ggCPP <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = 0.0772594, sigma_w = 0, prop_f = 1, delta_bool = delta_bool, m = 0.03104461, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.15977862, vacc_time = 0)
     #params_ggCPP <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = 0.1545188, sigma_w = 0, prop_f = 1, delta_bool = delta_bool, m = 0.03104461, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.15977862, vacc_time = 0)
     params_ggCPP <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = 0.3090376, sigma_w = 0, prop_f = 1, delta_bool = delta_bool, m = 0.03104461, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.15977862, vacc_time = 0)
-    params_ggCPP <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = 0.6180752, sigma_w = 0, prop_f = 1, delta_bool = delta_bool, m = 0.03104461, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.15977862, vacc_time = 0)
-    params_ggCPP <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = 1.081632, sigma_w = 0, prop_f = 1, delta_bool = delta_bool, m = 0.03104461, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.15977862, vacc_time = 0)
+    #params_ggCPP <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = 0.6180752, sigma_w = 0, prop_f = 1, delta_bool = delta_bool, m = 0.03104461, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.15977862, vacc_time = 0)
+    #params_ggCPP <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = 1.081632, sigma_w = 0, prop_f = 1, delta_bool = delta_bool, m = 0.03104461, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.15977862, vacc_time = 0)
     WFmodel_ggCPP <- WF$new(pars = params_ggCPP,
                             time = 1,
                             n_particles = 10L,
@@ -255,10 +255,56 @@ best_10_perc_vec_df <- FindNFDSgenes(repeats = 1000, frac = 0.10)
 
 # 10% best likelihood
 which(best_10_perc_vec_df$X1>(max(best_10_perc_vec_df$X1) + (min(best_10_perc_vec_df$X1) - max(best_10_perc_vec_df$X1))/10))
+best_10_perc_vec_df$X1[which(best_10_perc_vec_df$X1>(max(best_10_perc_vec_df$X1) + (min(best_10_perc_vec_df$X1) - max(best_10_perc_vec_df$X1))/10))]
 colMeans(best_10_perc_vec_df[which(best_10_perc_vec_df$X1>(max(best_10_perc_vec_df$X1) + (min(best_10_perc_vec_df$X1) - max(best_10_perc_vec_df$X1))/10)),])
 which(colMeans(best_10_perc_vec_df[which(best_10_perc_vec_df$X1>(max(best_10_perc_vec_df$X1) + (min(best_10_perc_vec_df$X1) - max(best_10_perc_vec_df$X1))/10)),])>0.2)
 # not even one is present in more than 20% of the vectors. looks like they are just randomly turned on/off
 plot(colMeans(best_10_perc_vec_df[which(best_10_perc_vec_df$X1>(max(best_10_perc_vec_df$X1) + (min(best_10_perc_vec_df$X1) - max(best_10_perc_vec_df$X1))/10)),-1]))
+
+which(colMeans(best_10_perc_vec_df[which(best_10_perc_vec_df$X1>(max(best_10_perc_vec_df$X1) + (min(best_10_perc_vec_df$X1) - max(best_10_perc_vec_df$X1))/10)),-1])>0.2)
+
+opt_genes <- rep(0, (nrow(ggCPP_intermed_gene_presence_absence_consensus)-1))
+opt_genes[which(colMeans(best_10_perc_vec_df[which(best_10_perc_vec_df$X1>(max(best_10_perc_vec_df$X1) + (min(best_10_perc_vec_df$X1) - max(best_10_perc_vec_df$X1))/10)),-1])>0.2)] <- 1
+
+delta_bool <- opt_genes
+params_ggCPP <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = 0.3090376, sigma_w = 0, prop_f = 1, delta_bool = delta_bool, m = 0.03104461, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.15977862, vacc_time = 0)
+WFmodel_ggCPP <- WF$new(pars = params_ggCPP,
+                        time = 1,
+                        n_particles = 10L,
+                        n_threads = 4L,
+                        seed = 1L)
+simMeanggCPP2 <- rowMeans(WFmodel_ggCPP$run(36)[-1,])
+simMeanggCPP3 <- rowMeans(WFmodel_ggCPP$run(72)[-1,])
+
+# ggC PopPUNK
+local_like <- combined_compare(simMeanggCPP2,PP_mass_cluster_freq_2) + combined_compare(simMeanggCPP3,PP_mass_cluster_freq_3)
+local_like
+
+#saveRDS(opt_genes,"opt_genes_v1.rds")
+opt_genes1 <- readRDS("opt_genes_v1.rds")
+#saveRDS(opt_genes,"opt_genes_v2.rds")
+opt_genes2 <- readRDS("opt_genes_v2.rds")
+#saveRDS(opt_genes,"opt_genes_v3.rds")
+opt_genes3 <- readRDS("opt_genes_v3.rds")
+#saveRDS(opt_genes,"opt_genes_v4.rds")
+opt_genes4 <- readRDS("opt_genes_v4.rds")
+#saveRDS(opt_genes,"opt_genes_v5.rds")
+opt_genes5 <- readRDS("opt_genes_v5.rds")
+
+plot(opt_genes4[order(ggC_delta_data3)])
+
+tail(opt_genes4[ggC_delta_ranking])
+
+which((opt_genes1 + opt_genes2 + opt_genes)>0)
+
+plot(opt_genes1+opt_genes2+opt_genes3+opt_genes4+opt_genes5)
+
+combined_opt <- opt_genes1+opt_genes2+opt_genes3+opt_genes4+opt_genes5
+new_best_vec <- rep(0, (nrow(ggCPP_intermed_gene_presence_absence_consensus)-1))
+new_best_vec[which(combined_opt>1)] <- 1
+# [1] -266.0292
+plot(new_best_vec[order(ggC_delta_data3)])
+# does not seem to correlate at all with the gene frequencies
 
 NFDSgenes_df <- data.frame(matrix(0, nrow = 8,ncol = 15))
 colnames(NFDSgenes_df)[1] <- "sigma_f"
