@@ -306,6 +306,140 @@ new_best_vec[which(combined_opt>1)] <- 1
 plot(new_best_vec[order(ggC_delta_data3)])
 # does not seem to correlate at all with the gene frequencies
 
+delta_bool <- new_best_vec
+
+test_gene_vec <- function(gene_vec){
+  params_ggCPP <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = 0.3090376, sigma_w = 0, prop_f = 1, delta_bool = gene_vec, m = 0.03104461, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.15977862, vacc_time = 0)
+  WFmodel_ggCPP <- WF$new(pars = params_ggCPP,
+                          time = 1,
+                          n_particles = 10L,
+                          n_threads = 4L,
+                          seed = 1L)
+  simMeanggCPP2 <- rowMeans(WFmodel_ggCPP$run(36)[-1,])
+  simMeanggCPP3 <- rowMeans(WFmodel_ggCPP$run(72)[-1,])
+  # ggC PopPUNK
+  local_like <- combined_compare(simMeanggCPP2,PP_mass_cluster_freq_2) + combined_compare(simMeanggCPP3,PP_mass_cluster_freq_3)
+  local_like
+}
+
+best_likelihood <- test_gene_vec(new_best_vec)
+
+unhelpful_params <- c()
+local_iter <- 1
+for(i in 1:length(which(new_best_vec==1))){
+  new_best_vec_loc <- new_best_vec
+  new_best_vec_loc[which(new_best_vec==1)[i]] <- 0
+  #print(which(new_best_vec==1)[i])
+  new_likelihood <- test_gene_vec(new_best_vec_loc)
+  if(new_likelihood > best_likelihood + 2){
+    print(new_likelihood)
+    unhelpful_params[local_iter] <- which(new_best_vec==1)[i]
+    local_iter <- local_iter +1 
+  }
+}
+
+likelihood_vec <- c()
+unhelpful_params2 <- c()
+unhelpful_params1 <- c()
+local_iter <- 1
+for(i in 1:length(unhelpful_params)){
+  for (j in 2:length(unhelpful_params)) {
+    new_best_vec_loc <- new_best_vec
+    new_best_vec_loc[unhelpful_params[i]] <- 0
+    new_best_vec_loc[unhelpful_params[j]] <- 0
+    #print(which(new_best_vec==1)[i])
+    new_likelihood <- test_gene_vec(new_best_vec_loc)
+    if(new_likelihood > best_likelihood + 2){
+      #print(new_likelihood)
+      likelihood_vec[local_iter] <- new_likelihood
+      unhelpful_params1[local_iter] <- unhelpful_params[i]
+      unhelpful_params2[local_iter] <- unhelpful_params[j]
+      local_iter <- local_iter +1 
+    }
+  }
+}
+
+#[1] -257.1697
+max(likelihood_vec)
+which.max(likelihood_vec)
+tail(sort(likelihood_vec))
+which(likelihood_vec>-260)
+likelihood_vec[which(likelihood_vec>-260)]
+
+new_best_vec_loc <- new_best_vec
+new_best_vec_loc[unhelpful_params1[which.max(likelihood_vec)]] <- 0
+new_best_vec_loc[unhelpful_params2[which.max(likelihood_vec)]] <- 0
+test_gene_vec(new_best_vec_loc)
+
+new_best_vec_loc1 <- new_best_vec
+new_best_vec_loc1[unhelpful_params1[which(likelihood_vec>-260)[1]]] <- 0
+new_best_vec_loc1[unhelpful_params2[which(likelihood_vec>-260)[1]]] <- 0
+test_gene_vec(new_best_vec_loc1)
+
+new_best_vec_loc2 <- new_best_vec
+new_best_vec_loc2[unhelpful_params1[which(likelihood_vec>-260)[2]]] <- 0
+new_best_vec_loc2[unhelpful_params2[which(likelihood_vec>-260)[2]]] <- 0
+test_gene_vec(new_best_vec_loc2)
+
+new_best_vec_loc3 <- new_best_vec
+new_best_vec_loc3[unhelpful_params1[which(likelihood_vec>-260)[3]]] <- 0
+new_best_vec_loc3[unhelpful_params2[which(likelihood_vec>-260)[3]]] <- 0
+test_gene_vec(new_best_vec_loc3)
+
+new_best_vec_loc4 <- new_best_vec
+new_best_vec_loc4[unhelpful_params1[which(likelihood_vec>-260)[4]]] <- 0
+new_best_vec_loc4[unhelpful_params2[which(likelihood_vec>-260)[4]]] <- 0
+test_gene_vec(new_best_vec_loc4)
+
+new_best_vec_loc5 <- new_best_vec
+new_best_vec_loc5[unhelpful_params1[which(likelihood_vec>-260)[5]]] <- 0
+new_best_vec_loc5[unhelpful_params2[which(likelihood_vec>-260)[5]]] <- 0
+test_gene_vec(new_best_vec_loc5)
+
+new_best_vec_loc6 <- new_best_vec
+new_best_vec_loc6[unhelpful_params1[which(likelihood_vec>-260)[6]]] <- 0
+new_best_vec_loc6[unhelpful_params2[which(likelihood_vec>-260)[6]]] <- 0
+test_gene_vec(new_best_vec_loc6)
+
+plot(new_best_vec_loc1 + new_best_vec_loc2 + new_best_vec_loc3 + new_best_vec_loc4 + new_best_vec_loc5 + new_best_vec_loc6)
+
+best_best_vec <- rep(0, length(new_best_vec_loc1))
+best_best_vec[which((new_best_vec_loc1 + new_best_vec_loc2 + new_best_vec_loc3 + new_best_vec_loc4 + new_best_vec_loc5 + new_best_vec_loc6)==6)] <- 1
+
+test_gene_vec(best_best_vec)
+# -256.7823
+saveRDS(best_best_vec, "bestNFDSgenes.rds")
+sum(best_best_vec)/length(best_best_vec)
+
+
+unhelpful_params3_1 <- c()
+unhelpful_params3_2 <- c()
+unhelpful_params4_1 <- c()
+unhelpful_params4_2 <- c()
+likelihood_vec <- c()
+local_iter <- 1
+for(i in 1:length(unhelpful_params1)){
+  for (j in 2:length(unhelpful_params1)) {
+    new_best_vec_loc <- new_best_vec
+    new_best_vec_loc[unhelpful_params1[i]] <- 0
+    new_best_vec_loc[unhelpful_params2[i]] <- 0
+    new_best_vec_loc[unhelpful_params1[j]] <- 0
+    new_best_vec_loc[unhelpful_params2[j]] <- 0
+    #print(which(new_best_vec==1)[i])
+    new_likelihood <- test_gene_vec(new_best_vec_loc)
+    if(new_likelihood > best_likelihood + 2){
+      #print(new_likelihood)
+      likelihood_vec[local_iter] <- new_likelihood
+      unhelpful_params3_1[local_iter] <- unhelpful_params1[i]
+      unhelpful_params3_2[local_iter] <- unhelpful_params2[i]
+      unhelpful_params4_1[local_iter] <- unhelpful_params1[j]
+      unhelpful_params4_2[local_iter] <- unhelpful_params2[j]
+      local_iter <- local_iter +1 
+    }
+  }
+}
+
+
 NFDSgenes_df <- data.frame(matrix(0, nrow = 8,ncol = 15))
 colnames(NFDSgenes_df)[1] <- "sigma_f"
 NFDSgenes_df[2:7,1] <- c(0.01931485, 0.0386297, 0.07725940, 0.1545188, 0.3090376, 0.6180752)

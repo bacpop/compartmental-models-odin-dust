@@ -129,20 +129,20 @@ det_filter <- particle_deterministic$new(data = fitting_mass_data,
 
 
 # compute boolean gene vectors
-n_groups <- ceiling((nrow(intermed_gene_presence_absence_consensus)-1)/25)
-find_genes_df <- data.frame(matrix(0,nrow = nrow(intermed_gene_presence_absence_consensus)-1, ncol = 51))
-for (i in 1:25) {
-  find_genes_df[,i] <- rep(c(rep(0,24),1),(n_groups + 4))[i:(nrow(intermed_gene_presence_absence_consensus)-2 + i)]
-  find_genes_df[,i+25] <- c(rep(0,(nrow(intermed_gene_presence_absence_consensus) - 1-n_groups)),rep(1,n_groups),rep(0,(nrow(intermed_gene_presence_absence_consensus) - n_groups)))[(1 + (i-1) * n_groups) : (nrow(intermed_gene_presence_absence_consensus)-1 + (i-1) * n_groups)]
-}
-ggCmanFindGeneResults <- readRDS("ggCmanSeqCl_FindGenesResults2.rds")
-find_genes_df[,51] <- ggCmanFindGeneResults
+#n_groups <- ceiling((nrow(intermed_gene_presence_absence_consensus)-1)/25)
+#find_genes_df <- data.frame(matrix(0,nrow = nrow(intermed_gene_presence_absence_consensus)-1, ncol = 51))
+#for (i in 1:25) {
+#  find_genes_df[,i] <- rep(c(rep(0,24),1),(n_groups + 4))[i:(nrow(intermed_gene_presence_absence_consensus)-2 + i)]
+#  find_genes_df[,i+25] <- c(rep(0,(nrow(intermed_gene_presence_absence_consensus) - 1-n_groups)),rep(1,n_groups),rep(0,(nrow(intermed_gene_presence_absence_consensus) - n_groups)))[(1 + (i-1) * n_groups) : (nrow(intermed_gene_presence_absence_consensus)-1 + (i-1) * n_groups)]
+#}
+#ggCmanFindGeneResults <- readRDS("ggCmanSeqCl_FindGenesResults2.rds")
+#find_genes_df[,51] <- ggCmanFindGeneResults
 
+#delta_bool <- find_genes_df[,i]
 
+#print(output_filename)
 
-print(output_filename)
-
-for (i in 51:51) {
+#for (i in 51:51) {
 #for (i in 1:50) {
 
 # Using MCMC to infer parameters
@@ -160,7 +160,9 @@ Pop_eq <- model_start_pop
 Genotypes <- intermed_gene_presence_absence_consensus_matrix
 
 capacity <- sum(model_start_pop)
-delta_bool <- find_genes_df[,i]
+
+delta_bool <- best_best_vec ### add you gene set here
+
 vaccTypes <- mass_VT
 vacc_time <- 0
 dt <- 1/36
@@ -218,7 +220,7 @@ control <- mcstate::pmcmc_control(
 det_pmcmc_run <- mcstate::pmcmc(mcmc_pars, det_filter, control = control)
 processed_chains <- mcstate::pmcmc_thin(det_pmcmc_run, burnin = 250, thin = 1)
 parameter_mean_hpd <- apply(processed_chains$pars, 2, mean)
-#print(parameter_mean_hpd)
+print(parameter_mean_hpd)
 
 #det_mcmc1 <- coda::as.mcmc(cbind(det_pmcmc_run$probabilities, det_pmcmc_run$pars))
 #pdf(file = paste(output_filename,"det_mcmc1.pdf",sep = "_"),   # The directory you want to save the file in
@@ -238,7 +240,7 @@ det_filter <- particle_deterministic$new(data = fitting_mass_data,
                                          model = WF,
                                          compare = combined_compare)
 
-n_steps <- 5000
+n_steps <- 2000
 n_burnin <- 0
 
 control <- mcstate::pmcmc_control(

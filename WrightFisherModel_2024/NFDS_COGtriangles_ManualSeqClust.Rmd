@@ -3359,8 +3359,31 @@ for (i in 1:length(names(PP_to_manSeq_dict))) {
 }
 
 
-# COG + BAPS
+# COG + PopPUNK
 combined_compare(simMean2_merged,merged_cluster_freq_2) + combined_compare(simMean3_merged,merged_cluster_freq_3)
 # -43.46789
+
+# for comparison: 3-param model
+params_n_vP <- list(dt = 1/36, species_no = mass_clusters,  gene_no = nrow(intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(model_start_pop), Pop_eq = as.double(model_start_pop), capacity = sum(model_start_pop), Genotypes = intermed_gene_presence_absence_consensus_matrix, sigma_f = log(0.007877661), sigma_w = (-1000), prop_f = 1 , delta = delta_ranking, m = log(0.008008877) , migVec = avg_cluster_freq, vaccTypes = mass_VT, v = 0.048982297, vacc_time = 0)
+WFmodel <- WF_nG_h_vP$new(pars = params_n_vP,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+
+simMean2 <- rowMeans(WFmodel$run(36)[-1,])
+simMean3 <- rowMeans(WFmodel$run(72)[-1,])
+
+simMean2_merged <- rep(0, length(unique(merged_mass_clusters)))
+simMean3_merged <- rep(0, length(unique(merged_mass_clusters)))
+for (i in 1:length(unique(merged_mass_clusters))) {
+  simMean2_merged[i] <- sum(simMean2[as.integer(names(which(merged_mass_clusters==i-1)))+1])
+  simMean3_merged[i] <- sum(simMean3[as.integer(names(which(merged_mass_clusters==i-1)))+1])
+}
+
+# COG + BAPS
+combined_compare(simMean2_merged,merged_cluster_freq_2) + combined_compare(simMean3_merged,merged_cluster_freq_3)
+# -46.67963
+
 ```
 

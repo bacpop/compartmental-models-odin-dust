@@ -15,22 +15,21 @@ freq[] <- sum(gene_freq[i,1:species_no]) / Pop_size
 
 # overall deviation of loci for genomes
 # idea 1: make a Boolean vector for strongly selected genes
-#delta_bool[] <- 1 - prop_f * delta[i]
-#delta_bool[] <- exp(sigma_f) - prop_f * delta[i]
-delta_bool[] <- if ((i<= prop_f * gene_no)) exp(sigma_f) - delta[i]  else 0
-# here delta is the value not the ranking
-#if ((delta[i] <= prop_f * gene_no)) 1 else 0
-pi_f_freq[,] <-  Genotypes[i,j] * (eq[i] - freq[i]) * delta_bool[i]
+delta_bool_1[] <- if ((delta[i] <= prop_f_1 * gene_no)) 1 else 0
+pi_f_freq[,] <-  Genotypes[i,j] * (eq[i] - freq[i]) * delta_bool_1[i]
 pi_f_genotypes[] <- sum(pi_f_freq[1:gene_no,i])
 
-#pi_w_freq[,] <-  Genotypes[i,j] * (eq[i] - freq[i]) * (1 - delta_bool[i])
+delta_bool_2[] <- if ((delta[i] <= (prop_f_1 + prop_f_2) * gene_no)) 1 else 0
+pi_w_freq[,] <-  Genotypes[i,j] * (eq[i] - freq[i]) * (delta_bool_2[i] - delta_bool_1[i])
+pi_w_genotypes[] <- sum(pi_w_freq[1:gene_no,i])
+
+#pi_w_freq[,] <-  Genotypes[i,j] * (eq[i] - freq[i]) * (1 - delta_bool_2[i])
 #pi_w_genotypes[] <- sum(pi_w_freq[1:gene_no,i])
 
 # Genotype specific probability to produce offspring
 # those are the individuals' probabilities multiplied by the number of individuals that have this genotype
 #probs[] <- ((1 + sigma_f)^pi_f_genotypes[i] * (1 + sigma_w)^pi_w_genotypes[i]) * Pop[i] * (1- (as.integer(time >= vacc_time) * vaccTypes[i] * v))
-probs[] <- ((1 + exp(sigma_f))^pi_f_genotypes[i]) * Pop[i] * (1- (as.integer(time >= vacc_time) * vaccTypes[i] * v))
-#probs[] <- max(pi_f_genotypes[i], 2.935635e-05) * Pop[i] * (1- (as.integer(time >= vacc_time) * vaccTypes[i] * v))
+probs[] <- ((1 + exp(sigma_w) + exp(sigma_f))^pi_f_genotypes[i] * (1 + exp(sigma_w))^pi_w_genotypes[i]) * Pop[i] * (1- (as.integer(time >= vacc_time) * vaccTypes[i] * v))
 
 
 
@@ -68,8 +67,9 @@ Pop_ini[] <- user() # initial frequency of Genotypes
 Pop_eq[] <- user()
 capacity <- user()
 sigma_f <- user()
-#sigma_w <- user()
-prop_f <- user()
+sigma_w <- user()
+prop_f_1 <- user()
+prop_f_2 <- user()
 delta[] <- user()
 m <- user() # migration rate
 #GeneFitness[] <- user() # fitness vector for different genes
@@ -89,10 +89,11 @@ dim(gene_eq) <- c(gene_no, species_no) #frequency of genes at equilibrium
 dim(eq) <- gene_no
 dim(pi_f_freq) <- c(gene_no, species_no)
 dim(pi_f_genotypes) <- species_no
-#dim(pi_w_freq) <- c(gene_no, species_no)
-#dim(pi_w_genotypes) <- species_no
+dim(pi_w_freq) <- c(gene_no, species_no)
+dim(pi_w_genotypes) <- species_no
 dim(delta) <- gene_no
-dim(delta_bool) <- gene_no
+dim(delta_bool_1) <- gene_no
+dim(delta_bool_2) <- gene_no
 #dim(FitnessMatrix) <- c(gene_no,species_no) # a matrix that stores the presence and the fitness for each gene and genotype
 dim(Genotypes) <- c(gene_no, species_no) # we have in each column the genes (present/not present, i.e. 1/0) of one genotype
 dim(Pop) <- species_no
