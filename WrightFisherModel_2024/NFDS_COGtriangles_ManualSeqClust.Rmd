@@ -3387,3 +3387,60 @@ combined_compare(simMean2_merged,merged_cluster_freq_2) + combined_compare(simMe
 
 ```
 
+# create matrix with PP clusters and serotypes
+```{r}
+PPxSero_matrix <- matrix(0, nrow = length(unique(PopPUNK_clusters$Cluster)), ncol = length(unique(PopPUNK_clusters$Serotype)))
+# sort(unique(PopPUNK_clusters$Serotype))
+# [1] "10A"   "11A"   "14"    "15A"   "15B/C" "15F"   "16F"   "17F"   "18C"   "19A"   "19F"   "21"    "22F"   "23A"
+#[15] "23B"   "23F"   "3"     "31"    "33F"   "34"    "35B"   "35F"   "37"    "38"    "6A"    "6B"    "6C"    "7C" 
+#[29] "7F"    "9N"    "9V"    "NT"
+
+SerotypeToIndex_dict <- 1:length(unique(PopPUNK_clusters$Serotype))
+names(SerotypeToIndex_dict) <- sort(unique(PopPUNK_clusters$Serotype))
+
+for (i in 1:nrow(PopPUNK_clusters)) {
+  PPxSero_matrix[PopPUNK_clusters$Cluster[i],SerotypeToIndex_dict[PopPUNK_clusters$Serotype[i]]] <- 1
+}
+# matrix shows information whether PP and serotype co-occur in the dataset (1=TRUE)
+# this can be used as the migration matrix:
+PPxSero_matrix_prob <- PPxSero_matrix / sum(PPxSero_matrix)
+PPxSero_matrix_prob <- matrix(sapply(PPxSero_matrix_prob,as.double), nrow = nrow(PPxSero_matrix), ncol = ncol(PPxSero_matrix))
+saveRDS(PPxSero_matrix_prob, "PPsero_mig.rds")
+
+# start population:
+PPsero_startpop <- matrix(0, nrow = length(unique(PopPUNK_clusters$Cluster)), ncol = length(unique(PopPUNK_clusters$Serotype)))
+
+for (i in which(PopPUNK_clusters$SeqYear=="2001")) {
+  PPsero_startpop[PopPUNK_clusters$Cluster[i],SerotypeToIndex_dict[PopPUNK_clusters$Serotype[i]]] <- PPsero_startpop[PopPUNK_clusters$Cluster[i],SerotypeToIndex_dict[PopPUNK_clusters$Serotype[i]]] + 1
+}
+#PPsero_startpop <- PPsero_startpop * 15000 / sum(PPsero_startpop)
+
+
+PP_expand_factor <- 15000 / sum(PPsero_startpop)
+exp_noise <- 10
+PPsero_startpop_corr <- matrix(sapply((PPsero_startpop + matrix(rexp(n = ncol(PPsero_startpop) * nrow(PPsero_startpop), rate = exp_noise), nrow= nrow(PPsero_startpop), ncol = ncol(PPsero_startpop))) * PP_expand_factor, rpois, n=1), nrow= nrow(PPsero_startpop), ncol = ncol(PPsero_startpop))
+PPsero_startpop_corr <- matrix(sapply(PPsero_startpop_corr,as.double), nrow= nrow(PPsero_startpop), ncol = ncol(PPsero_startpop))
+saveRDS(PPsero_startpop_corr, "PPsero_startpop.rds")
+
+# serotype VT vector
+SeroVT <- rep(0, length(unique(PopPUNK_clusters$Serotype)))
+for (i in 1:nrow(PopPUNK_clusters)) {
+  SeroVT[SerotypeToIndex_dict[PopPUNK_clusters$Serotype[i]]] <- as.integer(PopPUNK_clusters$VT[i]=="VT")
+}
+saveRDS(SeroVT, "SeroVT.rds")
+```
+
+```{r}
+WF_PPxSero <- odin.dust::odin_dust("NFDS_Model_PPxSero.R")
+```
+
+```{r}
+PPxSero_params <- list(dt = 1/36, species_no = PP_mass_clusters, sero_no = length(unique(PopPUNK_clusters$Serotype)), gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = PPsero_startpop_corr, Pop_eq = as.double(rowSums(PPsero_startpop_corr)), capacity = sum(PPsero_startpop_corr), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = log(0.14), prop_f = 0.38, delta = ggC_delta_ranking, m = log(0.011), migVec = PPxSero_matrix_prob, vaccTypes = SeroVT, v = 0.15, vacc_time = 0)
+WFmodel_ppxSero <- WF_PPxSero$new(pars = PPxSero_params,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+WFmodel_ppxSero$run(1)
+```
+

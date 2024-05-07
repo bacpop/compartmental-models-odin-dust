@@ -27,7 +27,7 @@ if(length(args)==0){
 
 
 # read in model from file
-WF <- odin.dust::odin_dust("NFDS_Model.R")
+WF <- odin.dust::odin_dust("NFDS_Model_PPxSero.R")
 
 # likelihood for fitting:
 ll_pois <- function(obs, model) {
@@ -48,7 +48,7 @@ combined_compare <- function(state, observed, pars = NULL) {
   #data_size <- sum(mass_cluster_freq_1)
   #model_size = 15000
   data_size <- sum(unlist(observed))
-  model_size = sum(unlist(state))
+  model_size = sum(unlist(state[2:mass_clusters+1, , drop = TRUE]))
   
   for (i in 1:mass_clusters){
     result <- result + ll_pois(observed[[as.character(i)]], state[1+i, , drop = TRUE]/model_size * data_size)
@@ -58,18 +58,18 @@ combined_compare <- function(state, observed, pars = NULL) {
 
 if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   seq_clusters <- readRDS("PopPUNK_clusters.rds")
+  sero_no = length(unique(seq_clusters$Serotype))
   intermed_gene_presence_absence_consensus <- readRDS(file = "ggCPP_intermed_gene_presence_absence_consensus.rds")
   intermed_gene_presence_absence_consensus_matrix <- sapply(intermed_gene_presence_absence_consensus[-1,-1],as.double)
-  model_start_pop <- readRDS(file = "PP_model_start_pop.rds")
+  model_start_pop <- readRDS(file = "PPsero_startpop.rds")
   delta_ranking <- readRDS(file = "ggC_delta_ranking.rds")
   mass_cluster_freq_1 <- readRDS(file = "PP_mass_cluster_freq_1.rds")
   mass_cluster_freq_2 <- readRDS(file = "PP_mass_cluster_freq_2.rds")
   mass_cluster_freq_3 <- readRDS(file = "PP_mass_cluster_freq_3.rds")
-  mass_VT <- readRDS(file = "PP_mass_VT_mean.rds")
-  mass_VT <- readRDS(file = "PP_mass_VT.rds")
+  mass_VT <- readRDS(file = "SeroVT.rds")
   mass_clusters <- length(unique(seq_clusters$Cluster))
-  avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
-  output_filename <- "4param_ggCaller_PopPUNK"
+  avg_cluster_freq <- readRDS(file = "PPsero_mig.rds")
+  output_filename <- "PPxSero_ggCaller_PopPUNK"
 } else if(args[1] == "COGtriangles" & args[2] == "PopPUNK"){
   seq_clusters <- readRDS("PopPUNK_clusters.rds")
   intermed_gene_presence_absence_consensus <- readRDS(file = "PP_intermed_gene_presence_absence_consensus.rds")
@@ -151,6 +151,8 @@ dt <- 1/36
 migVec <- avg_cluster_freq
 
 complex_params <- c(Pop_ini, Pop_eq, Genotypes, capacity, delta, vaccTypes, species_no, gene_no, vacc_time, dt, migVec, pmcmc_sigma_w)
+
+### have to re-write the whole make_transform function because of the matrices. 
 
 make_transform <- function(p) {
   function(theta){

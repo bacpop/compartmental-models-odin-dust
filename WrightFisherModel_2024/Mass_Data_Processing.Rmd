@@ -424,6 +424,13 @@ for (i in 1:no_PopPUNK_clusters){
 # 1 means VT
 # 0 means NVT
 # if cluster is 50/50 it will count as VT
+
+PP_mass_VT_mean <- rep(0, no_PopPUNK_clusters)
+
+for (i in 1:no_PopPUNK_clusters){
+  PP_mass_VT_mean[i] <- (mean(as.integer(PopPUNK_clusters[PopPUNK_clusters$Cluster == i,"VT"]=="VT")))
+}
+saveRDS(PP_mass_VT_mean, file = "PP_mass_VT_mean.rds")
 ```
 
 ```{r}

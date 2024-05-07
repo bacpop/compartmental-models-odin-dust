@@ -266,5 +266,7 @@ print("det_mcmc_2 log likelihood")
 processed_chains$probabilities[nrow(processed_chains$probabilities),2]
 print("det_mcmc_2 mean log likelihood")
 mean(processed_chains$probabilities[,2])
-
+#[1] -262.8631
+# not better than 4param model
+# no evidence for prop_f_2
 saveRDS(det_mcmc2, paste(output_filename, "_det_mcmc2.rds", sep = ""))
