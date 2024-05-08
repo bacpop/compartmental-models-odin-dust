@@ -411,6 +411,20 @@ test_gene_vec(best_best_vec)
 saveRDS(best_best_vec, "bestNFDSgenes.rds")
 sum(best_best_vec)/length(best_best_vec)
 
+plot(best_best_vec[order(ggC_delta_data3)])
+
+plot(sort(ggC_delta_data3), type = "l")
+points(which(best_best_vec[order(ggC_delta_data3)]==1),sort(ggC_delta_data3)[which(best_best_vec[order(ggC_delta_data3)]==1)], col = "red")
+abline(v=0.3765 * 1774)
+
+plot(sort(ggC_delta_data2), type = "l")
+points(which(best_best_vec[order(ggC_delta_data2)]==1),sort(ggC_delta_data2)[which(best_best_vec[order(ggC_delta_data2)]==1)], col = "red")
+abline(v=0.3765 * 1774)
+
+plot(sort(ggC_delta_data3),col = "#E69F00")
+points(ggC_delta_data3[order(ggC_delta_data2)], col = "#56B4E9")
+legend(0, 0.07, legend=c("Peri_Post - Pre", "Post - Pre"),
+        col=c("#E69F00", "#56B4E9"), lty=1, cex=1.2)
 
 unhelpful_params3_1 <- c()
 unhelpful_params3_2 <- c()
@@ -544,3 +558,43 @@ fit_FindGenes_ggCPP(new_start_vec)
 FindGenes_sa3 <- optim(fn=fit_FindGenes_ggCPP, par=new_start_vec, gr=nextfun, method="SANN", 
                        control=list(maxit=1000,fnscale=1,trace=10))
 plot(FindGenes_sa3$par + new_start_vec)
+
+
+fitting_closure_fl <- function(all_other_params, data1, data2){
+  null_fit_dfoptim_fl <- function(fit_params){
+    
+    rnd_vect_full <- fit_params
+    
+    params$delta_bool = rnd_vect_full
+    WFmodel_ggCPP <- WF$new(pars = params,
+                            time = 1,
+                            n_particles = 10L,
+                            n_threads = 4L,
+                            seed = 1L)
+    #n_particles <- 10L
+    #n_times <- 73
+    #x <- array(NA, dim = c(WFmodel_ggCPP$info()$len, n_particles, n_times))
+    
+    #for (t in seq_len(n_times)) {
+    #  x[ , , t] <- WFmodel_ggCPP$run(t)
+    #}
+    #time <- x[1, 1, ]
+    #x <- x[-1, , ]
+    simMeanggCPP2 <- rowMeans(WFmodel_ggCPP$run(36)[-1,])
+    simMeanggCPP3 <- rowMeans(WFmodel_ggCPP$run(72)[-1,])
+    - combined_compare(simMeanggCPP2,data1) - combined_compare(simMeanggCPP3,data2) 
+    #- combined_compare(x[,1,37],data1) - combined_compare(x[,1,73],data2) 
+  }
+}
+
+FindGenes_ggCPP_params <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = 0.3090376, sigma_w = 0, prop_f = 1, m = 0.03104461, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.15977862, vacc_time = 0)
+
+fit_FindGenes_ggCPP <- fitting_closure_fl(FindGenes_ggCPP_params, PP_mass_cluster_freq_2, PP_mass_cluster_freq_3)
+
+#FindGenes_sa <- optim_sa(fun = fit_FindGenes_ggCPP, start = best_best_vec, maximization = TRUE, trace = TRUE,lower=rep(0,length(start_vect)), upper=rep(1,length(start_vect)))
+
+nextfun <- function(x) rbinom(nrow(ggCPP_intermed_gene_presence_absence_consensus)-1  ,1,0.1)
+FindGenes_sa3 <- optim(fn=fit_FindGenes_ggCPP, par=best_best_vec, gr=nextfun, method="SANN", 
+      control=list(maxit=2000,fnscale=1,trace=10))
+test_gene_vec(FindGenes_sa3$par)
+test_gene_vec(best_best_vec)

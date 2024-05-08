@@ -2463,6 +2463,8 @@ coda::effectiveSize(ggCPP_det_mcmc2_4param_coda)
 # effective sample size better than COGmanSeqCl but could be better
 1 - coda::rejectionRate(ggCPP_det_mcmc2_4param_coda)
 
+max(ggCPP_det_mcmc2_4param$probabilities[,2]) # best value in chain
+
 plot(ggCPP_det_mcmc2_4param_coda)
 summary(ggCPP_det_mcmc2_4param_coda)
 #                     Mean      SD  Naive SE Time-series SE
