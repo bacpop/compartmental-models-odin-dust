@@ -140,7 +140,7 @@ no_clusters <- mass_clusters
 gene_no <- nrow(intermed_gene_presence_absence_consensus_matrix)
 
 Pop_ini <- model_start_pop
-Pop_eq <- model_start_pop
+Pop_eq <- rowSums(model_start_pop)
 Genotypes <- intermed_gene_presence_absence_consensus_matrix
 
 capacity <- sum(model_start_pop)
@@ -150,30 +150,53 @@ vacc_time <- 0
 dt <- 1/36
 migVec <- avg_cluster_freq
 
-complex_params <- c(Pop_ini, Pop_eq, Genotypes, capacity, delta, vaccTypes, species_no, gene_no, vacc_time, dt, migVec, pmcmc_sigma_w)
+complex_params <- c(Pop_ini, Pop_eq, Genotypes, capacity, delta, vaccTypes, species_no, gene_no, vacc_time, dt, migVec, pmcmc_sigma_w, sero_no)
 
 ### have to re-write the whole make_transform function because of the matrices. 
+#dim(Pop_ini)
+
+#make_transform <- function(p) {
+#  function(theta){
+#    c(list(Pop_ini = matrix(p[1:(nrow(Pop_ini) * ncol(Pop_ini))], nrow = mass_clusters, ncol = sero_no),
+#           Pop_eq = matrix(p[((nrow(Pop_ini) * ncol(Pop_ini)) +1) : ((nrow(Pop_ini) * ncol(Pop_ini)) + nrow(Pop_eq) * ncol(Pop_eq))], nrow = mass_clusters, ncol = sero_no),
+#           Genotypes = matrix(p[(((nrow(Pop_ini) * ncol(Pop_ini)) + nrow(Pop_eq) * ncol(Pop_eq))+ 1): (((nrow(Pop_ini) * ncol(Pop_ini)) + nrow(Pop_eq) * ncol(Pop_eq)) + nrow(Genotypes) * ncol(Genotypes))], nrow = gene_no, ncol = species_no),
+#           capacity = p[(((nrow(Pop_ini) * ncol(Pop_ini)) + nrow(Pop_eq) * ncol(Pop_eq)) + nrow(Genotypes) * ncol(Genotypes)) + 1],
+#           delta = p[((((nrow(Pop_ini) * ncol(Pop_ini)) + nrow(Pop_eq) * ncol(Pop_eq)) + nrow(Genotypes) * ncol(Genotypes)) + 2) : ((((nrow(Pop_ini) * ncol(Pop_ini)) + nrow(Pop_eq) * ncol(Pop_eq)) + nrow(Genotypes) * ncol(Genotypes)) + 2 + gene_no -1)],
+#           vaccTypes = p[((((nrow(Pop_ini) * ncol(Pop_ini)) + nrow(Pop_eq) * ncol(Pop_eq)) + nrow(Genotypes) * ncol(Genotypes)) + 2 + gene_no) : (((((nrow(Pop_ini) * ncol(Pop_ini)) + nrow(Pop_eq) * ncol(Pop_eq)) + nrow(Genotypes) * ncol(Genotypes)) + 2 + gene_no) + sero_no -1)],
+#           species_no = p[(((((nrow(Pop_ini) * ncol(Pop_ini)) + nrow(Pop_eq) * ncol(Pop_eq)) + nrow(Genotypes) * ncol(Genotypes)) + 2 + gene_no) + sero_no )],
+#           gene_no = p[(((((nrow(Pop_ini) * ncol(Pop_ini)) + nrow(Pop_eq) * ncol(Pop_eq)) + nrow(Genotypes) * ncol(Genotypes)) + 2 + gene_no) + sero_no)+ 1],
+#           vacc_time = p[(((((nrow(Pop_ini) * ncol(Pop_ini)) + nrow(Pop_eq) * ncol(Pop_eq)) + nrow(Genotypes) * ncol(Genotypes)) + 2 + gene_no) + sero_no) + 2],
+#           dt = p[(((((nrow(Pop_ini) * ncol(Pop_ini)) + nrow(Pop_eq) * ncol(Pop_eq)) + nrow(Genotypes) * ncol(Genotypes)) + 2 + gene_no) + sero_no) + 3],
+#           migVec = matrix(p[((((((nrow(Pop_ini) * ncol(Pop_ini)) + nrow(Pop_eq) * ncol(Pop_eq)) + nrow(Genotypes) * ncol(Genotypes)) + 2 + gene_no) + sero_no) + 4):((((((nrow(Pop_ini) * ncol(Pop_ini)) + nrow(Pop_eq) * ncol(Pop_eq)) + nrow(Genotypes) * ncol(Genotypes)) + 2 + gene_no) + sero_no) + 4 + (nrow(migVec) * ncol(migVec)) -1)], nrow = mass_clusters, ncol = sero_no),
+#           sigma_w = p[((((((nrow(Pop_ini) * ncol(Pop_ini)) + nrow(Pop_eq) * ncol(Pop_eq)) + nrow(Genotypes) * ncol(Genotypes)) + 2 + gene_no) + sero_no) + 4 + (nrow(migVec) * ncol(migVec)))],
+#           sero_no = p[((((((nrow(Pop_ini) * ncol(Pop_ini)) + nrow(Pop_eq) * ncol(Pop_eq)) + nrow(Genotypes) * ncol(Genotypes)) + 2 + gene_no) + sero_no) + 4 + (nrow(migVec) * ncol(migVec)) +1)]), as.list(theta))
+#  }
+#}
 
 make_transform <- function(p) {
   function(theta){
-    c(list(Pop_ini = p[1:mass_clusters],
-           Pop_eq = p[(mass_clusters +1) : (mass_clusters + mass_clusters)],
-           Genotypes = matrix(p[(mass_clusters + mass_clusters + 1): ((mass_clusters + mass_clusters + 1) + (gene_no * species_no) - 1)], nrow = gene_no, ncol = species_no),
-           capacity = p[((2 * mass_clusters + 1) + (gene_no * species_no) - 1) + 1],
-           delta = p[(((2 * mass_clusters + 1) + (gene_no * species_no) - 1) + 2) : (((2 * mass_clusters + 1) + (gene_no * species_no) - 1) + 2 + gene_no -1)],
-           vaccTypes = p[(((2 * mass_clusters + 1) + (gene_no * species_no) - 1) + 2 + gene_no) : ((((2 * mass_clusters + 1) + (gene_no * species_no) - 1) + 2 + gene_no) + no_clusters -1)],
-           species_no = p[(((2 * mass_clusters + 1) + (gene_no * species_no) - 1) + 2 + gene_no) + no_clusters],
-           gene_no = p[(((2 * mass_clusters + 1) + (gene_no * species_no) - 1) + 2 + gene_no) + no_clusters + 1],
-           vacc_time = p[(((2 * mass_clusters + 1) + (gene_no * species_no) - 1) + 2 + gene_no) + no_clusters + 2],
-           dt = p[(((2 * mass_clusters + 1) + (gene_no * species_no) - 1) + 2 + gene_no) + no_clusters + 3],
-           migVec = p[((((2 * mass_clusters + 1) + (gene_no * species_no) - 1) + 2 + gene_no) + no_clusters + 4):((((2 * mass_clusters + 1) + (gene_no * species_no) - 1) + 2 + gene_no) + no_clusters + 4 + species_no - 1)],
-           sigma_w = p[((((2 * mass_clusters + 1) + (gene_no * species_no) - 1) + 2 + gene_no) + no_clusters + 4 + species_no - 1 + 1)]), as.list(theta))
+    c(list(Pop_ini = matrix(p[1:(nrow(Pop_ini) * ncol(Pop_ini))], nrow = mass_clusters, ncol = sero_no),
+           Pop_eq = p[((nrow(Pop_ini) * ncol(Pop_ini)) +1) : ((nrow(Pop_ini) * ncol(Pop_ini)) + length(Pop_eq))],
+           Genotypes = matrix(p[(((nrow(Pop_ini) * ncol(Pop_ini)) + length(Pop_eq))+ 1): (((nrow(Pop_ini) * ncol(Pop_ini)) + length(Pop_eq)) + nrow(Genotypes) * ncol(Genotypes))], nrow = gene_no, ncol = species_no),
+           capacity = p[(((nrow(Pop_ini) * ncol(Pop_ini)) + length(Pop_eq)) + nrow(Genotypes) * ncol(Genotypes)) + 1],
+           delta = p[((((nrow(Pop_ini) * ncol(Pop_ini)) + length(Pop_eq)) + nrow(Genotypes) * ncol(Genotypes)) + 2) : ((((nrow(Pop_ini) * ncol(Pop_ini)) + length(Pop_eq)) + nrow(Genotypes) * ncol(Genotypes)) + 2 + gene_no -1)],
+           vaccTypes = p[((((nrow(Pop_ini) * ncol(Pop_ini)) + length(Pop_eq)) + nrow(Genotypes) * ncol(Genotypes)) + 2 + gene_no) : (((((nrow(Pop_ini) * ncol(Pop_ini)) + length(Pop_eq)) + nrow(Genotypes) * ncol(Genotypes)) + 2 + gene_no) + sero_no -1)],
+           species_no = p[(((((nrow(Pop_ini) * ncol(Pop_ini)) + length(Pop_eq)) + nrow(Genotypes) * ncol(Genotypes)) + 2 + gene_no) + sero_no )],
+           gene_no = p[(((((nrow(Pop_ini) * ncol(Pop_ini)) + length(Pop_eq)) + nrow(Genotypes) * ncol(Genotypes)) + 2 + gene_no) + sero_no)+ 1],
+           vacc_time = p[(((((nrow(Pop_ini) * ncol(Pop_ini)) + length(Pop_eq)) + nrow(Genotypes) * ncol(Genotypes)) + 2 + gene_no) + sero_no) + 2],
+           dt = p[(((((nrow(Pop_ini) * ncol(Pop_ini)) + length(Pop_eq)) + nrow(Genotypes) * ncol(Genotypes)) + 2 + gene_no) + sero_no) + 3],
+           migVec = matrix(p[((((((nrow(Pop_ini) * ncol(Pop_ini)) + length(Pop_eq)) + nrow(Genotypes) * ncol(Genotypes)) + 2 + gene_no) + sero_no) + 4):((((((nrow(Pop_ini) * ncol(Pop_ini)) + length(Pop_eq)) + nrow(Genotypes) * ncol(Genotypes)) + 2 + gene_no) + sero_no) + 4 + (nrow(migVec) * ncol(migVec)) -1)], nrow = mass_clusters, ncol = sero_no),
+           sigma_w = p[((((((nrow(Pop_ini) * ncol(Pop_ini)) + length(Pop_eq)) + nrow(Genotypes) * ncol(Genotypes)) + 2 + gene_no) + sero_no) + 4 + (nrow(migVec) * ncol(migVec)))],
+           sero_no = p[((((((nrow(Pop_ini) * ncol(Pop_ini)) + length(Pop_eq)) + nrow(Genotypes) * ncol(Genotypes)) + 2 + gene_no) + sero_no) + 4 + (nrow(migVec) * ncol(migVec)) +1)]), as.list(theta))
   }
 }
+
 
 transform <- function(x) {
   make_transform(complex_params)}
 proposal_matrix <- diag(0.1,4) # the proposal matrix defines the covariance-variance matrix for a mult normal dist
+proposal_matrix[1,1] <- exp(0.1)
+proposal_matrix[3,3] <- exp(0.1)
 # here, all parameters are proposed independently. 
 # think about this, this might not actually be true
 #mcmc_pars <- mcstate::pmcmc_parameters$new(list(pmcmc_sigma_f, pmcmc_sigma_w, pmcmc_prop_f, pmcmc_m, pmcmc_v), proposal_matrix, transform)
