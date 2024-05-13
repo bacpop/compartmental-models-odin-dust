@@ -3424,6 +3424,16 @@ PPsero_startpop_corr <- matrix(sapply((PPsero_startpop + matrix(rexp(n = ncol(PP
 PPsero_startpop_corr <- matrix(sapply(PPsero_startpop_corr,as.double), nrow= nrow(PPsero_startpop), ncol = ncol(PPsero_startpop))
 saveRDS(PPsero_startpop_corr, "PPsero_startpop.rds")
 
+# this lead to a start population that is way too evenly distributed across the different clusters
+# instead, I could maybe use the existing PP_model_start_pop and distribute it to the different serotypes?
+PPsero_startpop2 <-  matrix(0, nrow = length(unique(PopPUNK_clusters$Cluster)), ncol = length(unique(PopPUNK_clusters$Serotype)))
+for (i in 1:62) {
+  PPsero_startpop2[i,] <- round((PPxSero_matrix[i,] * PP_model_start_pop[i])/sum(PPxSero_matrix[i,]))
+}
+saveRDS(PPsero_startpop2, "PPsero_startpop.rds")
+# this is very close to the original PP_model_start_pop
+# maybe I am giving out too much information because the serotype distribution is exactly the real one?
+
 # serotype VT vector
 SeroVT <- rep(0, length(unique(PopPUNK_clusters$Serotype)))
 for (i in 1:nrow(PopPUNK_clusters)) {
@@ -3437,7 +3447,7 @@ WF_PPxSero <- odin.dust::odin_dust("NFDS_Model_PPxSero.R")
 ```
 
 ```{r}
-PPxSero_params <- list(dt = 1/36, species_no = PP_mass_clusters, sero_no = length(unique(PopPUNK_clusters$Serotype)), gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = PPsero_startpop_corr, Pop_eq = as.double(rowSums(PPsero_startpop_corr)), capacity = sum(PPsero_startpop_corr), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = log(0.14), prop_f = 0.38, delta = ggC_delta_ranking, m = log(0.011), migVec = PPxSero_matrix_prob, vaccTypes = SeroVT, v = 0.15, vacc_time = 0)
+PPxSero_params <- list(dt = 1/36, species_no = PP_mass_clusters, sero_no = length(unique(PopPUNK_clusters$Serotype)), gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = PPsero_startpop2, Pop_eq = as.double(rowSums(PPsero_startpop2)), capacity = sum(PPsero_startpop2), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = log(0.14), prop_f = 0.38, delta = ggC_delta_ranking, m = log(0.011), migVec = PPxSero_matrix_prob, vaccTypes = SeroVT, v = 0.15, vacc_time = 0)
 WFmodel_ppxSero <- WF_PPxSero$new(pars = PPxSero_params,
                          time = 1,
                          n_particles = 10L,
@@ -3445,4 +3455,32 @@ WFmodel_ppxSero <- WF_PPxSero$new(pars = PPxSero_params,
                          seed = 1L)
 WFmodel_ppxSero$run(1)
 ```
+
+```{r}
+WFmodel_ppxSero <- WF_PPxSero$new(pars = PPxSero_params,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+x <- array(NA, dim = c(WFmodel_ppxSero$info()$len, n_particles, n_times))
+for (t in seq_len(n_times)) {
+    x[ , , t] <- WFmodel_ppxSero$run(t)
+  }
+time <- x[1, 1, ]
+x <- x[-1, , ]
+combined_compare(x[1:PP_mass_clusters,1,37],PP_mass_cluster_freq_2) + combined_compare(x[1:PP_mass_clusters,1,73],PP_mass_cluster_freq_3)
+
+
+combined_compare(WFmodel_ppxSero$run(1)[2:(PP_mass_clusters+1),1],PP_mass_cluster_freq_1)
+# [1] -102.253
+combined_compare(ggCPP_WFmodel$run(1)[2:(PP_mass_clusters+1),1],PP_mass_cluster_freq_1)
+# [1] -55.15877
+
+# hmm, the start likelihood is already almost twice as high. that's not great. So I think I need to change how I generate the start population for the PPxSero model. Since the likelihood definition did not change, the likelihood also shouldn't change.
+
+# now, with the new start population definition (PPsero_startpop2), the likelihoods are very similar
+combined_compare(WFmodel_ppxSero$run(1)[2:(PP_mass_clusters+1),1],PP_mass_cluster_freq_1)
+#[1] -55.1599
+```
+
 
