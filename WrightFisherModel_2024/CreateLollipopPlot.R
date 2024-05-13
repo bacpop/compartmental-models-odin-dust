@@ -201,7 +201,7 @@ lollipop_cluster_freqs_VTandNVT_labelSero <- function(year = "year unknown", plo
     xlab("Clusters") +
     theme(axis.title  = element_text(size = 20), axis.text.y = element_text(size = 12), axis.text.x = element_text(size = 20), plot.title = element_text(size = 25,hjust = 0.5))  +
     ylim(0, max(max(lollipop_data_1$model_1)))
-  grid.arrange(lollipop_plot_1 + scale_y_continuous(limits = c(NA,0.175))  + scale_x_continuous(breaks = 1:length(data1), labels = 1:length(data1), sec.axis = dup_axis(name = "Serotypes", labels = SeroLabel))+ theme(plot.margin = unit(c(.5,0.5,1,0.5), "cm")), ncol = 1, nrow=1, top = textGrob(plot_title,gp=gpar(fontsize=20,font=3)))
+  grid.arrange(lollipop_plot_1 + scale_y_continuous(limits = c(NA,0.2))  + scale_x_continuous(breaks = 1:length(data1), labels = 1:length(data1), sec.axis = dup_axis(name = "Serotypes", labels = SeroLabel))+ theme(plot.margin = unit(c(.5,0.5,1,0.5), "cm")), ncol = 1, nrow=1, top = textGrob(plot_title,gp=gpar(fontsize=20,font=3)))
 }
 
 
@@ -280,5 +280,5 @@ lollipop_cluster_freqs_2x2_VTandNVT_labelSero <- function(year = "year unknown",
     xlab("Clusters") +
     theme(axis.title  = element_text(size = 20), axis.text = element_text(size = 20), plot.title = element_text(size = 25,hjust = 0.5))  +
     ylim(0, max(max(lollipop_data_1$model_1)))
-  grid.arrange(lollipop_plot_1 + scale_y_continuous(limits = c(NA,0.2)) + scale_x_continuous(breaks = 1:length(data1), labels = 1:length(data1), sec.axis = dup_axis(name = "Serotypes", labels = SeroLabel))+ theme(plot.margin = unit(c(.5,0.5,1,0.5), "cm")), ncol = 1, nrow=1, top = textGrob(plot_title,gp=gpar(fontsize=20,font=3)))
+  grid.arrange(lollipop_plot_1 + scale_y_continuous(limits = c(NA,0.22)) + scale_x_continuous(breaks = 1:length(data1), labels = 1:length(data1), sec.axis = dup_axis(name = "Serotypes", labels = SeroLabel))+ theme(plot.margin = unit(c(.5,0.5,1,0.5), "cm")), ncol = 1, nrow=1, top = textGrob(plot_title,gp=gpar(fontsize=20,font=3)))
 }

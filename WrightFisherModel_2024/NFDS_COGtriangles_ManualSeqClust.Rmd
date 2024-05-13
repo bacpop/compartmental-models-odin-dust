@@ -3400,6 +3400,9 @@ PPxSero_matrix <- matrix(0, nrow = length(unique(PopPUNK_clusters$Cluster)), nco
 SerotypeToIndex_dict <- 1:length(unique(PopPUNK_clusters$Serotype))
 names(SerotypeToIndex_dict) <- sort(unique(PopPUNK_clusters$Serotype))
 
+IndexToSerotype_dict <- sort(unique(PopPUNK_clusters$Serotype))
+names(IndexToSerotype_dict) <- 1:length(unique(PopPUNK_clusters$Serotype))
+
 for (i in 1:nrow(PopPUNK_clusters)) {
   PPxSero_matrix[PopPUNK_clusters$Cluster[i],SerotypeToIndex_dict[PopPUNK_clusters$Serotype[i]]] <- 1
 }
@@ -3408,6 +3411,15 @@ for (i in 1:nrow(PopPUNK_clusters)) {
 PPxSero_matrix_prob <- PPxSero_matrix / sum(PPxSero_matrix)
 PPxSero_matrix_prob <- matrix(sapply(PPxSero_matrix_prob,as.double), nrow = nrow(PPxSero_matrix), ncol = ncol(PPxSero_matrix))
 saveRDS(PPxSero_matrix_prob, "PPsero_mig.rds")
+
+
+
+PPxSero_matrix_prob2 <-  matrix(0, nrow = length(unique(PopPUNK_clusters$Cluster)), ncol = length(unique(PopPUNK_clusters$Serotype)))
+for (i in 1:62) {
+  PPxSero_matrix_prob2[i,] <- ((PPxSero_matrix[i,] * PP_avg_cluster_freq[i])/sum(PPxSero_matrix[i,]))
+}
+saveRDS(PPxSero_matrix_prob2, "PPsero_mig.rds")
+# new migration matrix that is closer to original one
 
 # start population:
 PPsero_startpop <- matrix(0, nrow = length(unique(PopPUNK_clusters$Cluster)), ncol = length(unique(PopPUNK_clusters$Serotype)))
@@ -3481,6 +3493,83 @@ combined_compare(ggCPP_WFmodel$run(1)[2:(PP_mass_clusters+1),1],PP_mass_cluster_
 # now, with the new start population definition (PPsero_startpop2), the likelihoods are very similar
 combined_compare(WFmodel_ppxSero$run(1)[2:(PP_mass_clusters+1),1],PP_mass_cluster_freq_1)
 #[1] -55.1599
+```
+
+```{r}
+# ggCPP fit (logistic function model)
+fitPPxSero_params <- list(dt = 1/36, species_no = PP_mass_clusters, sero_no = length(unique(PopPUNK_clusters$Serotype)), gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = PPsero_startpop2, Pop_eq = as.double(rowSums(PPsero_startpop2)), capacity = sum(PPsero_startpop2), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = -1.6952228, prop_f = 0.3875749, delta = ggC_delta_ranking, m = -3.5522149, migVec = PPxSero_matrix_prob, vaccTypes = SeroVT, v = 0.2403443, vacc_time = 0)
+WFmodel_ppxSero <- WF_PPxSero$new(pars = fitPPxSero_params,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+simMeanggCPP2_log <- rowMeans(WFmodel_ppxSero$run(36)[2:(PP_mass_clusters+1),])
+simMeanggCPP3_log <- rowMeans(WFmodel_ppxSero$run(72)[2:(PP_mass_clusters+1),])
+
+lollipop_cluster_freqs_VTandNVT_labelSero(year = "2001", plot_title = "PopPUNK and ggCaller", data1 = PP_mass_cluster_freq_1/sum(PP_mass_cluster_freq_1), model_name_1 ="Model", model1 = PP_model_start_pop/sum(PP_model_start_pop), PP_mass_VT, SeroLabel = PP_serotype_comp)
+lollipop_cluster_freqs_VTandNVT_labelSero(year = "2004", plot_title = "PopPUNK and ggCaller", data1 = PP_mass_cluster_freq_2/sum(PP_mass_cluster_freq_2), model_name_1 ="Model", model1 = simMeanggCPP2_log/sum(simMeanggCPP2_log), PP_mass_VT, SeroLabel = PP_serotype_comp)
+lollipop_cluster_freqs_VTandNVT_labelSero(year = "2007", plot_title = "PopPUNK and ggCaller", data1 = PP_mass_cluster_freq_3/sum(PP_mass_cluster_freq_3), model_name_1 ="Model", model1 = simMeanggCPP3_log/sum(simMeanggCPP3_log), PP_mass_VT, SeroLabel = PP_serotype_comp)
+
+#combined_compare(simMeanggCPP2_log,PP_mass_cluster_freq_2) + combined_compare(simMeanggCPP3_log,PP_mass_cluster_freq_3)
+#combined_compare(simMeanggCPP2,PP_mass_cluster_freq_2) + combined_compare(simMeanggCPP3,PP_mass_cluster_freq_3)
+```
+
+```{r}
+lollipop_cluster_freqs_2x2_VTandNVT_labelSero(year = "2004", plot_title = "PopPUNK and ggCaller", data_name = "Data", data1 = PP_mass_cluster_freq_2/sum(PP_mass_cluster_freq_2), model_name_1 ="Standard Model", model1 = simMeanggCPP2/sum(simMeanggCPP2), model_name_2 ="Sero Sub-comp.", model2 = simMeanggCPP2_log/sum(simMeanggCPP2_log), PP_mass_VT, SeroLabel = PP_serotype_comp)
+lollipop_cluster_freqs_2x2_VTandNVT_labelSero(year = "2007", plot_title = "PopPUNK and ggCaller", data_name = "Data", data1 = PP_mass_cluster_freq_3/sum(PP_mass_cluster_freq_3), model_name_1 ="Standard Model", model1 = simMeanggCPP3/sum(simMeanggCPP3), model_name_2 ="Sero Sub-comp.", model2 = simMeanggCPP3_log/sum(simMeanggCPP3_log), PP_mass_VT, SeroLabel = PP_serotype_comp)
+
+```
+
+```{r}
+library("viridis") 
+# create stacked barplot to investigate within cluster changes:
+WFmodel_ppxSero <- WF_PPxSero$new(pars = fitPPxSero_params,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+#PP_cl <- sort(rep((1:PP_mass_clusters),length(serotypes_mass)))
+#Sero <- rep((1:length(serotypes_mass)), PP_mass_clusters)
+#SeroLabel = PP_serotype_comp
+
+PP_cl <-rep((1:PP_mass_clusters),length(serotypes_mass))
+Sero <-  sort(rep((1:length(serotypes_mass)), PP_mass_clusters))
+time1 <- WFmodel_ppxSero$run(1)[-(1:(PP_mass_clusters+1)),1]/sum(WFmodel_ppxSero$run(1)[-(1:(PP_mass_clusters+1)),1])
+time2 <- WFmodel_ppxSero$run(36)[-(1:(PP_mass_clusters+1)),1]/sum(WFmodel_ppxSero$run(36)[-(1:(PP_mass_clusters+1)),1])
+time3 <- WFmodel_ppxSero$run(72)[-(1:(PP_mass_clusters+1)),1]/sum(WFmodel_ppxSero$run(72)[-(1:(PP_mass_clusters+1)),1])
+barplot_PPxSero_data <- data.frame(PP_cl,Sero,time1, time2, time3)
+
+ggplot(barplot_PPxSero_data, aes(fill=as.factor(Sero), y=time1, x=PP_cl)) + 
+    geom_bar(position="stack", stat="identity") + scale_fill_viridis(option = "D", discrete = TRUE, name = "Serotype") + theme(legend.position = c(.8,.6),legend.text = element_text(size = 20),legend.title = element_text(size = 20)) 
+
+ggplot(barplot_PPxSero_data, aes(fill=IndexToSerotype_dict[as.factor(Sero)], y=time1, x=PP_cl)) + coord_flip()+ 
+    geom_bar(position="stack", stat="identity") + scale_fill_viridis(option = "D", discrete = TRUE, name = "Serotype") +
+  ggtitle("2001") + ylab("Frequency") + xlab("Clusters") + theme(legend.position = c(.8,.6),legend.text = element_text(size = 20),legend.title = element_text(size = 20)) +
+  scale_x_continuous(breaks = 1:62, sec.axis = dup_axis(name = "Serotypes", labels = PP_serotype_comp))
+ggplot(barplot_PPxSero_data, aes(fill=IndexToSerotype_dict[as.factor(Sero)], y=time2, x=PP_cl)) +  coord_flip()+
+    geom_bar(position="stack", stat="identity") + scale_fill_viridis(option = "D", discrete = TRUE, name = "Serotype") +
+  ggtitle("2004") + ylab("Frequency") + xlab("Clusters") + theme(legend.position = c(.8,.6),legend.text = element_text(size = 20),legend.title = element_text(size = 20)) +
+  scale_x_continuous(breaks = 1:62, sec.axis = dup_axis(name = "Serotypes", labels = PP_serotype_comp))
+ggplot(barplot_PPxSero_data, aes(fill=IndexToSerotype_dict[as.factor(Sero)], y=time3, x=PP_cl)) +  coord_flip()+
+    geom_bar(position="stack", stat="identity") + scale_fill_viridis(option = "D", discrete = TRUE, name = "Serotype") +
+  ggtitle("2007") + ylab("Frequency") + xlab("Clusters") + theme(legend.position = c(.8,.6),legend.text = element_text(size = 20),legend.title = element_text(size = 20)) +
+  scale_x_continuous(breaks = 1:62, sec.axis = dup_axis(name = "Serotypes", labels = PP_serotype_comp))
+```
+
+```{r}
+PP_data_2007 <- rep(0, (length(serotypes_mass) * PP_mass_clusters))
+
+for (i in which(PopPUNK_clusters$SeqYear=="2007")) {
+  PP_data_2007[((SerotypeToIndex_dict[PopPUNK_clusters$Serotype[i]] -1) * PP_mass_clusters) + PopPUNK_clusters$Cluster[i]] <- 
+  PP_data_2007[((SerotypeToIndex_dict[PopPUNK_clusters$Serotype[i]] -1) * PP_mass_clusters) + PopPUNK_clusters$Cluster[i]] + 1
+}  
+  
+barplot_PPxSero_data$PPdata_2007 <- PP_data_2007
+  
+ggplot(barplot_PPxSero_data, aes(fill=IndexToSerotype_dict[as.factor(Sero)], y=PPdata_2007, x=PP_cl)) +  coord_flip()+
+    geom_bar(position="stack", stat="identity") + scale_fill_viridis(option = "D", discrete = TRUE, name = "Serotype") +
+  ggtitle("2007 DATA") + ylab("Frequency") + xlab("Clusters") + theme(legend.position = c(.8,.6),legend.text = element_text(size = 20),legend.title = element_text(size = 20))+
+  scale_x_continuous(breaks = 1:62, sec.axis = dup_axis(name = "Serotypes", labels = PP_serotype_comp))
 ```
 
 

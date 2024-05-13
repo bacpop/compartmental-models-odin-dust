@@ -259,7 +259,7 @@ control <- mcstate::pmcmc_control(
   save_trajectories = TRUE,
   progress = TRUE,
   adaptive_proposal = TRUE,
-  n_chains = 4)
+  n_chains = 2)
 det_pmcmc_run2 <- mcstate::pmcmc(det_mcmc_pars, det_filter, control = control)
 par(mfrow = c(1,1))
 
