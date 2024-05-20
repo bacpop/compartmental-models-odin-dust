@@ -3563,7 +3563,8 @@ for (i in which(PopPUNK_clusters$SeqYear=="2007")) {
   PP_data_2007[((SerotypeToIndex_dict[PopPUNK_clusters$Serotype[i]] -1) * PP_mass_clusters) + PopPUNK_clusters$Cluster[i]] <- 
   PP_data_2007[((SerotypeToIndex_dict[PopPUNK_clusters$Serotype[i]] -1) * PP_mass_clusters) + PopPUNK_clusters$Cluster[i]] + 1
 }  
-  
+
+PP_data_2007 <- PP_data_2007/ sum(PP_data_2007)
 barplot_PPxSero_data$PPdata_2007 <- PP_data_2007
   
 ggplot(barplot_PPxSero_data, aes(fill=IndexToSerotype_dict[as.factor(Sero)], y=PPdata_2007, x=PP_cl)) +  coord_flip()+
@@ -3572,4 +3573,15 @@ ggplot(barplot_PPxSero_data, aes(fill=IndexToSerotype_dict[as.factor(Sero)], y=P
   scale_x_continuous(breaks = 1:62, sec.axis = dup_axis(name = "Serotypes", labels = PP_serotype_comp))
 ```
 
+```{r}
+barplot_PPxSero_data2 <- data.frame(rep(PP_cl,2), rep(Sero,2),c(time3, PP_data_2007))
+barplot_PPxSero_data2$category <- c(rep(0,length(PP_cl)),rep(1,length(PP_cl)))
+colnames(barplot_PPxSero_data2) <- c("Cluster","Serotype","Value","category")
+
+
+  ggplot(barplot_PPxSero_data2, aes(fill=IndexToSerotype_dict[as.factor(Serotype)], y=Value, x=(category))) +  
+    geom_bar(position="stack", stat="identity") + scale_fill_viridis(option = "D", discrete = TRUE, name = "Serotype") +
+  ggtitle("2007") + ylab("Frequency") + xlab("Clusters") + theme(legend.position = c(.8,.6),legend.text = element_text(size = 20),legend.title = element_text(size = 20)) +
+  facet_grid( ~ Cluster) + scale_x_continuous("Model / Data", labels = c("M","D"), breaks = c(0,1))
+```
 

@@ -1,0 +1,39 @@
+---
+title: "Nepal Data Processing"
+output: html_notebook
+---
+
+```{r}
+path_to_data <- "~/Documents/PhD_Project/Data/"
+```
+
+# read in meta data (esp. serotype, sequencing year)
+```{r}
+Nepal_meta_data <- read.csv(paste(path_to_data, "StrepPneumo_Nepal/monocle-metadata-from-sample-download.csv",sep = ""))
+Nepal_time_points <- unique(Nepal_meta_data$Year)
+```
+
+# read in PopPUNK results
+```{r}
+Nepal_PP <- read.csv(paste(path_to_data, "StrepPneumo_Nepal/PopPUNK/refined_fitmodel_k3/refined_fitmodel_k3_clusters.csv",sep = ""))
+no_Nepal_PP <- length(unique(Nepal_PP$Cluster)) # 212 clusters!
+```
+
+# read in ggCaller results
+```{r}
+Nepal_ggCaller <- read.csv(paste(path_to_data, "StrepPneumo_Nepal/ggCaller_output/gene_presence_absence.csv", sep = ""), header=FALSE)
+```
+
+```{r}
+# converting the gene presence absence matrix into a boolean df (0 = gene not present, 1 = gene present)
+convert_to_bool <- function(x){
+  if (x=="") 0 else 1
+}
+
+Nepal_ggCaller_bool <- Nepal_ggCaller[,c(-2,-3)]
+Nepal_ggCaller_bool[-1,-1] <- apply(Nepal_ggCaller_bool[-1,-1],c(1,2), convert_to_bool)
+```
+
+```{r}
+saveRDS(Nepal_ggCaller_bool, "Nepal_ggCaller_bool.rds")
+```
