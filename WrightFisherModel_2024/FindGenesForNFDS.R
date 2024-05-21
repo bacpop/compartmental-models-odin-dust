@@ -677,10 +677,11 @@ fitting_closure_max_decode <- function(all_other_params, data1, data2){
 
 ga_fit_FindGenes_ggCPP_dec <- fitting_closure_max_decode(FindGenes_ggCPP_params, PP_mass_cluster_freq_2, PP_mass_cluster_freq_3)
 gann <- ga(type = "real-valued", fitness = ga_fit_FindGenes_ggCPP_dec, lower = rep(0, length(best_best_vec)), upper = rep(1,length(best_best_vec)), 
-           seed = 123, elitism = 50, maxiter = 30, popSize = 300, run = 30)
+           seed = 123, elitism = 50, maxiter = 50, popSize = 400, run = 30)
 summary(gann)
 as.vector(t(apply(gann@solution, 1, decode2)))
 sum(as.vector(t(apply(gann@solution, 1, decode2))))/length(best_best_vec)
+saveRDS(gann,"gann.rds")
 
 # all values between 0.3 and 0.65
 plot(as.vector(gann@solution))
