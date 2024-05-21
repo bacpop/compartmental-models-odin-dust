@@ -598,3 +598,93 @@ FindGenes_sa3 <- optim(fn=fit_FindGenes_ggCPP, par=best_best_vec, gr=nextfun, me
       control=list(maxit=2000,fnscale=1,trace=10))
 test_gene_vec(FindGenes_sa3$par)
 test_gene_vec(best_best_vec)
+
+
+### try using genetic / evolutionary algorithms for finding best genes
+library(GA)
+
+
+fitting_closure_max <- function(all_other_params, data1, data2){
+  null_fit_dfoptim_fl <- function(fit_params){
+    
+    rnd_vect_full <- fit_params
+    
+    params$delta_bool = rnd_vect_full
+    WFmodel_ggCPP <- WF$new(pars = params,
+                            time = 1,
+                            n_particles = 10L,
+                            n_threads = 4L,
+                            seed = 1L)
+    #n_particles <- 10L
+    #n_times <- 73
+    #x <- array(NA, dim = c(WFmodel_ggCPP$info()$len, n_particles, n_times))
+    
+    #for (t in seq_len(n_times)) {
+    #  x[ , , t] <- WFmodel_ggCPP$run(t)
+    #}
+    #time <- x[1, 1, ]
+    #x <- x[-1, , ]
+    simMeanggCPP2 <- rowMeans(WFmodel_ggCPP$run(36)[-1,])
+    simMeanggCPP3 <- rowMeans(WFmodel_ggCPP$run(72)[-1,])
+    combined_compare(simMeanggCPP2,data1) + combined_compare(simMeanggCPP3,data2) 
+    #- combined_compare(x[,1,37],data1) - combined_compare(x[,1,73],data2) 
+  }
+}
+
+my_crossover <- function(x1, x2){
+  x <- c(x1[1:round(0.5 * length(best_best_vec))], x2[(round(0.5 * length(best_best_vec))+1):length(best_best_vec)])
+}
+
+ga_fit_FindGenes_ggCPP <- fitting_closure_max(FindGenes_ggCPP_params, PP_mass_cluster_freq_2, PP_mass_cluster_freq_3)
+gann <- ga(type = "real-valued", fitness = ga_fit_FindGenes_ggCPP, lower = rep(0, length(best_best_vec)), upper = rep(1,length(best_best_vec)), 
+           seed = 123, elitism = 50, maxiter = 3, popSize = 300, run = 30)
+# crossover = ga_spCrossover, mutation = gabin_raMutation
+summary(gann)
+
+
+decode2 <- function(x)
+{ 
+  x <- round(x)         
+  return(x)
+}
+
+fitting_closure_max_decode <- function(all_other_params, data1, data2){
+  null_fit_dfoptim_fl <- function(fit_params){
+    fit_params <- decode2(fit_params)
+    rnd_vect_full <- fit_params
+    
+    params$delta_bool = rnd_vect_full
+    WFmodel_ggCPP <- WF$new(pars = params,
+                            time = 1,
+                            n_particles = 10L,
+                            n_threads = 4L,
+                            seed = 1L)
+    #n_particles <- 10L
+    #n_times <- 73
+    #x <- array(NA, dim = c(WFmodel_ggCPP$info()$len, n_particles, n_times))
+    
+    #for (t in seq_len(n_times)) {
+    #  x[ , , t] <- WFmodel_ggCPP$run(t)
+    #}
+    #time <- x[1, 1, ]
+    #x <- x[-1, , ]
+    simMeanggCPP2 <- rowMeans(WFmodel_ggCPP$run(36)[-1,])
+    simMeanggCPP3 <- rowMeans(WFmodel_ggCPP$run(72)[-1,])
+    combined_compare(simMeanggCPP2,data1) + combined_compare(simMeanggCPP3,data2) 
+    #- combined_compare(x[,1,37],data1) - combined_compare(x[,1,73],data2) 
+  }
+}
+
+ga_fit_FindGenes_ggCPP_dec <- fitting_closure_max_decode(FindGenes_ggCPP_params, PP_mass_cluster_freq_2, PP_mass_cluster_freq_3)
+gann <- ga(type = "real-valued", fitness = ga_fit_FindGenes_ggCPP_dec, lower = rep(0, length(best_best_vec)), upper = rep(1,length(best_best_vec)), 
+           seed = 123, elitism = 50, maxiter = 30, popSize = 300, run = 30)
+summary(gann)
+as.vector(t(apply(gann@solution, 1, decode2)))
+sum(as.vector(t(apply(gann@solution, 1, decode2))))/length(best_best_vec)
+
+# all values between 0.3 and 0.65
+plot(as.vector(gann@solution))
+plot(sort(as.vector(gann@solution)))
+# but 0-1 vector has much better likelihood than real-valued vector (e.g. -827.3559 vs. -1316.802)
+# maybe it just makes sense to optimize around 0.5 which will results in 0 and 1 because of my rounding function?
+# still, -827 is much, much worse than my other "best gene vectors" --> run on cluster?

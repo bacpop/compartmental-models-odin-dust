@@ -53,6 +53,10 @@ for (i in 2:nrow(Nepal_meta_dataPP)) {
     Nepal_meta_dataPP$Phenotypic_serotype[i] <- "NT"
   }
 }
+rownames(Nepal_meta_dataPP) <- 1:nrow(Nepal_meta_dataPP)
+
+Nepal_meta_IDtoIndPP <- 1:nrow(Nepal_meta_dataPP)
+names(Nepal_meta_IDtoIndPP) <- Nepal_meta_dataPP$Lane_id
 ```
 
 ```{r}
@@ -188,3 +192,34 @@ for (i in 1:no_Nepal_PP){
 #save VTs
 saveRDS(Nepal_VT, file = "Nepal_VT.rds")
 ```
+
+# calculate cluster frequencies for different years
+```{r}
+Nepal_cluster_freqs <- vector(mode = "list", length = length(Nepal_time_points_selected))
+
+for(j in 1:length(Nepal_time_points_selected)){
+  Nepal_cluster_freqs[[j]] <- rep(0, no_Nepal_PP)
+  for (i in 1:no_Nepal_PP){
+    Nepal_cluster_freqs[[j]][i] <- length(which(Nepal_meta_dataPP[Nepal_meta_IDtoIndPP[Nepal_PP[Nepal_PP$Cluster == i,"Taxon"]],]$Year==Nepal_time_points_selected[j]))
+  }
+}
+# 781 data points in total
+```
+
+#create initial population
+```{r}
+### create initial population that is based on the first time point data set
+# sample from it with an Poisson process
+expand_factor <- 15000 / sum(Nepal_cluster_freqs[[1]])
+exp_noise <- 10
+Nepal_model_start_pop <- (sapply((Nepal_cluster_freqs[[1]] + rexp(n = length(Nepal_cluster_freqs[[1]]), rate = exp_noise)) * expand_factor, rpois, n=1))
+
+# visual check for the "sampling"
+plot(Nepal_cluster_freqs[[1]]/sum(Nepal_cluster_freqs[[1]]))
+points(Nepal_model_start_pop/sum(Nepal_model_start_pop), col = "red")
+# hmm
+# I am really not sure why I have 212 PopPUNK clusters. Is that realistic?
+```
+
+
+# calculate delta ranking
