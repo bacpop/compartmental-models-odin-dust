@@ -16,6 +16,9 @@ Nepal_time_points <- sort(unique(Nepal_meta_data$Year))
 
 Nepal_SeqYear_dict <- Nepal_meta_data$Year
 names(Nepal_SeqYear_dict) <- Nepal_meta_data$Lane_id
+
+Nepal_meta_IDtoInd <- 1:nrow(Nepal_meta_data)
+names(Nepal_meta_IDtoInd) <- Nepal_meta_data$Lane_id
 ```
 
 
@@ -42,6 +45,21 @@ Nepal_seq_clusters_dict <- Nepal_PP$Cluster
 names(Nepal_seq_clusters_dict) <- Nepal_PP$Taxon
 ```
 
+# filter meta data by PopPUNK sequences (PopPUNK qc removed some of the sequences)
+```{r}
+Nepal_meta_dataPP <- Nepal_meta_data[sort(Nepal_meta_IDtoInd[Nepal_PP$Taxon]),]
+for (i in 2:nrow(Nepal_meta_dataPP)) {
+  if (Nepal_meta_dataPP$Phenotypic_serotype[i] == "") {
+    Nepal_meta_dataPP$Phenotypic_serotype[i] <- "NT"
+  }
+}
+```
+
+```{r}
+saveRDS(Nepal_meta_dataPP, "Nepal_meta_dataPP.rds")
+```
+
+
 # read in ggCaller results
 ```{r}
 Nepal_ggCaller <- read.csv(paste(path_to_data, "StrepPneumo_Nepal/ggCaller_output/gene_presence_absence.csv", sep = ""), header=FALSE)
@@ -55,13 +73,21 @@ convert_to_bool <- function(x){
 
 Nepal_ggCaller_bool <- Nepal_ggCaller[,c(-2,-3)]
 Nepal_ggCaller_bool[-1,-1] <- apply(Nepal_ggCaller_bool[-1,-1],c(1,2), convert_to_bool)
-Nepal_ggCaller_bool[1,-1] <- unlist(strsplit(Nepal_ggCaller_bool[1,-1],".contigs_velvet"))
+#Nepal_ggCaller_bool[1,-1] <- unlist(strsplit(Nepal_ggCaller_bool[1,-1],".contigs_velvet"))
 
 Nepal_ggCaller_bool[1,-1] <- sapply(Nepal_ggCaller_bool[1,-1], strsplit, split = ".contigs_velvet") # remove contigs appendix
+colnames(Nepal_ggCaller_bool) <- Nepal_ggCaller_bool[1,]
+
+# filter ggCaller results by the ones 
+Nepal_ggCallerPP_bool <- data.frame(matrix(0, nrow = nrow(Nepal_ggCaller_bool), ncol = length(Nepal_PP$Taxon)+1))
+Nepal_ggCallerPP_bool[-1,-1] <- Nepal_ggCaller_bool[-1,c(Nepal_PP$Taxon)]
+colnames(Nepal_ggCallerPP_bool) <- c("Gene",Nepal_PP$Taxon)
+Nepal_ggCallerPP_bool[1,] <- c("Gene",Nepal_PP$Taxon)
+Nepal_ggCallerPP_bool[,1] <- Nepal_ggCaller_bool[,1]
 ```
 
 ```{r}
-saveRDS(Nepal_ggCaller_bool, "Nepal_ggCaller_bool.rds")
+saveRDS(Nepal_ggCallerPP_bool, "Nepal_ggCaller_bool.rds")
 ```
 
 # split ggCaller gene presence absence matrix into different time points
@@ -69,10 +95,10 @@ saveRDS(Nepal_ggCaller_bool, "Nepal_ggCaller_bool.rds")
 Nepal_ggCaller_byYear <- vector(mode = "list", length = length(Nepal_time_points_selected))
 
 for (i in 1:length(Nepal_time_points_selected)) {
-  Nepal_ggCaller_year <- data.frame(matrix(0, nrow = nrow(Nepal_ggCaller_bool), ncol = length(which(Nepal_meta_data$Year==Nepal_time_points_selected[i]))+1)) # initialize data frame
-  Nepal_ggCaller_year[1,-1] <- Nepal_ggCaller_bool[1,c(FALSE,Nepal_SeqYear_dict[unlist(Nepal_ggCaller_bool[1,-1])]==Nepal_time_points_selected[i])] # fill in first row (seq names)
-  Nepal_ggCaller_year[-1,1] <- Nepal_ggCaller_bool[-1,1] # fill in first column (gene cluster names)
-  Nepal_ggCaller_year[-1,-1] <- Nepal_ggCaller_bool[-1,c(FALSE,Nepal_SeqYear_dict[unlist(Nepal_ggCaller_bool[1,-1])]==Nepal_time_points_selected[i])] # fill in presence absence information
+  Nepal_ggCaller_year <- data.frame(matrix(0, nrow = nrow(Nepal_ggCallerPP_bool), ncol = length(which(Nepal_meta_dataPP$Year==Nepal_time_points_selected[i]))+1)) # initialize data frame
+  Nepal_ggCaller_year[1,-1] <- Nepal_ggCallerPP_bool[1,c(FALSE,Nepal_SeqYear_dict[unlist(Nepal_ggCallerPP_bool[1,-1])]==Nepal_time_points_selected[i])] # fill in first row (seq names)
+  Nepal_ggCaller_year[-1,1] <- Nepal_ggCallerPP_bool[-1,1] # fill in first column (gene cluster names)
+  Nepal_ggCaller_year[-1,-1] <- Nepal_ggCallerPP_bool[-1,c(FALSE,Nepal_SeqYear_dict[unlist(Nepal_ggCallerPP_bool[1,-1])]==Nepal_time_points_selected[i])] # fill in presence absence information
   Nepal_ggCaller_byYear[[i]] <- Nepal_ggCaller_year
 }
 ```
@@ -88,7 +114,7 @@ Nepal_gene_freq_2001 <- apply(Nepal_ggCaller_byYear[[1]][-1,-1],1, sum_as_int)
 Nepal_gene_freq_2001 <- Nepal_gene_freq_2001 / (length(Nepal_ggCaller_byYear[[1]][1,-1]))
 
 Nepal_gene_filter <- as.integer(Nepal_gene_freq_2001<=0.95 & Nepal_gene_freq_2001>=0.05)
-# 1889 intermediate-frequency genes (of 5775)
+# 1977 intermediate-frequency genes (of 5775)
 ```
 
 # create intermediate frequency dataframes
@@ -96,13 +122,13 @@ Nepal_gene_filter <- as.integer(Nepal_gene_freq_2001<=0.95 & Nepal_gene_freq_200
 Nepal_ggCaller_byYear_intermed <- vector(mode = "list", length = length(Nepal_time_points_selected))
 
 for (i in 1:length(Nepal_time_points_selected)) {
-  Nepal_ggCaller_year <- data.frame(matrix(0, nrow = sum(Nepal_gene_filter)+1,ncol = length(which(Nepal_meta_data$Year==Nepal_time_points_selected[i]))+1))
+  Nepal_ggCaller_year <- data.frame(matrix(0, nrow = sum(Nepal_gene_filter)+1,ncol = length(which(Nepal_meta_dataPP$Year==Nepal_time_points_selected[i]))+1))
   Nepal_ggCaller_year <-  Nepal_ggCaller_byYear[[i]][c(1,which(Nepal_gene_filter==1)+1),]
   Nepal_ggCaller_byYear_intermed[[i]] <- Nepal_ggCaller_year
 }
 
-Nepal_ggCaller_intermed <- data.frame(matrix(0, nrow = sum(Nepal_gene_filter)+1,ncol = ncol(Nepal_ggCaller_bool)))
-Nepal_ggCaller_intermed <-  Nepal_ggCaller_bool[c(1,which(Nepal_gene_filter==1)+1),]
+Nepal_ggCaller_intermed <- data.frame(matrix(0, nrow = sum(Nepal_gene_filter)+1,ncol = ncol(Nepal_ggCallerPP_bool)))
+Nepal_ggCaller_intermed <-  Nepal_ggCallerPP_bool[c(1,which(Nepal_gene_filter==1)+1),]
 ```
 
 # create consensus gene presence absence matrices for the clusters
@@ -111,12 +137,54 @@ cons_genomes <- function(x){
   as.double(ceiling(median(as.integer(x))))
 }
 
+# overall
 Nepal_ggCaller_intermed_consensus <- data.frame(matrix(0, nrow = sum(Nepal_gene_filter)+1, ncol = no_Nepal_PP+1))
 Nepal_ggCaller_intermed_consensus[1,-1] <- paste("SeqCl_",unique(Nepal_PP$Cluster),sep = "")
 
 for (i in unique(Nepal_PP$Cluster)) {
-Nepal_ggCaller_intermed_consensus[-1,i+2] <- apply(as.matrix(Nepal_ggCaller_intermed[-1,c(FALSE,Nepal_seq_clusters_dict[unlist(Nepal_ggCaller_intermed[1,-1])]==i)]), 1, cons_genomes)
+Nepal_ggCaller_intermed_consensus[-1,i+1] <- apply(as.matrix(Nepal_ggCaller_intermed[-1,c(FALSE,Nepal_seq_clusters_dict[unlist(Nepal_ggCaller_intermed[1,-1])]==i)]), 1, cons_genomes)
 
 }
+Nepal_ggCaller_intermed_consensus[,1] <- Nepal_ggCaller_intermed[,1]
+
+#by year
+Nepal_ggCaller_byYear_intermed_consensus <- vector(mode = "list", length = length(Nepal_time_points_selected))
+
+for (i in 1:length(Nepal_time_points_selected)) {
+  Nepal_ggCaller_year <- data.frame(matrix(0, nrow = sum(Nepal_gene_filter)+1,ncol = no_Nepal_PP+1))
+  Nepal_ggCaller_year[1,-1] <- paste("SeqCl_",unique(Nepal_PP$Cluster),sep = "")
+  for (j in unique(Nepal_PP$Cluster)) {
+    Nepal_ggCaller_year[-1,j+1] <- apply(as.matrix(Nepal_ggCaller_byYear_intermed[[i]][-1,c(FALSE,Nepal_seq_clusters_dict[unlist(Nepal_ggCaller_byYear_intermed[[i]][1,-1])]==j)]), 1, cons_genomes)
+  }
+  Nepal_ggCaller_year[,1] <- Nepal_ggCaller_byYear_intermed[[i]][,1]
+  Nepal_ggCaller_byYear_intermed_consensus[[i]] <- Nepal_ggCaller_year
+}
+
 ```
 
+# Calculate VT/NVT for clusters
+```{r}
+# create dictionary for VTs of the PCV10
+# 1, 4, 5, 6b, 7f, 9V, 14, 18c, 19f and 23f serotypes (source: NCBI)
+PCV10_VTs <- rep(0,length(unique(Nepal_meta_dataPP$Phenotypic_serotype)))
+names(PCV10_VTs) <- unique(Nepal_meta_dataPP$Phenotypic_serotype)
+PCV10_VTs[c("1","4","5","6B", "7F", "9V", "14", "18C", "19F", "23F")] <- 1
+
+Nepal_SeqToSero_dict <- Nepal_meta_dataPP$Phenotypic_serotype
+names(Nepal_SeqToSero_dict) <- Nepal_meta_dataPP$Lane_id
+
+# calculate Vaccine Type consensus for clusters
+Nepal_VT <- rep(0, no_Nepal_PP)
+
+for (i in 1:no_Nepal_PP){
+  Nepal_VT[i] <- ceiling(median(as.integer(PCV10_VTs[Nepal_SeqToSero_dict[Nepal_PP[Nepal_PP$Cluster == i,"Taxon"]]])))
+}
+# 1 means VT
+# 0 means NVT
+# if cluster is 50/50 it will count as VT
+```
+
+```{r}
+#save VTs
+saveRDS(Nepal_VT, file = "Nepal_VT.rds")
+```
