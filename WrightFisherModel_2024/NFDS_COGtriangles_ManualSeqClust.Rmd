@@ -3585,4 +3585,48 @@ colnames(barplot_PPxSero_data2) <- c("Cluster","Serotype","Value","category")
   facet_grid( ~ Cluster) + scale_x_continuous("Model / Data", labels = c("M","D"), breaks = c(0,1))
 ```
 
+### check results 
+```{r}
+# path to results: 
+results_path_22 <- "/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_05_22/"
+ga_results <- readRDS(paste(results_path_22, "FindGenesGA_results.rds",sep = ""))
+
+summary(ga_results)
+as.vector(t(apply(ga_results@solution, 1, decode2)))
+sum(as.vector(t(apply(ga_results@solution, 1, decode2))))/length(best_best_vec)
+
+# all values between 0.3 and 0.65
+plot(as.vector(ga_results@solution))
+plot(sort(as.vector(ga_results@solution)))
+
+ga_results_dict <- as.vector(ga_results@solution)
+names(ga_results_dict) <- 1:length(as.vector(ga_results@solution))
+
+ggC_delta_data3_newNames <- ggC_delta_data3
+names(ggC_delta_data3_newNames) <- 1:length(ggC_delta_data3)
+
+plot((ga_results_dict)[(names(sort(ggC_delta_data3_newNames)))])
+```
+
+# try running model with Nepal data
+#define parameters for the model:
+```{r}
+Nepal_ggCaller_intermed_consensus_matrix <- sapply(Nepal_ggCaller_intermed_consensus[-1,-1],as.double)
+Nepal_avg_cluster_freq <- rep(1/no_Nepal_PP, no_Nepal_PP)
+
+params_Nepal <- list(dt = 1/36, species_no = no_Nepal_PP,  gene_no = nrow(Nepal_ggCaller_intermed_consensus)-1, Pop_ini = as.double(Nepal_model_start_pop), Pop_eq = as.double(Nepal_model_start_pop), capacity = sum(Nepal_model_start_pop), Genotypes = Nepal_ggCaller_intermed_consensus_matrix, sigma_f = 0.1789665082, sigma_w = 0.0006039627, prop_f = 0.3669067334 , delta = Nepal_delta_ranking, m = 0.0078524723 , migVec = Nepal_avg_cluster_freq, vaccTypes = Nepal_VT, v = 0.1103623064, vacc_time = 9)
+```
+
+### Running the model:
+```{r}
+WFmodel_Nepal <- WF_nG_h_vP$new(pars = params_Nepal,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+```
+
+```{r}
+WFmodel_Nepal$run(10)
+```
 

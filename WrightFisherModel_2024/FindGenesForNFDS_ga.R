@@ -96,7 +96,7 @@ gene_number <-  nrow(intermed_gene_presence_absence_consensus)-1
 
 ga_fit_FindGenes_ggCPP_dec <- fitting_closure_max_decode(FindGenes_ggCPP_params, mass_cluster_freq_2, mass_cluster_freq_3)
 gann <- ga(type = "real-valued", fitness = ga_fit_FindGenes_ggCPP_dec, lower = rep(0, gene_number), upper = rep(1,gene_number), 
-           seed = 123, elitism = 40, maxiter = 20, popSize = 80, run = 30)
+           seed = 123, elitism = 40, maxiter = 200, popSize = 800, run = 30)
 summary(gann)
 as.vector(t(apply(gann@solution, 1, decode2)))
 sum(as.vector(t(apply(gann@solution, 1, decode2))))/gene_number
