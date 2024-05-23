@@ -70,6 +70,12 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   mass_clusters <- length(unique(seq_clusters$Cluster))
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
   output_filename <- "4param_ggCaller_PopPUNK"
+  # process data with particle filter:
+  dt <- 1/36 # we assume that the generation time of Strep. pneumo is 1 month
+  # we have data from 2001, 2004, 2007, so we want 3 (years) * 12 (months) = 36 updates in-between
+  
+  peripost_mass_cluster_freq <- data.frame("year" = c(1, 2), rbind(mass_cluster_freq_2, mass_cluster_freq_3))
+  names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
 } else if(args[1] == "COGtriangles" & args[2] == "PopPUNK"){
   seq_clusters <- readRDS("PopPUNK_clusters.rds")
   intermed_gene_presence_absence_consensus <- readRDS(file = "PP_intermed_gene_presence_absence_consensus.rds")
@@ -83,6 +89,12 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   mass_clusters <- length(unique(seq_clusters$Cluster))
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
   output_filename <- "4param_COGtriangles_PopPUNK"
+  # process data with particle filter:
+  dt <- 1/36 # we assume that the generation time of Strep. pneumo is 1 month
+  # we have data from 2001, 2004, 2007, so we want 3 (years) * 12 (months) = 36 updates in-between
+  
+  peripost_mass_cluster_freq <- data.frame("year" = c(1, 2), rbind(mass_cluster_freq_2, mass_cluster_freq_3))
+  names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
 } else if(args[1] == "ggCaller" & args[2] == "manualSeqClusters"){
   seq_clusters <- readRDS("Mass_Samples_accCodes.rds")
   intermed_gene_presence_absence_consensus <- readRDS(file = "ggC_intermed_gene_presence_absence_consensus.rds")
@@ -96,6 +108,12 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   mass_clusters <- length(unique(seq_clusters$SequenceCluster))
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
   output_filename <- "4param_ggCaller_manSeqClusters"
+  # process data with particle filter:
+  dt <- 1/36 # we assume that the generation time of Strep. pneumo is 1 month
+  # we have data from 2001, 2004, 2007, so we want 3 (years) * 12 (months) = 36 updates in-between
+  
+  peripost_mass_cluster_freq <- data.frame("year" = c(1, 2), rbind(mass_cluster_freq_2, mass_cluster_freq_3))
+  names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
 } else if(args[1] == "COGtriangles" & args[2] == "manualSeqClusters"){
   seq_clusters <- readRDS("Mass_Samples_accCodes.rds")
   intermed_gene_presence_absence_consensus <- readRDS(file = "intermed_gene_presence_absence_consensus.rds")
@@ -109,15 +127,41 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   mass_clusters <- length(unique(seq_clusters$SequenceCluster))
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
   output_filename <- "4param_COGtriangles_manSeqClusters"
+  # process data with particle filter:
+  dt <- 1/36 # we assume that the generation time of Strep. pneumo is 1 month
+  # we have data from 2001, 2004, 2007, so we want 3 (years) * 12 (months) = 36 updates in-between
+  
+  peripost_mass_cluster_freq <- data.frame("year" = c(1, 2), rbind(mass_cluster_freq_2, mass_cluster_freq_3))
+  names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
+} else if(args[1] == "Nepal" & args[2] == "PopPUNK"){
+  seq_clusters <- readRDS("Nepal_PP.rds")
+  intermed_gene_presence_absence_consensus <- readRDS(file = "Nepal_ggCaller_intermed_consensus.rds")
+  intermed_gene_presence_absence_consensus_matrix <- sapply(intermed_gene_presence_absence_consensus[-1,-1],as.double)
+  model_start_pop <- readRDS(file = "Nepal_model_start_pop.rds")
+  delta_ranking <- readRDS(file = "Nepal_delta_ranking.rds")
+  mass_cluster_freq_1 <- readRDS(file = "Nepal_cluster_freqs_1.rds")
+  mass_cluster_freq_2 <- readRDS(file = "Nepal_cluster_freqs_2.rds")
+  mass_cluster_freq_3 <- readRDS(file = "Nepal_cluster_freqs_3.rds")
+  mass_cluster_freq_4 <- readRDS(file = "Nepal_cluster_freqs_4.rds")
+  mass_cluster_freq_5 <- readRDS(file = "Nepal_cluster_freqs_5.rds")
+  mass_cluster_freq_6 <- readRDS(file = "Nepal_cluster_freqs_6.rds")
+  mass_cluster_freq_7 <- readRDS(file = "Nepal_cluster_freqs_7.rds")
+  mass_cluster_freq_8 <- readRDS(file = "Nepal_cluster_freqs_8.rds")
+  mass_cluster_freq_9 <- readRDS(file = "Nepal_cluster_freqs_9.rds")
+  mass_cluster_freq_10 <- readRDS(file = "Nepal_cluster_freqs_10.rds")
+  mass_cluster_freq_11 <- readRDS(file = "Nepal_cluster_freqs_11.rds")
+  mass_cluster_freq_12 <- readRDS(file = "Nepal_cluster_freqs_12.rds")
+  mass_cluster_freq_13 <- readRDS(file = "Nepal_cluster_freqs_13.rds")
+  mass_VT <- readRDS(file = "Nepal_VT.rds")
+  mass_clusters <- length(unique(seq_clusters$Cluster))
+  avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
+  output_filename <- "Nepal_ggCaller_PopPUNK"
+  
+  dt <- 1/12
+  peripost_mass_cluster_freq <- data.frame("year" = 1:12, rbind(mass_cluster_freq_2, mass_cluster_freq_3, mass_cluster_freq_4, mass_cluster_freq_5, mass_cluster_freq_6, mass_cluster_freq_7, mass_cluster_freq_8, mass_cluster_freq_9,mass_cluster_freq_10, mass_cluster_freq_11, mass_cluster_freq_12, mass_cluster_freq_13))
+  names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
 }
 
-
-# process data with particle filter:
-dt <- 1/36 # we assume that the generation time of Strep. pneumo is 1 month
-# we have data from 2001, 2004, 2007, so we want 3 (years) * 12 (months) = 36 updates in-between
-
-peripost_mass_cluster_freq <- data.frame("year" = c(1, 2), rbind(mass_cluster_freq_2, mass_cluster_freq_3))
-names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
 
 fitting_mass_data <- mcstate::particle_filter_data(data = peripost_mass_cluster_freq,
                                                    time = "year",
@@ -224,7 +268,7 @@ det_filter <- particle_deterministic$new(data = fitting_mass_data,
                                          model = WF,
                                          compare = combined_compare)
 
-n_steps <- 2000
+n_steps <- 20000
 n_burnin <- 0
 
 

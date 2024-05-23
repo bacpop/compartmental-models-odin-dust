@@ -3614,8 +3614,11 @@ plot((ga_results_dict)[(names(sort(ggC_delta_data3_newNames)))])
 Nepal_ggCaller_intermed_consensus_matrix <- sapply(Nepal_ggCaller_intermed_consensus[-1,-1],as.double)
 Nepal_avg_cluster_freq <- rep(1/no_Nepal_PP, no_Nepal_PP)
 
-params_Nepal <- list(dt = 1/36, species_no = no_Nepal_PP,  gene_no = nrow(Nepal_ggCaller_intermed_consensus)-1, Pop_ini = as.double(Nepal_model_start_pop), Pop_eq = as.double(Nepal_model_start_pop), capacity = sum(Nepal_model_start_pop), Genotypes = Nepal_ggCaller_intermed_consensus_matrix, sigma_f = 0.1789665082, sigma_w = 0.0006039627, prop_f = 0.3669067334 , delta = Nepal_delta_ranking, m = 0.0078524723 , migVec = Nepal_avg_cluster_freq, vaccTypes = Nepal_VT, v = 0.1103623064, vacc_time = 9)
+params_Nepal <- list(dt = 1/12, species_no = no_Nepal_PP,  gene_no = nrow(Nepal_ggCaller_intermed_consensus)-1, Pop_ini = as.double(Nepal_model_start_pop), Pop_eq = as.double(Nepal_model_start_pop), capacity = sum(Nepal_model_start_pop), Genotypes = Nepal_ggCaller_intermed_consensus_matrix, sigma_f = log(0.1133391187), sigma_w = log(0.0003826182), prop_f = 0.3803189582, delta = Nepal_delta_ranking, m = log(0.0108386117) , migVec = Nepal_avg_cluster_freq, vaccTypes = Nepal_VT, v = 0.1441624728, vacc_time = 9)
 ```
+
+# Note to myself: time points for nepal are 2005 2006 2007 2008 2009 2011 2012 2013 2014 2015 2016 2017 2018
+# 2010 is missing --> that is an issue for odin.dust/mcstate I think, so I should probably pad that
 
 ### Running the model:
 ```{r}
@@ -3627,6 +3630,33 @@ WFmodel_Nepal <- WF_nG_h_vP$new(pars = params_Nepal,
 ```
 
 ```{r}
-WFmodel_Nepal$run(10)
+WFmodel_Nepal$run(13*12)
+```
+
+```{r}
+n_particles <- 10L
+  n_times <- 13*12
+  x <- array(NA, dim = c(WFmodel_Nepal$info()$len, n_particles, n_times))
+
+  for (t in seq_len(n_times)) {
+    x[ , , t] <- WFmodel_Nepal$run(t)
+  }
+  time <- x[1, 1, ]
+  x <- x[-1, , ]
+  
+library(dplyr)
+library(zoo)
+if (length(x[,1,1]) <= 8){
+  cols <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7") #8 colorblind friendly colors
+} else {
+  cols <- rainbow(length(x[,1,1]))
+}
+par(ask = FALSE)
+matplot(time,(x[1,1 , ]), type = "l",
+         xlab = "Time", ylab = "Number of individuals",
+         col = cols[1], lty = 1, ylim = range(x))
+for (species in 2:length(x[,1,1])) {
+  matlines(time, (x[species,1 , ]), col = cols[species], lty = 1)
+}
 ```
 

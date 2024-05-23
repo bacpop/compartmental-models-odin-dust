@@ -69,6 +69,12 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   mass_clusters <- length(unique(seq_clusters$Cluster))
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
   output_filename <- "ggCaller_PopPUNK"
+  # process data with particle filter:
+  dt <- 1/36 # we assume that the generation time of Strep. pneumo is 1 month
+  # we have data from 2001, 2004, 2007, so we want 3 (years) * 12 (months) = 36 updates in-between
+  
+  peripost_mass_cluster_freq <- data.frame("year" = c(1, 2), rbind(mass_cluster_freq_2, mass_cluster_freq_3))
+  names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
 } else if(args[1] == "COGtriangles" & args[2] == "PopPUNK"){
   seq_clusters <- readRDS("PopPUNK_clusters.rds")
   intermed_gene_presence_absence_consensus <- readRDS(file = "PP_intermed_gene_presence_absence_consensus.rds")
@@ -82,6 +88,12 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   mass_clusters <- length(unique(seq_clusters$Cluster))
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
   output_filename <- "COGtriangles_PopPUNK"
+  # process data with particle filter:
+  dt <- 1/36 # we assume that the generation time of Strep. pneumo is 1 month
+  # we have data from 2001, 2004, 2007, so we want 3 (years) * 12 (months) = 36 updates in-between
+  
+  peripost_mass_cluster_freq <- data.frame("year" = c(1, 2), rbind(mass_cluster_freq_2, mass_cluster_freq_3))
+  names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
 } else if(args[1] == "ggCaller" & args[2] == "manualSeqClusters"){
   seq_clusters <- readRDS("Mass_Samples_accCodes.rds")
   intermed_gene_presence_absence_consensus <- readRDS(file = "ggC_intermed_gene_presence_absence_consensus.rds")
@@ -95,6 +107,12 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   mass_clusters <- length(unique(seq_clusters$SequenceCluster))
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
   output_filename <- "ggCaller_manSeqClusters"
+  # process data with particle filter:
+  dt <- 1/36 # we assume that the generation time of Strep. pneumo is 1 month
+  # we have data from 2001, 2004, 2007, so we want 3 (years) * 12 (months) = 36 updates in-between
+  
+  peripost_mass_cluster_freq <- data.frame("year" = c(1, 2), rbind(mass_cluster_freq_2, mass_cluster_freq_3))
+  names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
 } else if(args[1] == "COGtriangles" & args[2] == "manualSeqClusters"){
   seq_clusters <- readRDS("Mass_Samples_accCodes.rds")
   intermed_gene_presence_absence_consensus <- readRDS(file = "intermed_gene_presence_absence_consensus.rds")
@@ -108,6 +126,12 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   mass_clusters <- length(unique(seq_clusters$SequenceCluster))
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
   output_filename <- "COGtriangles_manSeqClusters"
+  # process data with particle filter:
+  dt <- 1/36 # we assume that the generation time of Strep. pneumo is 1 month
+  # we have data from 2001, 2004, 2007, so we want 3 (years) * 12 (months) = 36 updates in-between
+  
+  peripost_mass_cluster_freq <- data.frame("year" = c(1, 2), rbind(mass_cluster_freq_2, mass_cluster_freq_3))
+  names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
 } else if(args[1] == "prev_COGtriangles" & args[2] == "manualSeqClusters"){
   seq_clusters <- readRDS("Mass_Samples_accCodes.rds")
   intermed_gene_presence_absence_consensus <- readRDS(file = "prev_mass_consensus_presence_absence.rds")
@@ -121,15 +145,15 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   mass_clusters <- length(unique(seq_clusters$SequenceCluster))
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
   output_filename <- "prev_COGtriangles_manSeqClusters"
-}
+  # process data with particle filter:
+  dt <- 1/36 # we assume that the generation time of Strep. pneumo is 1 month
+  # we have data from 2001, 2004, 2007, so we want 3 (years) * 12 (months) = 36 updates in-between
+  
+  peripost_mass_cluster_freq <- data.frame("year" = c(1, 2), rbind(mass_cluster_freq_2, mass_cluster_freq_3))
+  names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
+} 
 
 
-# process data with particle filter:
-dt <- 1/36 # we assume that the generation time of Strep. pneumo is 1 month
-# we have data from 2001, 2004, 2007, so we want 3 (years) * 12 (months) = 36 updates in-between
-
-peripost_mass_cluster_freq <- data.frame("year" = c(1, 2), rbind(mass_cluster_freq_2, mass_cluster_freq_3))
-names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
 
 fitting_mass_data <- mcstate::particle_filter_data(data = peripost_mass_cluster_freq,
                                                    time = "year",
