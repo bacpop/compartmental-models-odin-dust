@@ -677,7 +677,8 @@ fitting_closure_max_decode <- function(all_other_params, data1, data2){
 
 ga_fit_FindGenes_ggCPP_dec <- fitting_closure_max_decode(FindGenes_ggCPP_params, PP_mass_cluster_freq_2, PP_mass_cluster_freq_3)
 gann <- ga(type = "real-valued", fitness = ga_fit_FindGenes_ggCPP_dec, lower = rep(0, length(best_best_vec)), upper = rep(1,length(best_best_vec)), 
-           seed = 123, elitism = 50, maxiter = 50, popSize = 400, run = 30)
+           seed = 123, elitism = 200, maxiter = 5, popSize = 400, run = 5, pcrossover = 0.8, pmutation = 0.5)
+plot(gann)
 summary(gann)
 as.vector(t(apply(gann@solution, 1, decode2)))
 sum(as.vector(t(apply(gann@solution, 1, decode2))))/length(best_best_vec)
@@ -689,3 +690,67 @@ plot(sort(as.vector(gann@solution)))
 # but 0-1 vector has much better likelihood than real-valued vector (e.g. -827.3559 vs. -1316.802)
 # maybe it just makes sense to optimize around 0.5 which will results in 0 and 1 because of my rounding function?
 # still, -827 is much, much worse than my other "best gene vectors" --> run on cluster?
+
+
+# try optimising the positions that are 1, rather than the 0-1 vector
+decode3 <- function(x)
+{ 
+  x <- round(x)
+  y <- rep(0, length(best_best_vec))
+  y[x] <- 1
+  return(y)
+}
+
+fitting_closure_max_decode3 <- function(all_other_params, data1, data2){
+  null_fit_dfoptim_fl <- function(fit_params){
+    rnd_vect_full <- decode3(fit_params)
+    
+    all_other_params$delta_bool = rnd_vect_full
+    WFmodel_ggCPP <- WF$new(pars = all_other_params,
+                            time = 1,
+                            n_particles = 10L,
+                            n_threads = 4L,
+                            seed = 1L)
+    #n_particles <- 10L
+    #n_times <- 73
+    #x <- array(NA, dim = c(WFmodel_ggCPP$info()$len, n_particles, n_times))
+    
+    #for (t in seq_len(n_times)) {
+    #  x[ , , t] <- WFmodel_ggCPP$run(t)
+    #}
+    #time <- x[1, 1, ]
+    #x <- x[-1, , ]
+    simMeanggCPP2 <- rowMeans(WFmodel_ggCPP$run(36)[-1,])
+    simMeanggCPP3 <- rowMeans(WFmodel_ggCPP$run(72)[-1,])
+    combined_compare(simMeanggCPP2,data1) + combined_compare(simMeanggCPP3,data2) 
+    #- combined_compare(x[,1,37],data1) - combined_compare(x[,1,73],data2) 
+  }
+}
+ga_fit_FindGenes_ggCPP_dec3 <- fitting_closure_max_decode3(FindGenes_ggCPP_params, PP_mass_cluster_freq_2, PP_mass_cluster_freq_3)
+gann <- ga(type = "real-valued", fitness = ga_fit_FindGenes_ggCPP_dec3, lower = rep(1, round(0.1*length(best_best_vec))), upper = rep(length(best_best_vec),round(0.1*length(best_best_vec))), 
+           seed = 123, elitism = 50, maxiter = 20, popSize = 300, run = 20, pcrossover = 0.8, pmutation = 0.3, mutation = gareal_powMutation)
+plot(gann)
+summary(gann)
+as.vector(t(apply(gann@solution, 1, decode3)))
+
+# much better likelihood than other method
+# but no conversion / progress at all
+# same after 20 steps
+# implement my own mutation function?
+# this is the implementation of 
+# gareal_raMutation_R <- function(object, parent)
+#{
+#  mutate <- parent <- as.vector(object@population[parent,])
+#  n <- length(parent)
+#  j <- sample(1:n, size = 1)
+#  mutate[j] <- runif(1, object@lower[j], object@upper[j])
+#  return(mutate)
+#}
+plot(1:177,sort(gann@population[1,]))
+points(sort(gann@population[2,]))
+points(sort(gann@population[3,]))
+# try permutation algorithm next
+
+plot(1:1774,decode3(gann@population[1,]))
+
+plot(1:1774,rowSums(apply((gann@population), 1, decode3)))

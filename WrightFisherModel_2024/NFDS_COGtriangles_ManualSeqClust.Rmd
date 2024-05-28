@@ -3591,6 +3591,7 @@ colnames(barplot_PPxSero_data2) <- c("Cluster","Serotype","Value","category")
 results_path_22 <- "/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_05_22/"
 ga_results <- readRDS(paste(results_path_22, "FindGenesGA_results.rds",sep = ""))
 
+plot(ga_results)
 summary(ga_results)
 as.vector(t(apply(ga_results@solution, 1, decode2)))
 sum(as.vector(t(apply(ga_results@solution, 1, decode2))))/length(best_best_vec)

@@ -268,7 +268,7 @@ det_filter <- particle_deterministic$new(data = fitting_mass_data,
                                          model = WF,
                                          compare = combined_compare)
 
-n_steps <- 20000
+n_steps <- 10000
 n_burnin <- 0
 
 

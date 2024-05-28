@@ -216,7 +216,7 @@ det_filter <- particle_deterministic$new(data = fitting_mass_data,
                                          model = WF,
                                          compare = combined_compare)
 
-n_steps <- 1000
+n_steps <- 100
 n_burnin <- 0
 
 control <- mcstate::pmcmc_control(
@@ -227,6 +227,11 @@ control <- mcstate::pmcmc_control(
   adaptive_proposal = TRUE,
   n_chains = 4)
 det_pmcmc_run <- mcstate::pmcmc(mcmc_pars, det_filter, control = control)
+
+### this works fine here but not on the cluster...
+# throwing this error: "Error: Expected length 0 value for 'delta'"
+# really not sure why that is...
+
 processed_chains <- mcstate::pmcmc_thin(det_pmcmc_run, burnin = 250, thin = 1)
 parameter_mean_hpd <- apply(processed_chains$pars, 2, mean)
 print(parameter_mean_hpd)
