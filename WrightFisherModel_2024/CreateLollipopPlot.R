@@ -282,3 +282,39 @@ lollipop_cluster_freqs_2x2_VTandNVT_labelSero <- function(year = "year unknown",
     ylim(0, max(max(lollipop_data_1$model_1)))
   grid.arrange(lollipop_plot_1 + scale_y_continuous(limits = c(NA,0.22)) + scale_x_continuous(breaks = 1:length(data1), labels = 1:length(data1), sec.axis = dup_axis(name = "Serotypes", labels = SeroLabel))+ theme(plot.margin = unit(c(.5,0.5,1,0.5), "cm")), ncol = 1, nrow=1, top = textGrob(plot_title,gp=gpar(fontsize=20,font=3)))
 }
+
+# Creating a joint Lollipop plot for VTs and NVTs
+lollipop_cluster_freqs_VTandNVT_labelSero_flipped <- function(year = "year unknown", plot_title = "Generic Plot Title",data1, model_name_1 ="Model 1", model1, VT_vec, SeroLabel){
+  lollipop_data_1 <- data.frame(
+    x=1:length(data1),
+    model_1=model1,
+    data_1=as.numeric(data1),
+    Vaccine_Types <- sapply(VT_vec, function(x) if(x==1){"VT"}else{"NVT"})
+  )
+  # Change baseline
+  lollipop_plot_1 <- ggplot(lollipop_data_1) +
+    geom_segment( aes(x=x, xend=x, y=model_1, yend=data_1), color="grey") +
+    geom_vline(xintercept = 10, color = "white", linewidth = 1.5) +
+    geom_vline(xintercept = 20, color = "white", linewidth = 1.5) +
+    geom_vline(xintercept = 30, color = "white", linewidth = 1.5) +
+    geom_vline(xintercept = 40, color = "white", linewidth = 1.5) +
+    geom_vline(xintercept = 50, color = "white", linewidth = 1.5) +
+    geom_vline(xintercept = 60, color = "white", linewidth = 1.5) +
+    geom_point( aes(x=x, y=model_1, color=model_name_1, shape = Vaccine_Types), size=3, stroke = 2) +
+    geom_point( aes(x=x, y=data_1, color="Data",shape = Vaccine_Types), size=3,  stroke = 2) +
+    #geom_point( aes(x=x, y=model_1, color=model_name_1), size=5, alpha = 0.7) +
+    #geom_point( aes(x=x, y=data_1, color="Data"), size=5, alpha = 0.7) +
+    #geom_point(aes(x=x, y=model_2, color=model_name_2), size=5, alpha = 0.7) +
+    scale_color_manual(values = c("#E69F00","#56B4E9","#CC79A7"),
+                       guide  = guide_legend(), 
+                       name   = "Group") +
+    scale_shape_manual(values=c(19, 1))+
+    #theme_ipsum() +
+    theme(legend.position = c(.8,.8),legend.text = element_text(size = 20),legend.title = element_text(size = 20)) +
+    ggtitle(year) +
+    ylab("Frequency") +
+    xlab("Clusters") +
+    theme(axis.title  = element_text(size = 20), axis.text.y = element_text(size = 12), axis.text.x = element_text(size = 10), plot.title = element_text(size = 25,hjust = 0.5))  +
+    ylim(0, max(max(lollipop_data_1$model_1)))
+  grid.arrange(lollipop_plot_1 + scale_y_continuous(limits = c(NA,0.2))  + scale_x_continuous(breaks = 1:length(data1), labels = 1:length(data1), sec.axis = dup_axis(name = "Serotypes", labels = SeroLabel))+ theme(plot.margin = unit(c(.5,0.5,1,0.5), "cm"), axis.text.x.top = element_text(angle = 90, vjust = 0.5, hjust=0),axis.text.x.bottom = element_text(angle = 90, vjust = 0.5, hjust=1)), ncol = 1, nrow=1, top = textGrob(plot_title,gp=gpar(fontsize=20,font=3)))
+}

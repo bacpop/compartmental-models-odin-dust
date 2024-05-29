@@ -46,8 +46,6 @@ no_Nepal_PP <- length(unique(Nepal_PP$Cluster)) # 212 clusters!
 
 Nepal_seq_clusters_dict <- Nepal_PP$Cluster
 names(Nepal_seq_clusters_dict) <- Nepal_PP$Taxon
-
-saveRDS(Nepal_PP,"Nepal_PP.rds")
 ```
 
 # filter meta data by PopPUNK sequences (PopPUNK qc removed some of the sequences)
@@ -66,6 +64,16 @@ names(Nepal_meta_IDtoIndPP) <- Nepal_meta_dataPP$Lane_id
 
 ```{r}
 saveRDS(Nepal_meta_dataPP, "Nepal_meta_dataPP.rds")
+```
+
+```{r}
+# Add Serotype Information
+Nepal_Serotype_dict <- Nepal_meta_dataPP$Phenotypic_serotype
+names(Nepal_Serotype_dict) <- Nepal_meta_dataPP$Lane_id
+
+Nepal_PP$Serotype <- Nepal_Serotype_dict[Nepal_PP$Taxon]
+
+saveRDS(Nepal_PP,"Nepal_PP.rds")
 ```
 
 
