@@ -152,6 +152,7 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   mass_cluster_freq_11 <- readRDS(file = "Nepal_cluster_freqs_11.rds")
   mass_cluster_freq_12 <- readRDS(file = "Nepal_cluster_freqs_12.rds")
   mass_cluster_freq_13 <- readRDS(file = "Nepal_cluster_freqs_13.rds")
+  mass_cluster_freq_14 <- readRDS(file = "Nepal_cluster_freqs_14.rds")
   mass_VT <- readRDS(file = "Nepal_VT.rds")
   mass_clusters <- length(unique(seq_clusters$Cluster))
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)

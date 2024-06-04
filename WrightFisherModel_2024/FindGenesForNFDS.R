@@ -691,6 +691,29 @@ plot(sort(as.vector(gann@solution)))
 # maybe it just makes sense to optimize around 0.5 which will results in 0 and 1 because of my rounding function?
 # still, -827 is much, much worse than my other "best gene vectors" --> run on cluster?
 
+# cluster fit
+Cluster_ga <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_05_22/FindGenesGA_results.rds")
+plot(Cluster_ga)
+
+plot(1:1774,colMeans(Cluster_ga@population))
+
+plot(1:1774,(Cluster_ga@population[1,]))
+
+ga_sd <- rep(0, 1774)
+ga_sd <- apply(Cluster_ga@population,2,sd)
+
+plot(1:1774,             # Draw mean values
+     colMeans(Cluster_ga@population),
+     xlab = "Genes",
+     ylab = "Mean & Standard Deviation",
+     xaxt = "n",
+     ylim = c(min(colMeans(Cluster_ga@population) - ga_sd),
+              max((colMeans(Cluster_ga@population) + ga_sd))))
+segments(x0 = 1:1774,    # Add standard deviations
+         y0 = colMeans(Cluster_ga@population) - ga_sd,
+         x1 = 1:1774,
+         y1 = colMeans(Cluster_ga@population) + ga_sd)
+
 
 # try optimising the positions that are 1, rather than the 0-1 vector
 decode3 <- function(x)
@@ -753,4 +776,19 @@ points(sort(gann@population[3,]))
 
 plot(1:1774,decode3(gann@population[1,]))
 
-plot(1:1774,rowSums(apply((gann@population), 1, decode3)))
+plot(1:1774,rowMeans(apply((gann@population), 1, decode3)))
+
+local_ga_sd <- rep(0,1774)
+local_ga_sd <- apply(apply((gann@population), 1, decode3),1,sd)
+
+plot(1:1774,             # Draw mean values
+     rowMeans(apply((gann@population), 1, decode3)),
+     xlab = "Genes",
+     ylab = "Mean & Standard Deviation",
+     xaxt = "n",
+     ylim = c(min(rowMeans(apply((gann@population), 1, decode3)) - local_ga_sd),
+              max(rowMeans(apply((gann@population), 1, decode3)) + local_ga_sd)))
+segments(x0 = 1:1774,    # Add standard deviations
+         y0 = rowMeans(apply((gann@population), 1, decode3)) - local_ga_sd,
+         x1 = 1:1774,
+         y1 = rowMeans(apply((gann@population), 1, decode3)) + local_ga_sd)

@@ -3731,3 +3731,11 @@ lollipop_cluster_freqs_VTandNVT_labelSero(year = "2004", plot_title = "PopPUNK a
 lollipop_cluster_freqs_VTandNVT_labelSero(year = "2007", plot_title = "PopPUNK and ggCaller", data1 = PP_mass_cluster_freq_3/sum(PP_mass_cluster_freq_3), model_name_1 ="Model", model1 = simMeanggCPP3/sum(simMeanggCPP3), PP_mass_VT, SeroLabel = PP_serotype_comp)
 ```
 
+```{r}
+results_path_24 <- "/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_05_24/"
+Nepal_1stfit <- readRDS(paste(results_path_24,"Nepal_ggCaller_PopPUNK_det_pmcmc_run2.rds",sep = ""))
+Nepal_mcmc2 <- coda::as.mcmc(cbind(Nepal_1stfit$probabilities, Nepal_1stfit$pars))
+coda::effectiveSize(Nepal_mcmc2)
+summary(coda::as.mcmc(Nepal_mcmc2))
+```
+

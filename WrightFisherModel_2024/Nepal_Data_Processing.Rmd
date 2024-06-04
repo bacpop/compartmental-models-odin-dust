@@ -36,6 +36,8 @@ barplot(seq_no_per_year, xlab = "Sequencing Years", ylim = c(0, 250), ylab = "Se
 # No, I want all the years
 Nepal_time_points_selected <- Nepal_time_points
 Nepal_time_points_preVac <- Nepal_time_points[1:10]
+Nepal_time_points_selected <- 2005:2018
+Nepal_time_points_preVac <- Nepal_time_points[1:11]
 ```
 
 
@@ -145,8 +147,13 @@ Nepal_ggCaller_byYear_intermed <- vector(mode = "list", length = length(Nepal_ti
 
 for (i in 1:length(Nepal_time_points_selected)) {
   Nepal_ggCaller_year <- data.frame(matrix(0, nrow = sum(Nepal_gene_filter)+1,ncol = length(which(Nepal_meta_dataPP$Year==Nepal_time_points_selected[i]))+1))
-  Nepal_ggCaller_year <-  Nepal_ggCaller_byYear[[i]][c(1,which(Nepal_gene_filter==1)+1),]
-  Nepal_ggCaller_byYear_intermed[[i]] <- Nepal_ggCaller_year
+  if(ncol(Nepal_ggCaller_byYear[[i]])>1){
+    Nepal_ggCaller_year <-  Nepal_ggCaller_byYear[[i]][c(1,which(Nepal_gene_filter==1)+1),]
+  }
+  else{
+    Nepal_ggCaller_year <-  data.frame(matrix(Nepal_ggCaller_byYear[[6]][c(1,which(Nepal_gene_filter==1)+1),1], nrow = sum(Nepal_gene_filter)+1,ncol = 1))
+  }
+  Nepal_ggCaller_byYear_intermed[[i]] <- Nepal_ggCaller_year 
 }
 
 Nepal_ggCaller_intermed <- data.frame(matrix(0, nrow = sum(Nepal_gene_filter)+1,ncol = ncol(Nepal_ggCallerPP_bool)))
@@ -156,8 +163,10 @@ Nepal_ggCaller_intermed <-  Nepal_ggCallerPP_bool[c(1,which(Nepal_gene_filter==1
 Nepal_ggCaller_intermed_preVac <- data.frame(matrix(0, nrow = sum(Nepal_gene_filter)+1,ncol = (sum(unlist(lapply(Nepal_ggCaller_byYear_intermed,ncol))[1:length(Nepal_time_points_preVac)]) - length(Nepal_time_points_preVac) + 1)))
 col_count <- 2
 for (i in 1:length(Nepal_time_points_preVac)) {
-  Nepal_ggCaller_intermed_preVac[,(col_count:(col_count + ncol(Nepal_ggCaller_byYear_intermed[[i]])-1))] <- Nepal_ggCaller_byYear_intermed[[i]][,-1]
-  col_count <- col_count + ncol(Nepal_ggCaller_byYear_intermed[[i]])
+  if(ncol(Nepal_ggCaller_byYear_intermed[[i]])>1){
+    Nepal_ggCaller_intermed_preVac[,(col_count:(col_count + ncol(Nepal_ggCaller_byYear_intermed[[i]])-1))] <- Nepal_ggCaller_byYear_intermed[[i]][,-1]
+    col_count <- col_count + ncol(Nepal_ggCaller_byYear_intermed[[i]])
+  }
 }
 Nepal_ggCaller_intermed_preVac[,1] <-  Nepal_ggCaller_byYear_intermed[[1]][,1]
 ```
