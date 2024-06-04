@@ -4,12 +4,15 @@
 # pre-processed data files should be in the same folder
 
 ### Loading packages
-# install.packages("drat") # -- if you don't have drat installed
-# drat:::add("ncov-ic")
-# install.packages("odin.dust")
+#install.packages("drat") # -- if you don't have drat installed
+#drat:::add("ncov-ic")
+# install.packages("/nfs/research/jlees/leonie/WF_fitting_2024/Nepal/dust-master", repos = NULL, type="source")
+library(dust)
+install.packages("/nfs/research/jlees/leonie/WF_fitting_2024/Nepal/odin-1.5.10", repos = NULL, type="source")
+library(odin)
+#install.packages("odin.dust",repos = c("https://mrc-ide.r-universe.dev", "https://cloud.r-project.org"))
+#install.packages("odin.dust")
 library(odin.dust)
-#install.packages("mcstate")
-library(mcstate)
 #install.packages("mcstate")
 library(mcstate)
 library(coda)
@@ -27,7 +30,7 @@ if(length(args)==0){
 
 
 # read in model from file
-WF <- odin.dust::odin_dust("NFDS_Model.R")
+WF <- odin.dust::odin_dust("NFDS_Model.R", options = odin::odin_options(verbose = TRUE,workdir = "/nfs/research/jlees/leonie/WF_fitting_2024/Nepal"))
 
 # likelihood for fitting:
 ll_pois <- function(obs, model) {
@@ -214,8 +217,10 @@ make_transform <- function(p) {
   }
 }
 
-transform <- function(x) {
+transform <- function() {
   make_transform(complex_params)}
+
+transformed_params <- make_transform(complex_params)
 proposal_matrix <- diag(0.1,4) # the proposal matrix defines the covariance-variance matrix for a mult normal dist
 # here, all parameters are proposed independently. 
 # think about this, this might not actually be true
@@ -232,12 +237,14 @@ proposal_matrix <- diag(0.1,4) # the proposal matrix defines the covariance-vari
 mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", -0.597837, min = -1000, max = 0), mcstate::pmcmc_parameter("prop_f", 0.125, min = 0, max = 1), mcstate::pmcmc_parameter("m", -4, min = -1000, max = 0), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), proposal_matrix, make_transform(complex_params))
 mcmc_pars$initial()
 
+WF$public_methods$has_openmp()
 det_filter <- particle_deterministic$new(data = fitting_mass_data,
                                          model = WF,
                                          compare = combined_compare)
 
-n_steps <- 1000
+n_steps <- 2000
 n_burnin <- 0
+
 
 control <- mcstate::pmcmc_control(
   n_steps,
@@ -247,7 +254,7 @@ control <- mcstate::pmcmc_control(
   adaptive_proposal = TRUE,
   n_chains = 4)
 det_pmcmc_run <- mcstate::pmcmc(mcmc_pars, det_filter, control = control)
-processed_chains <- mcstate::pmcmc_thin(det_pmcmc_run, burnin = 250, thin = 1)
+processed_chains <- mcstate::pmcmc_thin(det_pmcmc_run, burnin = 500, thin = 1)
 parameter_mean_hpd <- apply(processed_chains$pars, 2, mean)
 print(parameter_mean_hpd)
 
@@ -263,13 +270,15 @@ print("det_mcmc_1 mean log likelihood")
 mean(processed_chains$probabilities[,2])
 det_proposal_matrix <- cov(processed_chains$pars)
 #det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0.075, max = 0.22), mcstate::pmcmc_parameter("sigma_w", 0.05, min = 0.000001, max = 0.0749), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 0.2), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 0.5)), det_proposal_matrix, make_transform(complex_params))
-det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", parameter_mean_hpd[1], min = -1000, max = 0), mcstate::pmcmc_parameter("prop_f", parameter_mean_hpd[2], min = 0, max = 1),mcstate::pmcmc_parameter("m", parameter_mean_hpd[3], min = -1000, max = 0), mcstate::pmcmc_parameter("v", parameter_mean_hpd[4], min = 0, max = 1)), det_proposal_matrix, make_transform(complex_params))
+det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", parameter_mean_hpd[1], min = -1000, max = 0), mcstate::pmcmc_parameter("prop_f", parameter_mean_hpd[2], min = 0, max = 1),mcstate::pmcmc_parameter("m", parameter_mean_hpd[3], min = -1000, max = 0), mcstate::pmcmc_parameter("v", parameter_mean_hpd[4], min = 0, max = 1)), det_proposal_matrix, transformed_params)
 
-det_filter <- particle_deterministic$new(data = fitting_mass_data,
-                                         model = WF,
-                                         compare = combined_compare)
+filter <- mcstate::particle_filter$new(data = fitting_mass_data,
+                                       model = WF,
+                                       n_particles = 96,
+                                       compare = combined_compare,
+                                       n_threads = 32)
 
-n_steps <- 10000
+n_steps <- 5000
 n_burnin <- 0
 
 
@@ -277,21 +286,43 @@ control <- mcstate::pmcmc_control(
   n_steps,
   save_state = TRUE, 
   save_trajectories = TRUE,
-  progress = TRUE,
-  adaptive_proposal = TRUE,
-  n_chains = 4)
-det_pmcmc_run2 <- mcstate::pmcmc(det_mcmc_pars, det_filter, control = control)
+  progress = TRUE, 
+  n_chains = 2)
+
+stoch_pmcmc_run2 <- mcstate::pmcmc(det_mcmc_pars, filter, control = control)
 par(mfrow = c(1,1))
 
-det_mcmc2 <- coda::as.mcmc(cbind(det_pmcmc_run2$probabilities, det_pmcmc_run2$pars))
+stoch_mcmc2 <- coda::as.mcmc(cbind(stoch_pmcmc_run2$probabilities, stoch_pmcmc_run2$pars))
 
-pdf(file = paste(output_filename,"det_mcmc2.pdf",sep = "_"),   # The directory you want to save the file in
+
+
+#det_filter <- particle_deterministic$new(data = fitting_mass_data,
+#                                         model = WF,
+#                                         compare = combined_compare, n_threads = 4)
+
+#n_steps <- 1000
+#n_burnin <- 0
+
+
+#control <- mcstate::pmcmc_control(
+#  n_steps,
+#  save_state = TRUE, 
+#  save_trajectories = TRUE,
+#  progress = TRUE,
+#  adaptive_proposal = TRUE,
+#  n_chains = 4,  n_threads_total = 16)
+#det_pmcmc_run2 <- mcstate::pmcmc(det_mcmc_pars, det_filter, control = control)
+#par(mfrow = c(1,1))
+
+#det_mcmc2 <- coda::as.mcmc(cbind(det_pmcmc_run2$probabilities, det_pmcmc_run2$pars))
+
+pdf(file = paste(output_filename,"stoch_mcmc2.pdf",sep = "_"),   # The directory you want to save the file in
     width = 6, # The width of the plot in inches
     height = 12)
-plot(det_mcmc2)
+plot(stoch_mcmc2)
 dev.off()
 
-processed_chains <- mcstate::pmcmc_thin(det_pmcmc_run2, burnin = 1000, thin = 1)
+processed_chains <- mcstate::pmcmc_thin(stoch_pmcmc_run2, burnin = 500, thin = 1)
 parameter_mean_hpd <- apply(processed_chains$pars, 2, mean)
 parameter_mean_hpd
 print("det_mcmc_2 final log likelihood")
@@ -299,4 +330,4 @@ processed_chains$probabilities[nrow(processed_chains$probabilities),2]
 print("det_mcmc_2 mean log likelihood")
 mean(processed_chains$probabilities[,2])
 
-saveRDS(det_pmcmc_run2, paste(output_filename, "_det_pmcmc_run2.rds", sep = ""))
+saveRDS(stoch_pmcmc_run2, paste(output_filename, "_stoch_pmcmc_run2.rds", sep = ""))
