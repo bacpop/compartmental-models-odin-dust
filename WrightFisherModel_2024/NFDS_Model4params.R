@@ -22,13 +22,13 @@ freq[] <- sum(gene_freq[i,1:species_no]) / Pop_size
 pi_f_freq[,] <- if ((delta[i] <= prop_f * gene_no)) Genotypes[i,j] * (eq[i] - freq[i]) else 0
 pi_f_genotypes[] <- sum(pi_f_freq[1:gene_no,i])
 
-pi_w_freq[,] <-  if ((delta[i] <= prop_f * gene_no)) 0 else Genotypes[i,j] * (eq[i] - freq[i])
-pi_w_genotypes[] <- sum(pi_w_freq[1:gene_no,i])
+#pi_w_freq[,] <-  if ((delta[i] <= prop_f * gene_no)) 0 else Genotypes[i,j] * (eq[i] - freq[i])
+#pi_w_genotypes[] <- sum(pi_w_freq[1:gene_no,i])
 
 # Genotype specific probability to produce offspring
 # those are the individuals' probabilities multiplied by the number of individuals that have this genotype
 #probs[] <- ((1 + sigma_f)^pi_f_genotypes[i] * (1 + sigma_w)^pi_w_genotypes[i]) * Pop[i] * (1- (as.integer(time >= vacc_time) * vaccTypes[i] * v))
-probs[] <- ((1 + exp(sigma_f))^pi_f_genotypes[i] * (1 + exp(sigma_w))^pi_w_genotypes[i]) * Pop[i] * (1- (as.integer(time >= vacc_time) * vaccTypes[i] * v))
+probs[] <- (1 + exp(sigma_f))^pi_f_genotypes[i] * Pop[i] * (1- (as.integer(time >= vacc_time) * vaccTypes[i] * v))
 
 
 
@@ -66,7 +66,7 @@ Pop_ini[] <- user() # initial frequency of Genotypes
 Pop_eq[] <- user()
 capacity <- user()
 sigma_f <- user()
-sigma_w <- user()
+#sigma_w <- user()
 prop_f <- user()
 delta[] <- user()
 m <- user() # migration rate
@@ -87,8 +87,8 @@ dim(gene_eq) <- c(gene_no, species_no) #frequency of genes at equilibrium
 dim(eq) <- gene_no
 dim(pi_f_freq) <- c(gene_no, species_no)
 dim(pi_f_genotypes) <- species_no
-dim(pi_w_freq) <- c(gene_no, species_no)
-dim(pi_w_genotypes) <- species_no
+#dim(pi_w_freq) <- c(gene_no, species_no)
+#dim(pi_w_genotypes) <- species_no
 dim(delta) <- gene_no
 #dim(delta_bool) <- gene_no
 #dim(FitnessMatrix) <- c(gene_no,species_no) # a matrix that stores the presence and the fitness for each gene and genotype

@@ -240,10 +240,11 @@ for(j in 1:length(Nepal_time_points_selected)){
     Nepal_cluster_freqs[[j]][i] <- length(which(Nepal_meta_dataPP[Nepal_meta_IDtoIndPP[Nepal_PP[Nepal_PP$Cluster == i,"Taxon"]],]$Year==Nepal_time_points_selected[j]))
   }
 }
+Nepal_cluster_freqs[[6]] <- rep(NA, no_Nepal_PP)
 # 901 data points in total
 Nepal_cluster_freqs_preVac <- rep(0, no_Nepal_PP)
 for (i in 1:length(Nepal_time_points_preVac)) {
-  Nepal_cluster_freqs_preVac <- Nepal_cluster_freqs_preVac + Nepal_cluster_freqs[[i]]
+  Nepal_cluster_freqs_preVac <- Nepal_cluster_freqs_preVac + replace(Nepal_cluster_freqs[[i]],which(is.na(Nepal_cluster_freqs[[i]])),0)
 }
 
 for (i in 1:length(Nepal_time_points_selected)) {
