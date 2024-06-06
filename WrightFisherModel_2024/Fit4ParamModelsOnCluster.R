@@ -277,7 +277,7 @@ det_filter <- particle_deterministic$new(data = fitting_mass_data,
                                         model = WF,
                                          compare = combined_compare)
 
-n_steps <- 10000
+n_steps <- 2000
 n_burnin <- 0
 
 
@@ -306,10 +306,10 @@ print("det_mcmc_2 mean log likelihood")
 mean(processed_chains$probabilities[,2])
 det_proposal_matrix <- cov(processed_chains$pars)
 
-Nepal_2ndfit <- readRDS("Nepal_ggCaller_PopPUNK_stoch_pmcmc_run2.rds")
-Nepal_mcmc2 <- coda::as.mcmc(cbind(Nepal_2ndfit$probabilities, Nepal_2ndfit$pars))
-processed_chains <- mcstate::pmcmc_thin(Nepal_2ndfit, burnin = 100, thin = 1)
-det_proposal_matrix <- cov(processed_chains$pars)
+#Nepal_2ndfit <- readRDS("Nepal_ggCaller_PopPUNK_stoch_pmcmc_run2.rds")
+#Nepal_mcmc2 <- coda::as.mcmc(cbind(Nepal_2ndfit$probabilities, Nepal_2ndfit$pars))
+#processed_chains <- mcstate::pmcmc_thin(Nepal_2ndfit, burnin = 100, thin = 1)
+#det_proposal_matrix <- cov(processed_chains$pars)
 
 
 #det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0.075, max = 0.22), mcstate::pmcmc_parameter("sigma_w", 0.05, min = 0.000001, max = 0.0749), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 0.2), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 0.5)), det_proposal_matrix, make_transform(complex_params))
@@ -318,7 +318,7 @@ det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("si
 
 filter <- mcstate::particle_filter$new(data = fitting_mass_data,
                                        model = WF,
-                                       n_particles = 192,
+                                       n_particles = 384,
                                        compare = combined_compare,
                                        n_threads = 48)
 
@@ -345,7 +345,7 @@ pdf(file = paste(output_filename,"stoch_mcmc2.pdf",sep = "_"),   # The directory
 plot(stoch_mcmc2)
 dev.off()
 
-processed_chains <- mcstate::pmcmc_thin(stoch_pmcmc_run2, burnin = 100, thin = 1)
+processed_chains <- mcstate::pmcmc_thin(stoch_pmcmc_run2, burnin = 500, thin = 1)
 parameter_mean_hpd <- apply(processed_chains$pars, 2, mean)
 parameter_mean_hpd
 print("det_mcmc_2 final log likelihood")

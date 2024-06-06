@@ -3740,8 +3740,8 @@ summary(coda::as.mcmc(Nepal_mcmc2))
 ```
 
 ```{r}
-results_path_6_5 <- "/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_06_05_2/"
-Nepal_2ndfit <- readRDS(paste(results_path_6_5,"Nepal_ggCaller_PopPUNK_stoch_pmcmc_run2.rds",sep = ""))
+results_path_6_6 <- "/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_06_06/run2/"
+Nepal_2ndfit <- readRDS(paste(results_path_6_6,"Nepal_ggCaller_PopPUNK_stoch_pmcmc_run2.rds",sep = ""))
 Nepal_mcmc2 <- coda::as.mcmc(cbind(Nepal_2ndfit$probabilities, Nepal_2ndfit$pars))
 coda::effectiveSize(Nepal_mcmc2)
 summary(coda::as.mcmc(Nepal_mcmc2))

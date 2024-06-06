@@ -1,5 +1,5 @@
 ---
-title: "Nepal Data Processing"
+title: "Navajo Data Processing"
 output: html_notebook
 editor_options: 
   chunk_output_type: console
@@ -11,44 +11,46 @@ path_to_data <- "~/Documents/PhD_Project/Data/"
 
 # read in meta data (esp. serotype, sequencing year)
 ```{r}
-Nepal_meta_data <- read.csv(paste(path_to_data, "StrepPneumo_Nepal/monocle-metadata-from-sample-download.csv",sep = ""))
-Nepal_time_points <- sort(unique(Nepal_meta_data$Year))
+library(readxl)
+Navajo_meta_data <- read_excel(paste(path_to_data, "StrepPneumo_Navajo/metadata.xlsx", sep = ""))
+Navajo_time_points <- sort(unique(Navajo_meta_data$Year))
 
-Nepal_SeqYear_dict <- Nepal_meta_data$Year
-names(Nepal_SeqYear_dict) <- Nepal_meta_data$Lane_id
+Navajo_SeqYear_dict <- Navajo_meta_data$Year
+names(Navajo_SeqYear_dict) <- Navajo_meta_data$Accession
 
-Nepal_meta_IDtoInd <- 1:nrow(Nepal_meta_data)
-names(Nepal_meta_IDtoInd) <- Nepal_meta_data$Lane_id
+Navajo_meta_IDtoInd <- 1:nrow(Navajo_meta_data)
+names(Navajo_meta_IDtoInd) <- Navajo_meta_data$Accession
 ```
 
 
 ```{r}
-seq_no_per_year <- rep(0, length(Nepal_time_points))
-names(seq_no_per_year) <- Nepal_time_points
-for (i in 1:length(Nepal_time_points)) {
-  seq_no_per_year[i] <- length(which(Nepal_meta_data$Year==Nepal_time_points[i]))
+Navajo_time_seq <- Navajo_time_points[1]:Navajo_time_points[length(Navajo_time_points)]
+seq_no_per_year <- rep(0, length(Navajo_time_seq))
+names(seq_no_per_year) <- Navajo_time_seq
+for (i in 1:length(Navajo_time_seq)) {
+  seq_no_per_year[i] <- length(which(Navajo_meta_data$Year==Navajo_time_seq[i]))
 }
-barplot(seq_no_per_year, xlab = "Sequencing Years", ylim = c(0, 250), ylab = "Sequence Counts")
-# PCV10 was introduced in 2015
-# number of sequences fluctuates a lot from year to year. take just 2009, 2012, 2014, 2017, 2018?
-# or summaries the years somehow?
-#Nepal_time_points_selected <- Nepal_time_points[c(5,7,9,12,13)]
-# No, I want all the years
-Nepal_time_points_selected <- Nepal_time_points
-Nepal_time_points_preVac <- Nepal_time_points[1:10]
-Nepal_time_points_selected <- 2005:2018
-Nepal_time_points_preVac <- Nepal_time_points[1:11]
+barplot(seq_no_per_year, xlab = "Sequencing Years", ylab = "Sequence Counts")
+# PCV7 was introduced in 2000
+# PCV13 was introduced in 2010
+# according to Azarian et al. (2018) https://doi.org/10.1371/journal.ppat.1006966
+# 
+Navajo_time_points_selected <- Navajo_time_seq
+Navajo_time_points_preVac1 <- Navajo_time_seq[1:3]
+Navajo_time_points_preVac2 <- Navajo_time_seq[1:13]
 ```
 
 
 # read in PopPUNK results
 ```{r}
-Nepal_PP <- read.csv(paste(path_to_data, "StrepPneumo_Nepal/PopPUNKwithStandardDB/poppunk_clusters_clusters.csv",sep = ""))
-no_Nepal_PP <- length(unique(Nepal_PP$Cluster)) # 212 clusters!
+Navajo_PP <- read.csv(paste(path_to_data, "StrepPneumo_Navajo/poppunk_clusters/poppunk_clusters_clusters.csv",sep = ""))
+no_Navajo_PP <- length(unique(Navajo_PP$Cluster)) #  57 clusters!
 
-Nepal_seq_clusters_dict <- Nepal_PP$Cluster
-names(Nepal_seq_clusters_dict) <- Nepal_PP$Taxon
+Navajo_seq_clusters_dict <- Navajo_PP$Cluster
+names(Navajo_seq_clusters_dict) <- Navajo_PP$Taxon
 ```
+
+### the rest still has to be adapted to Navajo dataset
 
 # filter meta data by PopPUNK sequences (PopPUNK qc removed some of the sequences)
 ```{r}
