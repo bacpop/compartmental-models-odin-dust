@@ -43,8 +43,21 @@ Nepal_time_points_preVac <- Nepal_time_points[1:11]
 
 # read in PopPUNK results
 ```{r}
-Nepal_PP <- read.csv(paste(path_to_data, "StrepPneumo_Nepal/PopPUNKwithStandardDB/poppunk_clusters_clusters.csv",sep = ""))
-no_Nepal_PP <- length(unique(Nepal_PP$Cluster)) # 212 clusters!
+PP_all <- read.csv(paste(path_to_data, "StrepPneumo_Nepal/PopPUNKwithStandardDB/poppunk_clusters_clusters.csv",sep = ""))
+# since Nepal was in the database, I had to run PopPUNK with --write-references
+# so now I need to filter this dataset to only have the real Nepal sequences
+PP_taxon_ind_dict <- 1:nrow(PP_all)
+names(PP_taxon_ind_dict) <- PP_all$Taxon
+
+PP_is_Nepal_dict <- rep(FALSE,nrow(PP_all))
+names(PP_is_Nepal_dict) <- PP_all$Taxon
+
+for (i in 1:length(Nepal_meta_data$Lane_id)) {
+  PP_is_Nepal_dict[Nepal_meta_data$Lane_id[i]] <- TRUE
+}
+Nepal_PP <- PP_all[PP_is_Nepal_dict,]
+no_Nepal_PP <- length(unique(Nepal_PP$Cluster)) 
+# 212 clusters! --> now only 161
 
 Nepal_seq_clusters_dict <- Nepal_PP$Cluster
 names(Nepal_seq_clusters_dict) <- Nepal_PP$Taxon
