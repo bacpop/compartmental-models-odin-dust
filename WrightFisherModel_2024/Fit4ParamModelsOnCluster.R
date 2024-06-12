@@ -30,10 +30,10 @@ if(length(args)==0){
 
 
 # read in model from file
-WF <- odin.dust::odin_dust("NFDS_Model4params.R")
+WF <- odin.dust::odin_dust("NFDS_Model.R", options=odin_options(verbose = TRUE))
 
 # likelihood for fitting:
-ll_pois <- function(obs, model) {
+ll_pois <<- function(obs, model) {
   exp_noise <- 1e6
   
   if (is.na(obs)) {
@@ -52,12 +52,35 @@ combined_compare <- function(state, observed, pars = NULL) {
   #model_size = 15000
   data_size <- sum(unlist(observed))
   model_size = sum(unlist(state))
-  
-  for (i in 1:mass_clusters){
-    result <- result + ll_pois(observed[[as.character(i)]], state[1+i, , drop = TRUE]/model_size * data_size)
+  exp_noise <- 1e6
+  for (i in 1:(nrow(state)-1)){
+    
+    
+    if (is.na(observed[[as.character(i)]])) {
+      # Creates vector of zeros in ll with same length, if no data
+      ll_obs <- numeric(length( state[1+i, , drop = TRUE]/model_size * data_size))
+    } else {
+      lambda <-  state[1+i, , drop = TRUE]/model_size * data_size + rexp(n = length( state[1+i, , drop = TRUE]/model_size * data_size), rate = exp_noise)
+      ll_obs <- dpois(x = observed[[as.character(i)]], lambda = lambda, log = TRUE)
+    }
+    
+    result <- result + ll_obs
   }
   result
 }
+
+#combined_compare <- function(state, observed, pars = NULL) {
+#  result <- 0
+#data_size <- sum(mass_cluster_freq_1)
+#model_size = 15000
+#  data_size <- sum(unlist(observed))
+#  model_size = sum(unlist(state))
+
+#  for (i in 1:(nrow(state)-1)){
+#    result <- result + ll_pois(observed[[as.character(i)]], state[1+i, , drop = TRUE]/model_size * data_size)
+#  }
+#  result
+#}
 
 if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   seq_clusters <- readRDS("PopPUNK_clusters.rds")
@@ -166,6 +189,16 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
 }
 
+threads_total <- 1
+if(length(args)>=3){
+  print(paste("Setting the number of total threads to ", args[3]))
+  threads_total <- args[3]
+}
+worker_nodes <- 1
+if(length(args)==4){
+  print(paste("Setting the number of workers to ", args[4]))
+  threads_total <- args[4]
+}
 
 fitting_mass_data <- mcstate::particle_filter_data(data = peripost_mass_cluster_freq,
                                                    time = "year",
@@ -177,9 +210,9 @@ det_filter <- particle_deterministic$new(data = fitting_mass_data,
                                          compare = combined_compare)
 
 # Using MCMC to infer parameters
-#pmcmc_sigma_f <- mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0, max = 1)
+pmcmc_sigma_f <- mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0, max = 1)
 #pmcmc_sigma_w <- 0
-#pmcmc_sigma_w <- -1000
+pmcmc_sigma_w <- -1000
 pmcmc_prop_f <- mcstate::pmcmc_parameter("prop_f", 0.2, min = 0, max = 1)
 pmcmc_m <- mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 1)
 pmcmc_v <- mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)
@@ -190,6 +223,7 @@ gene_no <- nrow(intermed_gene_presence_absence_consensus_matrix)
 Pop_ini <- model_start_pop
 Pop_eq <- model_start_pop
 Genotypes <- intermed_gene_presence_absence_consensus_matrix
+#Genotypes_vec <- as.double(c(intermed_gene_presence_absence_consensus_matrix))
 
 capacity <- sum(model_start_pop)
 delta <- delta_ranking
@@ -198,28 +232,48 @@ vacc_time <- 0
 dt <- 1/36
 migVec <- avg_cluster_freq
 
-complex_params <- c(Pop_ini, Pop_eq, Genotypes, capacity, delta, vaccTypes, species_no, gene_no, vacc_time, dt, migVec)
+#complex_params = c(species_no, Pop_ini, Pop_eq, Genotypes, capacity, delta, vaccTypes, gene_no, vacc_time, dt, migVec, pmcmc_sigma_w)
 
-make_transform <- function(p) {
-  function(theta){
-    c(list(Pop_ini = p[1:mass_clusters],
-           Pop_eq = p[(mass_clusters +1) : (mass_clusters + mass_clusters)],
-           Genotypes = matrix(p[(mass_clusters + mass_clusters + 1): ((mass_clusters + mass_clusters + 1) + (gene_no * species_no) - 1)], nrow = gene_no, ncol = species_no),
-           capacity = p[((2 * mass_clusters + 1) + (gene_no * species_no) - 1) + 1],
-           delta = p[(((2 * mass_clusters + 1) + (gene_no * species_no) - 1) + 2) : (((2 * mass_clusters + 1) + (gene_no * species_no) - 1) + 2 + gene_no -1)],
-           vaccTypes = p[(((2 * mass_clusters + 1) + (gene_no * species_no) - 1) + 2 + gene_no) : ((((2 * mass_clusters + 1) + (gene_no * species_no) - 1) + 2 + gene_no) + no_clusters -1)],
-           species_no = p[(((2 * mass_clusters + 1) + (gene_no * species_no) - 1) + 2 + gene_no) + no_clusters],
-           gene_no = p[(((2 * mass_clusters + 1) + (gene_no * species_no) - 1) + 2 + gene_no) + no_clusters + 1],
-           vacc_time = p[(((2 * mass_clusters + 1) + (gene_no * species_no) - 1) + 2 + gene_no) + no_clusters + 2],
-           dt = p[(((2 * mass_clusters + 1) + (gene_no * species_no) - 1) + 2 + gene_no) + no_clusters + 3],
-           migVec = p[((((2 * mass_clusters + 1) + (gene_no * species_no) - 1) + 2 + gene_no) + no_clusters + 4):((((2 * mass_clusters + 1) + (gene_no * species_no) - 1) + 2 + gene_no) + no_clusters + 4 + species_no - 1)]), as.list(theta))
+#make_transform <- function(p) {
+#  function(theta){
+#    c(list(species_no = p[1],
+#           Pop_ini = p[2:(species_no +1)],
+#           Pop_eq = p[(species_no +2) : (species_no + species_no +1)],
+#           Genotypes = matrix(p[(species_no + species_no + 1 +1): ((species_no + species_no + 1) + (gene_no * species_no) - 1 +1)], nrow = gene_no, ncol = species_no),
+#           capacity = p[((2 * species_no + 1 +1) + (gene_no * species_no) - 1) + 1 +1],
+#           delta = p[(((2 * species_no + 1) + (gene_no * species_no) - 1) + 2 +1) : (((2 * species_no + 1) + (gene_no * species_no) - 1) + 2 + gene_no -1 +1)],
+#           vaccTypes = p[(((2 * species_no + 1) + (gene_no * species_no) - 1) + 2 + gene_no +1) : ((((2 * species_no + 1) + (gene_no * species_no) - 1) + 2 + gene_no) + no_clusters -1 +1)],
+#           gene_no = p[(((2 * species_no + 1) + (gene_no * species_no) - 1) + 2 + gene_no) + no_clusters + 1],
+#           vacc_time = p[(((2 * species_no + 1) + (gene_no * species_no) - 1) + 2 + gene_no) + no_clusters + 2],
+#           dt = p[(((2 * species_no + 1) + (gene_no * species_no) - 1) + 2 + gene_no) + no_clusters + 3],
+#           migVec = p[((((2 * species_no + 1) + (gene_no * species_no) - 1) + 2 + gene_no) + no_clusters + 4):((((2 * species_no + 1) + (gene_no * species_no) - 1) + 2 + gene_no) + no_clusters + 4 + species_no - 1)],
+#           sigma_w = p[((((2 * species_no + 1) + (gene_no * species_no) - 1) + 2 + gene_no) + no_clusters + 4 + species_no - 1 + 1)]), as.list(theta))
+#  }
+#}
+
+complex_params = list(species_no = species_no, Pop_ini = Pop_ini, Pop_eq = Pop_eq, Genotypes = intermed_gene_presence_absence_consensus[-1,-1], capacity = capacity, delta = delta, vaccTypes = vaccTypes, gene_no = gene_no, vacc_time = vacc_time, dt = dt, migVec = migVec, sigma_w = pmcmc_sigma_w)
+
+
+
+make_transform <- function(m) {
+  function(theta) {
+    as_double_mtx <- function(x){
+      sapply(x,as.double)
+    }
+    c(lapply(m, as_double_mtx), as.list(theta))
   }
+}
+
+# as_double_mtx nice idea but can't find the function in parallelisation
+
+take_list <- function(x){
+  print(x$Genotype)
 }
 
 transform <- function() {
   make_transform(complex_params)}
 
-transformed_params <- make_transform(complex_params)
+transformed_params <<- make_transform(complex_params)
 proposal_matrix <- diag(0.1,4) # the proposal matrix defines the covariance-variance matrix for a mult normal dist
 # here, all parameters are proposed independently. 
 # think about this, this might not actually be true
@@ -241,7 +295,7 @@ det_filter <- particle_deterministic$new(data = fitting_mass_data,
                                          model = WF,
                                          compare = combined_compare)
 
-n_steps <- 1000
+n_steps <- 25
 n_burnin <- 0
 
 
@@ -251,11 +305,9 @@ control <- mcstate::pmcmc_control(
   save_trajectories = TRUE,
   progress = TRUE,
   adaptive_proposal = TRUE,
-  n_chains = 1)
+  n_chains = 2)
 det_pmcmc_run <- mcstate::pmcmc(mcmc_pars, det_filter, control = control)
-# removing pi_w led to speed up from 38 sec to 25 sec for 100 steps (34% speed up)
-# change from NFDS_Model to calculating if ((delta[i] <= prop_f * gene_no)) Genotypes[i,j] * (eq[i] - freq[i]) else 0 directly did not lead to speed up
-processed_chains <- mcstate::pmcmc_thin(det_pmcmc_run, burnin = 250, thin = 1)
+processed_chains <- mcstate::pmcmc_thin(det_pmcmc_run, burnin = 10, thin = 1)
 parameter_mean_hpd <- apply(processed_chains$pars, 2, mean)
 print(parameter_mean_hpd)
 
@@ -271,10 +323,10 @@ print("det_mcmc_1 mean log likelihood")
 mean(processed_chains$probabilities[,2])
 det_proposal_matrix <- cov(processed_chains$pars)
 #det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0.075, max = 0.22), mcstate::pmcmc_parameter("sigma_w", 0.05, min = 0.000001, max = 0.0749), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 0.2), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 0.5)), det_proposal_matrix, make_transform(complex_params))
-det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", parameter_mean_hpd[1], min = -1000, max = 0), mcstate::pmcmc_parameter("prop_f", parameter_mean_hpd[2], min = 0, max = 1),mcstate::pmcmc_parameter("m", parameter_mean_hpd[3], min = -1000, max = 0), mcstate::pmcmc_parameter("v", parameter_mean_hpd[4], min = 0, max = 1)), det_proposal_matrix, transformed_params)
+det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", parameter_mean_hpd[1], min = -1000, max = 0), mcstate::pmcmc_parameter("prop_f", parameter_mean_hpd[2], min = 0, max = 1),mcstate::pmcmc_parameter("m", parameter_mean_hpd[3], min = -1000, max = 0), mcstate::pmcmc_parameter("v", parameter_mean_hpd[4], min = 0, max = 1)), det_proposal_matrix, make_transform(complex_params))
 
 det_filter <- particle_deterministic$new(data = fitting_mass_data,
-                                        model = WF,
+                                         model = WF,
                                          compare = combined_compare)
 
 n_steps <- 2000
@@ -287,7 +339,7 @@ control <- mcstate::pmcmc_control(
   save_trajectories = TRUE,
   progress = TRUE,
   adaptive_proposal = TRUE,
-  n_chains = 1)
+  n_chains = 4)
 det_pmcmc_run2 <- mcstate::pmcmc(det_mcmc_pars, det_filter, control = control)
 processed_chains <- mcstate::pmcmc_thin(det_pmcmc_run2, burnin = 500, thin = 1)
 parameter_mean_hpd <- apply(processed_chains$pars, 2, mean)
@@ -305,35 +357,40 @@ processed_chains$probabilities[nrow(processed_chains$probabilities),2]
 print("det_mcmc_2 mean log likelihood")
 mean(processed_chains$probabilities[,2])
 det_proposal_matrix <- cov(processed_chains$pars)
-
-#Nepal_2ndfit <- readRDS("Nepal_ggCaller_PopPUNK_stoch_pmcmc_run2.rds")
-#Nepal_mcmc2 <- coda::as.mcmc(cbind(Nepal_2ndfit$probabilities, Nepal_2ndfit$pars))
-#processed_chains <- mcstate::pmcmc_thin(Nepal_2ndfit, burnin = 100, thin = 1)
-#det_proposal_matrix <- cov(processed_chains$pars)
-
-
 #det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0.075, max = 0.22), mcstate::pmcmc_parameter("sigma_w", 0.05, min = 0.000001, max = 0.0749), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 0.2), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 0.5)), det_proposal_matrix, make_transform(complex_params))
-det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", parameter_mean_hpd[1], min = -1000, max = 0), mcstate::pmcmc_parameter("prop_f", parameter_mean_hpd[2], min = 0, max = 1),mcstate::pmcmc_parameter("m", parameter_mean_hpd[3], min = -1000, max = 0), mcstate::pmcmc_parameter("v", parameter_mean_hpd[4], min = 0, max = 1)), det_proposal_matrix, transformed_params)
+det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", parameter_mean_hpd[1], min = -1000, max = 0), mcstate::pmcmc_parameter("prop_f", parameter_mean_hpd[2], min = 0, max = 1),mcstate::pmcmc_parameter("m", parameter_mean_hpd[3], min = -1000, max = 0), mcstate::pmcmc_parameter("v", parameter_mean_hpd[4], min = 0, max = 1)), det_proposal_matrix, make_transform(complex_params))
 
 
 filter <- mcstate::particle_filter$new(data = fitting_mass_data,
                                        model = WF,
-                                       n_particles = 384,
+                                       n_particles = 96,
                                        compare = combined_compare,
-                                       n_threads = 48)
+                                       n_threads = 8)
 
-n_steps <- 1000
+n_steps <- 50
 n_burnin <- 0
 
+control <- mcstate::pmcmc_control(n_steps, n_chains = 4, n_workers = 2,save_state = TRUE,
+                                  save_trajectories = TRUE,
+                                  progress = TRUE,
+                                  n_threads_total = 1)
+pmcmc_run <- mcstate::pmcmc(mcmc_pars, filter, control = control)
 
 control <- mcstate::pmcmc_control(
   n_steps,
   save_state = TRUE, 
   save_trajectories = TRUE,
   progress = TRUE, 
-  n_chains = 1)
+  n_chains = 2, n_workers = worker_nodes, 
+  n_threads_total = threads_total)
+#control <- mcstate::pmcmc_control(
+#  n_steps,
+#  save_state = TRUE, 
+#  save_trajectories = TRUE,
+#  progress = TRUE, 
+#  n_chains = 2)
 
-stoch_pmcmc_run2 <- mcstate::pmcmc(det_mcmc_pars, filter, control = control)
+stoch_pmcmc_run2 <- mcstate::pmcmc(pars <<- det_mcmc_pars, filter, control = control)
 par(mfrow = c(1,1))
 
 stoch_mcmc2 <- coda::as.mcmc(cbind(stoch_pmcmc_run2$probabilities, stoch_pmcmc_run2$pars))
@@ -345,7 +402,7 @@ pdf(file = paste(output_filename,"stoch_mcmc2.pdf",sep = "_"),   # The directory
 plot(stoch_mcmc2)
 dev.off()
 
-processed_chains <- mcstate::pmcmc_thin(stoch_pmcmc_run2, burnin = 500, thin = 1)
+processed_chains <- mcstate::pmcmc_thin(stoch_pmcmc_run2, burnin = 100, thin = 1)
 parameter_mean_hpd <- apply(processed_chains$pars, 2, mean)
 parameter_mean_hpd
 print("det_mcmc_2 final log likelihood")
