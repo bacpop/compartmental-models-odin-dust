@@ -295,7 +295,7 @@ det_filter <- particle_deterministic$new(data = fitting_mass_data,
                                          model = WF,
                                          compare = combined_compare)
 
-n_steps <- 25
+n_steps <- 50
 n_burnin <- 0
 
 
@@ -307,7 +307,7 @@ control <- mcstate::pmcmc_control(
   adaptive_proposal = TRUE,
   n_chains = 2)
 det_pmcmc_run <- mcstate::pmcmc(mcmc_pars, det_filter, control = control)
-processed_chains <- mcstate::pmcmc_thin(det_pmcmc_run, burnin = 10, thin = 1)
+processed_chains <- mcstate::pmcmc_thin(det_pmcmc_run, burnin = 25, thin = 1)
 parameter_mean_hpd <- apply(processed_chains$pars, 2, mean)
 print(parameter_mean_hpd)
 
@@ -329,7 +329,7 @@ det_filter <- particle_deterministic$new(data = fitting_mass_data,
                                          model = WF,
                                          compare = combined_compare)
 
-n_steps <- 2000
+n_steps <- 50
 n_burnin <- 0
 
 
@@ -341,7 +341,7 @@ control <- mcstate::pmcmc_control(
   adaptive_proposal = TRUE,
   n_chains = 4)
 det_pmcmc_run2 <- mcstate::pmcmc(det_mcmc_pars, det_filter, control = control)
-processed_chains <- mcstate::pmcmc_thin(det_pmcmc_run2, burnin = 500, thin = 1)
+processed_chains <- mcstate::pmcmc_thin(det_pmcmc_run2, burnin = 25, thin = 1)
 parameter_mean_hpd <- apply(processed_chains$pars, 2, mean)
 print(parameter_mean_hpd)
 par(mfrow = c(1,1))
@@ -381,7 +381,7 @@ control <- mcstate::pmcmc_control(
   save_state = TRUE, 
   save_trajectories = TRUE,
   progress = TRUE, 
-  n_chains = 2, n_workers = worker_nodes, 
+  n_chains = 1, n_workers = worker_nodes, 
   n_threads_total = threads_total)
 #control <- mcstate::pmcmc_control(
 #  n_steps,

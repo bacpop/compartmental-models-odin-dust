@@ -78,7 +78,7 @@ names(Nepal_meta_IDtoIndPP) <- Nepal_meta_dataPP$Lane_id
 ```
 
 ```{r}
-saveRDS(Nepal_meta_dataPP, "Nepal_meta_dataPP.rds")
+#saveRDS(Nepal_meta_dataPP, "Nepal_meta_dataPP.rds")
 ```
 
 ```{r}
@@ -88,7 +88,7 @@ names(Nepal_Serotype_dict) <- Nepal_meta_dataPP$Lane_id
 
 Nepal_PP$Serotype <- Nepal_Serotype_dict[Nepal_PP$Taxon]
 
-saveRDS(Nepal_PP,"Nepal_PP.rds")
+#saveRDS(Nepal_PP,"Nepal_PP.rds")
 ```
 
 
@@ -151,7 +151,7 @@ for (i in 1:length(Nepal_time_points_preVac)) {
 Nepal_gene_freq_preVac <- Nepal_gene_freq_preVac / preVac_datapoints
 
 Nepal_gene_filter <- as.integer(Nepal_gene_freq_preVac<=0.95 & Nepal_gene_freq_preVac>=0.05)
-# 1981 intermediate-frequency genes (of 5775)
+# 1987 intermediate-frequency genes (of 5775)
 ```
 
 # create intermediate frequency dataframes
@@ -194,7 +194,7 @@ cons_genomes <- function(x){
 Nepal_ggCaller_intermed_consensus <- data.frame(matrix(0, nrow = sum(Nepal_gene_filter)+1, ncol = no_Nepal_PP+1))
 Nepal_ggCaller_intermed_consensus[1,-1] <- paste("SeqCl_",unique(Nepal_PP$Cluster),sep = "")
 
-for (i in unique(Nepal_PP$Cluster)) {
+for (i in 1:no_Nepal_PP) {
 Nepal_ggCaller_intermed_consensus[-1,i+1] <- apply(as.matrix(Nepal_ggCaller_intermed[-1,c(FALSE,Nepal_seq_clusters_dict[unlist(Nepal_ggCaller_intermed[1,-1])]==i)]), 1, cons_genomes)
 
 }
@@ -206,7 +206,7 @@ Nepal_ggCaller_byYear_intermed_consensus <- vector(mode = "list", length = lengt
 for (i in 1:length(Nepal_time_points_selected)) {
   Nepal_ggCaller_year <- data.frame(matrix(0, nrow = sum(Nepal_gene_filter)+1,ncol = no_Nepal_PP+1))
   Nepal_ggCaller_year[1,-1] <- paste("SeqCl_",unique(Nepal_PP$Cluster),sep = "")
-  for (j in unique(Nepal_PP$Cluster)) {
+  for (j in 1:no_Nepal_PP) {
     Nepal_ggCaller_year[-1,j+1] <- apply(as.matrix(Nepal_ggCaller_byYear_intermed[[i]][-1,c(FALSE,Nepal_seq_clusters_dict[unlist(Nepal_ggCaller_byYear_intermed[[i]][1,-1])]==j)]), 1, cons_genomes)
   }
   Nepal_ggCaller_year[,1] <- Nepal_ggCaller_byYear_intermed[[i]][,1]
