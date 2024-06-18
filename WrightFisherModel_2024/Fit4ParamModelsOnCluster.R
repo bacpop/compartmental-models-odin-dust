@@ -192,12 +192,16 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
 threads_total <- 1
 if(length(args)>=3){
   print(paste("Setting the number of total threads to ", args[3]))
-  threads_total <- args[3]
+  threads_total <- as.integer(args[3])
 }
 worker_nodes <- 1
-if(length(args)==4){
+if(length(args)>=4){
   print(paste("Setting the number of workers to ", args[4]))
-  threads_total <- args[4]
+  threads_total <- as.integer(args[4])
+}
+stoch_run <- FALSE
+if(length(args)>=5 & args[5]=="stoch"){
+  stoch_run <- TRUE
 }
 
 fitting_mass_data <- mcstate::particle_filter_data(data = peripost_mass_cluster_freq,
@@ -295,7 +299,7 @@ det_filter <- particle_deterministic$new(data = fitting_mass_data,
                                          model = WF,
                                          compare = combined_compare)
 
-n_steps <- 50
+n_steps <- 5
 n_burnin <- 0
 
 
@@ -305,9 +309,27 @@ control <- mcstate::pmcmc_control(
   save_trajectories = TRUE,
   progress = TRUE,
   adaptive_proposal = TRUE,
-  n_chains = 2)
+  n_chains = 1)
 det_pmcmc_run <- mcstate::pmcmc(mcmc_pars, det_filter, control = control)
-processed_chains <- mcstate::pmcmc_thin(det_pmcmc_run, burnin = 25, thin = 1)
+
+n_steps <- 1000
+n_burnin <- 0
+
+
+control <- mcstate::pmcmc_control(
+  n_steps,
+  save_state = TRUE, 
+  save_trajectories = TRUE,
+  progress = TRUE,
+  adaptive_proposal = TRUE,
+  n_chains =4, n_workers = 4,
+  n_threads_total = 4)
+
+#n_chains = 8, n_workers = 8,
+#n_threads_total = 8
+
+det_pmcmc_run <- mcstate::pmcmc(mcmc_pars, det_filter, control = control)
+processed_chains <- mcstate::pmcmc_thin(det_pmcmc_run, burnin = 250, thin = 1)
 parameter_mean_hpd <- apply(processed_chains$pars, 2, mean)
 print(parameter_mean_hpd)
 
@@ -329,7 +351,7 @@ det_filter <- particle_deterministic$new(data = fitting_mass_data,
                                          model = WF,
                                          compare = combined_compare)
 
-n_steps <- 50
+n_steps <- 5
 n_burnin <- 0
 
 
@@ -339,9 +361,22 @@ control <- mcstate::pmcmc_control(
   save_trajectories = TRUE,
   progress = TRUE,
   adaptive_proposal = TRUE,
-  n_chains = 4)
+  n_chains = 1)
+det_pmcmc_run <- mcstate::pmcmc(det_mcmc_pars, det_filter, control = control)
+
+n_steps <- 20000
+n_burnin <- 0
+
+
+control <- mcstate::pmcmc_control(
+  n_steps,
+  save_state = TRUE, 
+  save_trajectories = TRUE,
+  progress = TRUE,
+  adaptive_proposal = TRUE,
+  n_chains = 4, n_workers = 4, n_threads_total = 4)
 det_pmcmc_run2 <- mcstate::pmcmc(det_mcmc_pars, det_filter, control = control)
-processed_chains <- mcstate::pmcmc_thin(det_pmcmc_run2, burnin = 25, thin = 1)
+processed_chains <- mcstate::pmcmc_thin(det_pmcmc_run2, burnin = 1000, thin = 1)
 parameter_mean_hpd <- apply(processed_chains$pars, 2, mean)
 print(parameter_mean_hpd)
 par(mfrow = c(1,1))
@@ -356,58 +391,65 @@ print("det_mcmc_2 final log likelihood")
 processed_chains$probabilities[nrow(processed_chains$probabilities),2]
 print("det_mcmc_2 mean log likelihood")
 mean(processed_chains$probabilities[,2])
-det_proposal_matrix <- cov(processed_chains$pars)
-#det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0.075, max = 0.22), mcstate::pmcmc_parameter("sigma_w", 0.05, min = 0.000001, max = 0.0749), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 0.2), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 0.5)), det_proposal_matrix, make_transform(complex_params))
-det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", parameter_mean_hpd[1], min = -1000, max = 0), mcstate::pmcmc_parameter("prop_f", parameter_mean_hpd[2], min = 0, max = 1),mcstate::pmcmc_parameter("m", parameter_mean_hpd[3], min = -1000, max = 0), mcstate::pmcmc_parameter("v", parameter_mean_hpd[4], min = 0, max = 1)), det_proposal_matrix, make_transform(complex_params))
+
+saveRDS(det_pmcmc_run2, paste(output_filename, "_det_pmcmc_run2.rds", sep = ""))
+
+if(stoch_run == TRUE){
+  det_proposal_matrix <- cov(processed_chains$pars)
+  #det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0.075, max = 0.22), mcstate::pmcmc_parameter("sigma_w", 0.05, min = 0.000001, max = 0.0749), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 0.2), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 0.5)), det_proposal_matrix, make_transform(complex_params))
+  det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", parameter_mean_hpd[1], min = -1000, max = 0), mcstate::pmcmc_parameter("prop_f", parameter_mean_hpd[2], min = 0, max = 1),mcstate::pmcmc_parameter("m", parameter_mean_hpd[3], min = -1000, max = 0), mcstate::pmcmc_parameter("v", parameter_mean_hpd[4], min = 0, max = 1)), det_proposal_matrix, make_transform(complex_params))
+  
+  
+  filter <- mcstate::particle_filter$new(data = fitting_mass_data,
+                                         model = WF,
+                                         n_particles = 96,
+                                         compare = combined_compare,
+                                         n_threads = 8)
+  
+  n_steps <- 50
+  n_burnin <- 0
+  
+  control <- mcstate::pmcmc_control(n_steps, n_chains = 4, n_workers = 2,save_state = TRUE,
+                                    save_trajectories = TRUE,
+                                    progress = TRUE,
+                                    n_threads_total = 8)
+  pmcmc_run <- mcstate::pmcmc(mcmc_pars, filter, control = control)
+  
+  control <- mcstate::pmcmc_control(
+    n_steps,
+    save_state = TRUE, 
+    save_trajectories = TRUE,
+    progress = TRUE, 
+    n_chains = 8, n_workers = worker_nodes, 
+    n_threads_total = threads_total)
+  #control <- mcstate::pmcmc_control(
+  #  n_steps,
+  #  save_state = TRUE, 
+  #  save_trajectories = TRUE,
+  #  progress = TRUE, 
+  #  n_chains = 2)
+  
+  stoch_pmcmc_run2 <- mcstate::pmcmc(pars <<- det_mcmc_pars, filter, control = control)
+  par(mfrow = c(1,1))
+  
+  stoch_mcmc2 <- coda::as.mcmc(cbind(stoch_pmcmc_run2$probabilities, stoch_pmcmc_run2$pars))
+  
+  
+  pdf(file = paste(output_filename,"stoch_mcmc2.pdf",sep = "_"),   # The directory you want to save the file in
+      width = 6, # The width of the plot in inches
+      height = 12)
+  plot(stoch_mcmc2)
+  dev.off()
+  
+  processed_chains <- mcstate::pmcmc_thin(stoch_pmcmc_run2, burnin = 250, thin = 1)
+  parameter_mean_hpd <- apply(processed_chains$pars, 2, mean)
+  parameter_mean_hpd
+  print("stoch_mcmc_2 final log likelihood")
+  processed_chains$probabilities[nrow(processed_chains$probabilities),2]
+  print("stoch_mcmc_2 mean log likelihood")
+  mean(processed_chains$probabilities[,2])
+  
+  saveRDS(stoch_pmcmc_run2, paste(output_filename, "_stoch_pmcmc_run2.rds", sep = ""))
+}
 
 
-filter <- mcstate::particle_filter$new(data = fitting_mass_data,
-                                       model = WF,
-                                       n_particles = 96,
-                                       compare = combined_compare,
-                                       n_threads = 8)
-
-n_steps <- 50
-n_burnin <- 0
-
-control <- mcstate::pmcmc_control(n_steps, n_chains = 4, n_workers = 2,save_state = TRUE,
-                                  save_trajectories = TRUE,
-                                  progress = TRUE,
-                                  n_threads_total = 1)
-pmcmc_run <- mcstate::pmcmc(mcmc_pars, filter, control = control)
-
-control <- mcstate::pmcmc_control(
-  n_steps,
-  save_state = TRUE, 
-  save_trajectories = TRUE,
-  progress = TRUE, 
-  n_chains = 1, n_workers = worker_nodes, 
-  n_threads_total = threads_total)
-#control <- mcstate::pmcmc_control(
-#  n_steps,
-#  save_state = TRUE, 
-#  save_trajectories = TRUE,
-#  progress = TRUE, 
-#  n_chains = 2)
-
-stoch_pmcmc_run2 <- mcstate::pmcmc(pars <<- det_mcmc_pars, filter, control = control)
-par(mfrow = c(1,1))
-
-stoch_mcmc2 <- coda::as.mcmc(cbind(stoch_pmcmc_run2$probabilities, stoch_pmcmc_run2$pars))
-
-
-pdf(file = paste(output_filename,"stoch_mcmc2.pdf",sep = "_"),   # The directory you want to save the file in
-    width = 6, # The width of the plot in inches
-    height = 12)
-plot(stoch_mcmc2)
-dev.off()
-
-processed_chains <- mcstate::pmcmc_thin(stoch_pmcmc_run2, burnin = 100, thin = 1)
-parameter_mean_hpd <- apply(processed_chains$pars, 2, mean)
-parameter_mean_hpd
-print("det_mcmc_2 final log likelihood")
-processed_chains$probabilities[nrow(processed_chains$probabilities),2]
-print("det_mcmc_2 mean log likelihood")
-mean(processed_chains$probabilities[,2])
-
-saveRDS(stoch_pmcmc_run2, paste(output_filename, "_stoch_pmcmc_run2.rds", sep = ""))

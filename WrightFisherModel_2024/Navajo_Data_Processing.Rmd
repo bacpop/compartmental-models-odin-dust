@@ -54,16 +54,16 @@ names(Navajo_seq_clusters_dict) <- Navajo_PP$Taxon
 
 # filter meta data by PopPUNK sequences (PopPUNK qc removed some of the sequences)
 ```{r}
-Nepal_meta_dataPP <- Nepal_meta_data[sort(Nepal_meta_IDtoInd[Nepal_PP$Taxon]),]
-for (i in 2:nrow(Nepal_meta_dataPP)) {
-  if (Nepal_meta_dataPP$Phenotypic_serotype[i] == "") {
-    Nepal_meta_dataPP$Phenotypic_serotype[i] <- "NT"
+Navajo_meta_dataPP <- Navajo_meta_data[sort(Navajo_meta_IDtoInd[Navajo_PP$Taxon]),]
+for (i in 2:nrow(Navajo_meta_dataPP)) {
+  if (Navajo_meta_dataPP$Serogroup[i] == "") {
+    Navajo_meta_dataPP$Serogroup[i] <- "NT"
   }
 }
-rownames(Nepal_meta_dataPP) <- 1:nrow(Nepal_meta_dataPP)
+rownames(Navajo_meta_dataPP) <- 1:nrow(Navajo_meta_dataPP)
 
-Nepal_meta_IDtoIndPP <- 1:nrow(Nepal_meta_dataPP)
-names(Nepal_meta_IDtoIndPP) <- Nepal_meta_dataPP$Lane_id
+Navajo_meta_IDtoIndPP <- 1:nrow(Navajo_meta_dataPP)
+names(Navajo_meta_IDtoIndPP) <- Navajo_meta_dataPP$Lane_id
 ```
 
 ```{r}
@@ -184,7 +184,7 @@ Nepal_ggCaller_intermed_consensus <- data.frame(matrix(0, nrow = sum(Nepal_gene_
 Nepal_ggCaller_intermed_consensus[1,-1] <- paste("SeqCl_",unique(Nepal_PP$Cluster),sep = "")
 
 for (i in unique(Nepal_PP$Cluster)) {
-Nepal_ggCaller_intermed_consensus[-1,i+1] <- apply(as.matrix(Nepal_ggCaller_intermed[-1,c(FALSE,Nepal_seq_clusters_dict[unlist(Nepal_ggCaller_intermed[1,-1])]==i)]), 1, cons_genomes)
+Nepal_ggCaller_intermed_consensus[-1,(which(unique(Nepal_PP$Cluster) == i))+1] <- apply(as.matrix(Nepal_ggCaller_intermed[-1,c(FALSE,Nepal_seq_clusters_dict[unlist(Nepal_ggCaller_intermed[1,-1])]==i)]), 1, cons_genomes)
 
 }
 Nepal_ggCaller_intermed_consensus[,1] <- Nepal_ggCaller_intermed[,1]
@@ -196,7 +196,7 @@ for (i in 1:length(Nepal_time_points_selected)) {
   Nepal_ggCaller_year <- data.frame(matrix(0, nrow = sum(Nepal_gene_filter)+1,ncol = no_Nepal_PP+1))
   Nepal_ggCaller_year[1,-1] <- paste("SeqCl_",unique(Nepal_PP$Cluster),sep = "")
   for (j in unique(Nepal_PP$Cluster)) {
-    Nepal_ggCaller_year[-1,j+1] <- apply(as.matrix(Nepal_ggCaller_byYear_intermed[[i]][-1,c(FALSE,Nepal_seq_clusters_dict[unlist(Nepal_ggCaller_byYear_intermed[[i]][1,-1])]==j)]), 1, cons_genomes)
+    Nepal_ggCaller_year[-1,(which(unique(Nepal_PP$Cluster) == j))+1] <- apply(as.matrix(Nepal_ggCaller_byYear_intermed[[i]][-1,c(FALSE,Nepal_seq_clusters_dict[unlist(Nepal_ggCaller_byYear_intermed[[i]][1,-1])]==j)]), 1, cons_genomes)
   }
   Nepal_ggCaller_year[,1] <- Nepal_ggCaller_byYear_intermed[[i]][,1]
   Nepal_ggCaller_byYear_intermed_consensus[[i]] <- Nepal_ggCaller_year
