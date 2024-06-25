@@ -309,8 +309,13 @@ points(model_start_pop/sum(model_start_pop), col = "red")
 
 # Read in PopPUNK clusters:
 ```{r}
-PopPUNK_clusters <- read.csv("~/Documents/PhD_Project/Code/1st_project/odin-dust-examples/Data/refined_modelfitk3_clusters.csv")
-no_PopPUNK_clusters <- length(unique(PopPUNK_clusters$Cluster)) # number of clusters in dataset
+PopPUNK_clusters_old <- read.csv("~/Documents/PhD_Project/Code/1st_project/odin-dust-examples/Data/refined_modelfitk3_clusters.csv")
+no_PopPUNK_clusters_old <- length(unique(PopPUNK_clusters_old$Cluster)) # number of clusters in dataset
+```
+
+```{r}
+PopPUNK_all <- read.csv("/Users/llorenz/Documents/PhD_Project/Data/Massachusetts_SeqClusters/PopPUNKwithStandardDB/poppunk_clusters_clusters.csv")
+no_PopPUNK_all <- length(unique(PopPUNK_clusters$Cluster)) # number of clusters in dataset
 ```
 
 ```{r}
@@ -328,7 +333,27 @@ names(filenameToAccNo_dict) <- accNo_to_filename$filenames
 AccNoToIsolate_dict <- Mass_Samples_accCodes$`Isolate Name`
 names(AccNoToIsolate_dict) <- Mass_Samples_accCodes$`Accession Code`
 
-PopPUNK_clusters$IsolateName <- AccNoToIsolate_dict[filenameToAccNo_dict[PopPUNK_clusters$Taxon]]
+#PopPUNK_clusters$IsolateName <- AccNoToIsolate_dict[filenameToAccNo_dict[PopPUNK_clusters$Taxon]]
+```
+
+```{r}
+PopPUNK_clusters <- data.frame(matrix(NA, nrow = nrow(Mass_Samples_accCodes), ncol = 3))
+colnames(PopPUNK_clusters) <- c(colnames(PopPUNK_all), "IsolateName")
+
+counter <- 0
+for (i in 1:nrow(PopPUNK_all)) {
+  if(is.element(PopPUNK_all$Taxon[i], names(filenameToAccNo_dict))){
+    if(is.element(filenameToAccNo_dict[PopPUNK_all$Taxon[i]], names(AccNoToIsolate_dict))){
+    counter <- counter + 1
+    PopPUNK_clusters[counter,] <- c(PopPUNK_all[i,],AccNoToIsolate_dict[filenameToAccNo_dict[PopPUNK_all[i,1]]])
+    }
+  }
+}
+
+no_PopPUNK_clusters <- length(unique(PopPUNK_clusters$Cluster)) 
+
+
+# 55 clusters! (used to be 55)
 ```
 
 ```{r}
@@ -385,10 +410,10 @@ cons_genomes <- function(x){
 }
 
 for (i in unique(PopPUNK_clusters$Cluster)) {
-  PP_intermed_gene_presence_absence_consensus[-1,i+1] <- apply(as.matrix(intermed_gene_presence_absence[-1,c(FALSE,PP_Mass_seq_clusters_dict[unlist(intermed_gene_presence_absence[1,-1])]==i)]), 1, cons_genomes)
-  PP_intermed_gene_presence_absence_consensus_2001[-1,i+1] <- apply(as.matrix(intermed_gene_presence_absence_2001[-1,c(FALSE,PP_Mass_seq_clusters_dict[unlist(intermed_gene_presence_absence_2001[1,-1])]==i)]), 1, cons_genomes)
-    PP_intermed_gene_presence_absence_consensus_2004[-1,i+1] <- apply(as.matrix(intermed_gene_presence_absence_2004[-1,c(FALSE,PP_Mass_seq_clusters_dict[unlist(intermed_gene_presence_absence_2004[1,-1])]==i)]), 1, cons_genomes)
-    PP_intermed_gene_presence_absence_consensus_2007[-1,i+1] <- apply(as.matrix(intermed_gene_presence_absence_2007[-1,c(FALSE,PP_Mass_seq_clusters_dict[unlist(intermed_gene_presence_absence_2007[1,-1])]==i)]), 1, cons_genomes)
+  PP_intermed_gene_presence_absence_consensus[-1,(which(unique(PopPUNK_clusters$Cluster) == i))+1] <- apply(as.matrix(intermed_gene_presence_absence[-1,c(FALSE,PP_Mass_seq_clusters_dict[unlist(intermed_gene_presence_absence[1,-1])]==i)]), 1, cons_genomes)
+  PP_intermed_gene_presence_absence_consensus_2001[-1,(which(unique(PopPUNK_clusters$Cluster) == i))+1] <- apply(as.matrix(intermed_gene_presence_absence_2001[-1,c(FALSE,PP_Mass_seq_clusters_dict[unlist(intermed_gene_presence_absence_2001[1,-1])]==i)]), 1, cons_genomes)
+    PP_intermed_gene_presence_absence_consensus_2004[-1,(which(unique(PopPUNK_clusters$Cluster) == i))+1] <- apply(as.matrix(intermed_gene_presence_absence_2004[-1,c(FALSE,PP_Mass_seq_clusters_dict[unlist(intermed_gene_presence_absence_2004[1,-1])]==i)]), 1, cons_genomes)
+    PP_intermed_gene_presence_absence_consensus_2007[-1,(which(unique(PopPUNK_clusters$Cluster) == i))+1] <- apply(as.matrix(intermed_gene_presence_absence_2007[-1,c(FALSE,PP_Mass_seq_clusters_dict[unlist(intermed_gene_presence_absence_2007[1,-1])]==i)]), 1, cons_genomes)
 }
 
 PP_intermed_gene_presence_absence_consensus[-1,1] <- intermed_gene_presence_absence[-1,1]
@@ -720,10 +745,10 @@ cons_genomes <- function(x){
 }
 
 for (i in unique(PopPUNK_clusters$Cluster)) {
-  ggCPP_intermed_gene_presence_absence_consensus[-1,i+1] <- apply(as.matrix(ggC_intermed_gene_presence_absence[-1,c(FALSE,ggCPP_Mass_seq_clusters_dict[unlist(ggC_intermed_gene_presence_absence[1,-1])]==i)]), 1, cons_genomes)
-  ggCPP_intermed_gene_presence_absence_consensus_2001[-1,i+1] <- apply(as.matrix(ggC_intermed_gene_presence_absence_2001[-1,c(FALSE,ggCPP_Mass_seq_clusters_dict[unlist(ggC_intermed_gene_presence_absence_2001[1,-1])]==i)]), 1, cons_genomes)
-    ggCPP_intermed_gene_presence_absence_consensus_2004[-1,i+1] <- apply(as.matrix(ggC_intermed_gene_presence_absence_2004[-1,c(FALSE,ggCPP_Mass_seq_clusters_dict[unlist(ggC_intermed_gene_presence_absence_2004[1,-1])]==i)]), 1, cons_genomes)
-    ggCPP_intermed_gene_presence_absence_consensus_2007[-1,i+1] <- apply(as.matrix(ggC_intermed_gene_presence_absence_2007[-1,c(FALSE,ggCPP_Mass_seq_clusters_dict[unlist(ggC_intermed_gene_presence_absence_2007[1,-1])]==i)]), 1, cons_genomes)
+  ggCPP_intermed_gene_presence_absence_consensus[-1,(which(unique(PopPUNK_clusters$Cluster) == i))+1] <- apply(as.matrix(ggC_intermed_gene_presence_absence[-1,c(FALSE,ggCPP_Mass_seq_clusters_dict[unlist(ggC_intermed_gene_presence_absence[1,-1])]==i)]), 1, cons_genomes)
+  ggCPP_intermed_gene_presence_absence_consensus_2001[-1,(which(unique(PopPUNK_clusters$Cluster) == i))+1] <- apply(as.matrix(ggC_intermed_gene_presence_absence_2001[-1,c(FALSE,ggCPP_Mass_seq_clusters_dict[unlist(ggC_intermed_gene_presence_absence_2001[1,-1])]==i)]), 1, cons_genomes)
+    ggCPP_intermed_gene_presence_absence_consensus_2004[-1,(which(unique(PopPUNK_clusters$Cluster) == i))+1] <- apply(as.matrix(ggC_intermed_gene_presence_absence_2004[-1,c(FALSE,ggCPP_Mass_seq_clusters_dict[unlist(ggC_intermed_gene_presence_absence_2004[1,-1])]==i)]), 1, cons_genomes)
+    ggCPP_intermed_gene_presence_absence_consensus_2007[-1,(which(unique(PopPUNK_clusters$Cluster) == i))+1] <- apply(as.matrix(ggC_intermed_gene_presence_absence_2007[-1,c(FALSE,ggCPP_Mass_seq_clusters_dict[unlist(ggC_intermed_gene_presence_absence_2007[1,-1])]==i)]), 1, cons_genomes)
 }
 
 ggCPP_intermed_gene_presence_absence_consensus[-1,1] <- ggC_intermed_gene_presence_absence[-1,1]
@@ -741,7 +766,7 @@ ggCPP_intermed_gene_presence_absence_consensus_2007[-1,1] <- ggC_intermed_gene_p
 #saveRDS(ggCPP_intermed_gene_presence_absence_consensus_2007, file = "ggCPP_intermed_gene_presence_absence_consensus_2007.rds")
 ```
 
-# checkin whether the gene variation and whether genes occur in VTs is correlated
+# checking whether the gene variation and whether genes occur in VTs is correlated
 # variation in genes that do not occur in VTs seems to be higher
 # variation in genes that occur in VTs generally seems lower 
 # but it's not a super strong correlation

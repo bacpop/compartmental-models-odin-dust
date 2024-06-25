@@ -3671,7 +3671,7 @@ WFmodel_Nepal <- WF_nG_h_vP$new(pars = fitted_params_Nepal,
                          n_particles = 10L,
                          n_threads = 4L,
                          seed = 1L)
-
+simMeanggCPP1_Nepal <- rowMeans(WFmodel_Nepal$run(1)[-1,])
 simMeanggCPP2_Nepal <- rowMeans(WFmodel_Nepal$run(12)[-1,])
 simMeanggCPP3_Nepal <- rowMeans(WFmodel_Nepal$run(24)[-1,])
 simMeanggCPP4_Nepal <- rowMeans(WFmodel_Nepal$run(36)[-1,])
@@ -3684,6 +3684,8 @@ simMeanggCPP10_Nepal <- rowMeans(WFmodel_Nepal$run(108)[-1,])
 simMeanggCPP11_Nepal <- rowMeans(WFmodel_Nepal$run(120)[-1,])
 simMeanggCPP12_Nepal <- rowMeans(WFmodel_Nepal$run(132)[-1,])
 simMeanggCPP13_Nepal <- rowMeans(WFmodel_Nepal$run(144)[-1,])
+simMeanggCPP14_Nepal <- rowMeans(WFmodel_Nepal$run(156)[-1,])
+
 
   nepal_cluster_freq_1 <- readRDS(file = "Nepal_cluster_freqs_1.rds")
   nepal_cluster_freq_2 <- readRDS(file = "Nepal_cluster_freqs_2.rds")
@@ -3698,6 +3700,7 @@ simMeanggCPP13_Nepal <- rowMeans(WFmodel_Nepal$run(144)[-1,])
   nepal_cluster_freq_11 <- readRDS(file = "Nepal_cluster_freqs_11.rds")
   nepal_cluster_freq_12 <- readRDS(file = "Nepal_cluster_freqs_12.rds")
   nepal_cluster_freq_13 <- readRDS(file = "Nepal_cluster_freqs_13.rds")
+   nepal_cluster_freq_14 <- readRDS(file = "Nepal_cluster_freqs_14.rds")
 
 Nepal_VT <- readRDS(file = "Nepal_VT.rds")
 mass_clusters <- length(unique(seq_clusters$Cluster))
@@ -3756,3 +3759,23 @@ mean(processed_chains$probabilities[,2])
 
 det_proposal_matrix <- cov(processed_chains$pars)
 ```
+
+```{r}
+### Nepal det fit
+results_path_6_19 <- "/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_06_19/"
+Nepal_detfit <- readRDS(paste(results_path_6_19,"Nepal_ggCaller_PopPUNK_det_pmcmc_run2.rds",sep = ""))
+Nepal_mcmc2 <- coda::as.mcmc(cbind(Nepal_detfit$probabilities, Nepal_detfit$pars))
+coda::effectiveSize(Nepal_mcmc2)
+summary(coda::as.mcmc(Nepal_mcmc2))
+```
+
+```{r}
+fitted_params_Nepal <- list(dt = 1/12, species_no = no_Nepal_PP,  gene_no = nrow(Nepal_ggCaller_intermed_consensus)-1, Pop_ini = as.double(Nepal_model_start_pop), Pop_eq = as.double(Nepal_model_start_pop), capacity = sum(Nepal_model_start_pop), Genotypes = Nepal_ggCaller_intermed_consensus_matrix, sigma_f = -4.278e+02, sigma_w = -1000, prop_f = 4.519e-01, delta = Nepal_delta_ranking, m = -1.261e+01 , migVec = Nepal_avg_cluster_freq, vaccTypes = Nepal_VT, v = 1.685e-03, vacc_time = 9)
+
+# run code from lines 3669 3724
+
+lollipop_cluster_freqs_VTandNVT_labelSero(year = "2005", plot_title = "PopPUNK and ggCaller", data1 = nepal_cluster_freq_1[which(Nepal_PP_cluster_freq>1)]/sum(nepal_cluster_freq_1[which(Nepal_PP_cluster_freq>1)]), model_name_1 ="Model", model1 = Nepal_model_start_pop[which(Nepal_PP_cluster_freq>1)]/sum(Nepal_model_start_pop[which(Nepal_PP_cluster_freq>1)]), Nepal_VT[which(Nepal_PP_cluster_freq>1)], SeroLabel = Nepal_PP_serotype_comp[which(Nepal_PP_cluster_freq>1)])
+
+lollipop_cluster_freqs_VTandNVT_labelSero(year = "2009", plot_title = "PopPUNK and ggCaller", data1 = nepal_cluster_freq_5[which(Nepal_PP_cluster_freq>1)]/sum(nepal_cluster_freq_5[which(Nepal_PP_cluster_freq>1)]), model_name_1 ="Model", model1 = simMeanggCPP5_Nepal[which(Nepal_PP_cluster_freq>1)]/sum(simMeanggCPP5_Nepal[which(Nepal_PP_cluster_freq>1)]), Nepal_VT[which(Nepal_PP_cluster_freq>1)], SeroLabel = Nepal_PP_serotype_comp[which(Nepal_PP_cluster_freq>1)])
+```
+
