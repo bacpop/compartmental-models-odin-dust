@@ -353,7 +353,7 @@ for (i in 1:nrow(PopPUNK_all)) {
 no_PopPUNK_clusters <- length(unique(PopPUNK_clusters$Cluster)) 
 
 
-# 55 clusters! (used to be 55)
+# 55 clusters! (used to be 61?)
 ```
 
 ```{r}
@@ -505,7 +505,8 @@ points(PP_model_start_pop/sum(PP_model_start_pop), col = "red")
 
 ```{r}
 # reading in the gene presence absence matrix produced by ggCaller
-ggCaller_gene_presence_absence <- read.csv(paste(path_to_data, "Massachusetts_ggcaller/run2/ggCaller_output/gene_presence_absence.csv", sep = ""), header=FALSE)
+#ggCaller_gene_presence_absence <- read.csv(paste(path_to_data, "Massachusetts_ggcaller/run2/ggCaller_output/gene_presence_absence.csv", sep = ""), header=FALSE)
+ggCaller_gene_presence_absence <- read.csv(paste(path_to_data, "Massachusetts_ggcaller/run_withFuncAnn/ggCaller_output/gene_presence_absence.csv", sep = ""), header=FALSE)
 
 # converting the gene presence absence matrix into a boolean df (0 = gene not present, 1 = gene present)
 convert_to_bool <- function(x){

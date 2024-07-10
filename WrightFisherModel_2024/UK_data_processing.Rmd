@@ -35,6 +35,10 @@ split_winter <- function(winter){
 
 UK_SeqYear_dict <- sapply(UK_metadata$Winter, split_winter)
 names(UK_SeqYear_dict) <- UK_ids
+
+UK_time_points <- sort(unique(UK_SeqYear_dict))
+
+UK_winters <- sort(unique(UK_metadata$Winter))
 ```
 
 ```{r}
@@ -56,20 +60,25 @@ names(assembly_dict) <- gsub("\\.", "_", ncbi_metadata$Assembly.Accession)
 PP_all <- read.csv(paste(path_to_data, "StrepPneumo_UK/poppunk_clusters/poppunk_clusters_clusters.csv",sep = ""))
 no_PP_all <- length(unique(UK_PP$Cluster)) 
 
+has_assembly_ncbi <- rep(FALSE, nrow(PP_all))
+
 no_matches <- 0
 for (i in 1:nrow(PP_all)) {
   if(grepl("GCF",PP_all$Taxon[i])){
     assembly_name <- regmatches(PP_all$Taxon[i],regexpr("^GCF\\_[0-9]+\\_1",PP_all$Taxon[i]))
     PP_all$Taxon[i] <- assembly_dict[assembly_name]
     no_matches <- no_matches + 1
+    has_assembly_ncbi[i] <- TRUE
   }
 }
+
+ncbi_PP <- PP_all[(has_assembly_ncbi),] # only keeps taxa for which we have the sequence data
 
 #PP_taxon_ind_dict <- 1:nrow(PP_all)
 #names(PP_taxon_ind_dict) <- PP_all$Taxon
 
-PP_is_UK_dict <- rep(FALSE,nrow(PP_all))
-names(PP_is_UK_dict) <- PP_all$Taxon
+PP_is_UK_dict <- rep(FALSE,nrow(ncbi_PP))
+names(PP_is_UK_dict) <- ncbi_PP$Taxon
 
 #for (i in 1:length(UK_metadata$id)) {
 #  PP_is_UK_dict[UK_metadata$id[i]] <- TRUE
@@ -78,13 +87,13 @@ names(PP_is_UK_dict) <- PP_all$Taxon
 UK_is_UK_dict <- rep(TRUE,nrow(UK_metadata))
 names(UK_is_UK_dict) <- UK_metadata$id
 
-for (i in 1:nrow(PP_all)) {
-  if(!is.na(UK_is_UK_dict[PP_all$Taxon[i]])){
-    PP_is_UK_dict[PP_all$Taxon[i]] <- TRUE
+for (i in 1:nrow(ncbi_PP)) {
+  if(!is.na(UK_is_UK_dict[ncbi_PP$Taxon[i]])){
+    PP_is_UK_dict[ncbi_PP$Taxon[i]] <- TRUE
   }
 }
 
-UK_PP <- PP_all[(PP_is_UK_dict),]
+UK_PP <- ncbi_PP[(PP_is_UK_dict),]
 no_UK_PP <- length(unique(UK_PP$Cluster)) 
 
 # 56 clusters
@@ -100,5 +109,103 @@ names(UK_Serotype_dict) <- UK_metadata$id
 
 UK_PP$Serotype <- UK_Serotype_dict[UK_PP$Taxon]
 
+UK_PP$Time <- UK_SeqYear_dict[UK_PP$Taxon]
+
 #saveRDS(UK_PP,"UK_PP.rds")
+```
+
+# save sequencing year information
+```{r}
+UKPP_time_points <- unique(sort(UK_PP$Time))
+# [1] "2006" "2007" "2008" "2009" "2010"
+
+# no!!!
+# the sequences from the ncbi are actually only 2006-2010 :-(
+
+seq_no_per_year <- rep(0, length(UK_time_points))
+names(seq_no_per_year) <- UK_winters
+for (i in 1:length(UK_time_points)) {
+  seq_no_per_year[i] <- length(which(UK_metadata$Winter==UK_winters[i]))
+}
+barplot(seq_no_per_year, xlab = "Winters", ylim = c(0, 250), ylab = "Sequence Counts")
+# introduction of PCV7 in 2006 and PCV13 in 2010
+# number of sequences is pretty constant
+
+```
+
+# read in ggCaller results
+```{r}
+UK_ggCaller <- read.csv(paste(path_to_data, "StrepPneumo_UK/ggCaller_output/gene_presence_absence.csv", sep = ""), header=FALSE)
+```
+
+```{r}
+# converting the gene presence absence matrix into a boolean df (0 = gene not present, 1 = gene present)
+convert_to_bool <- function(x){
+  if (x=="") 0 else 1
+}
+
+UK_ggCaller_bool <- UK_ggCaller[,c(-2,-3)]
+UK_ggCaller_bool[-1,-1] <- apply(UK_ggCaller_bool[-1,-1],c(1,2), convert_to_bool)
+
+ggC_matches <- regmatches(UK_ggCaller_bool[1,-1],regexpr("^GCF\\_[0-9]+\\.1",UK_ggCaller_bool[1,-1]))
+ggC_matches_tr <- assembly_dict[ggC_matches]
+
+gsub_apply <- function(x){
+    ggc_match <- regmatches(x,regexpr("^GCF\\_[0-9]+\\.1",x))
+    ggc_match2 <- gsub("\\.","_",ggc_match)
+    gsub(paste(".*",ggc_match,".*",sep = ""), assembly_dict[ggc_match2],x)
+  
+}
+
+UK_ggCaller_bool[1,-1] <- sapply(UK_ggCaller_bool[1,-1], gsub_apply)
+colnames(UK_ggCaller_bool) <- UK_ggCaller_bool[1,]
+
+# filter ggCaller results by the ones 
+UK_ggCallerPP_bool <- data.frame(matrix(0, nrow = nrow(UK_ggCaller_bool), ncol = length(UK_PP$Taxon)+1))
+for (i in 1:length(UK_PP$Taxon)) {
+  UK_ggCallerPP_bool[-1,(i+1)] <- UK_ggCaller_bool[-1,UK_PP$Taxon[i]]
+}
+
+
+UK_ggCallerPP_bool[-1,-1] <- UK_ggCaller_bool[-1,c(UK_PP$Taxon)]
+colnames(UK_ggCallerPP_bool) <- c("Gene",UK_PP$Taxon)
+UK_ggCallerPP_bool[1,] <- c("Gene",UK_PP$Taxon)
+UK_ggCallerPP_bool[,1] <- UK_ggCaller_bool[,1]
+```
+
+```{r}
+saveRDS(UK_ggCallerPP_bool, "UK_ggCaller_bool.rds")
+```
+
+# split ggCaller gene presence absence matrix into different time points
+```{r}
+UK_ggCaller_byYear <- vector(mode = "list", length = length(UK_time_points))
+
+for (i in 1:length(UK_time_points)) {
+  UK_ggCaller_year <- data.frame(matrix(0, nrow = nrow(UK_ggCallerPP_bool), ncol = length(which(UK_metadata$Winter==UK_winters[i]))+1)) # initialize data frame
+  UK_ggCaller_year[1,-1] <- UK_ggCallerPP_bool[1,c(FALSE,UK_SeqYear_dict[unlist(UK_ggCallerPP_bool[1,-1])]==UK_time_points[i])] # fill in first row (seq names)
+  UK_ggCaller_year[-1,1] <- UK_ggCallerPP_bool[-1,1] # fill in first column (gene cluster names)
+  UK_ggCaller_year[-1,-1] <- UK_ggCallerPP_bool[-1,c(FALSE,UK_SeqYear_dict[unlist(UK_ggCallerPP_bool[1,-1])]==UK_time_points[i])] # fill in presence absence information
+  print(i)
+  UK_ggCaller_byYear[[i]] <- UK_ggCaller_year
+}
+```
+
+# find intermediate frequency genes
+# I will combine all pre-vaccine data points for this
+```{r}
+sum_as_int <- function(x){
+  sum(as.integer(x))
+}
+
+UK_gene_freq_preVac <- rep(0, nrow(UK_ggCaller_byYear[[1]])-1)
+preVac_datapoints <- 0
+for (i in 1:length(UK_time_points_preVac)) {
+  UK_gene_freq_preVac <- UK_gene_freq_preVac + apply(UK_ggCaller_byYear[[i]][-1,-1],1, sum_as_int)
+  preVac_datapoints <- preVac_datapoints + length(UK_ggCaller_byYear[[i]][1,-1])
+}
+UK_gene_freq_preVac <- UK_gene_freq_preVac / preVac_datapoints
+
+UK_gene_filter <- as.integer(UK_gene_freq_preVac<=0.95 & UK_gene_freq_preVac>=0.05)
+# 1987 intermediate-frequency genes (of 5775)
 ```
