@@ -196,6 +196,38 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
   
   vacc_time <- 6
+} else if(args[1] == "Navajo" & args[2] == "PopPUNK"){
+  seq_clusters <- readRDS("Navajo_PP.rds")
+  intermed_gene_presence_absence_consensus <- readRDS(file = "Navajo_ggCaller_intermed_consensus.rds")
+  intermed_gene_presence_absence_consensus_matrix <- sapply(intermed_gene_presence_absence_consensus[-1,-1],as.double)
+  model_start_pop <- readRDS(file = "Navajo_model_start_pop.rds")
+  delta_ranking <- readRDS(file = "Navajo_delta_ranking.rds")
+  mass_cluster_freq_1 <- readRDS(file = "Navajo_cluster_freqs_1.rds")
+  mass_cluster_freq_2 <- readRDS(file = "Navajo_cluster_freqs_2.rds")
+  mass_cluster_freq_3 <- readRDS(file = "Navajo_cluster_freqs_3.rds")
+  mass_cluster_freq_4 <- readRDS(file = "Navajo_cluster_freqs_4.rds")
+  mass_cluster_freq_5 <- readRDS(file = "Navajo_cluster_freqs_5.rds")
+  mass_cluster_freq_6 <- readRDS(file = "Navajo_cluster_freqs_6.rds")
+  mass_cluster_freq_7 <- readRDS(file = "Navajo_cluster_freqs_7.rds")
+  mass_cluster_freq_8 <- readRDS(file = "Navajo_cluster_freqs_8.rds")
+  mass_cluster_freq_9 <- readRDS(file = "Navajo_cluster_freqs_9.rds")
+  mass_cluster_freq_10 <- readRDS(file = "Navajo_cluster_freqs_10.rds")
+  mass_cluster_freq_11 <- readRDS(file = "Navajo_cluster_freqs_11.rds")
+  mass_cluster_freq_12 <- readRDS(file = "Navajo_cluster_freqs_12.rds")
+  mass_cluster_freq_13 <- readRDS(file = "Navajo_cluster_freqs_13.rds")
+  mass_cluster_freq_14 <- readRDS(file = "Navajo_cluster_freqs_14.rds")
+  mass_cluster_freq_15 <- readRDS(file = "Navajo_cluster_freqs_15.rds")
+  mass_VT <- readRDS(file = "Navajo_VT.rds")
+  mass_clusters <- length(unique(seq_clusters$Cluster))
+  avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
+  output_filename <- "Navajo_ggCaller_PopPUNK"
+  
+  dt <- 1/12
+  peripost_mass_cluster_freq <- data.frame("year" = 1:14, rbind(mass_cluster_freq_2,mass_cluster_freq_3,mass_cluster_freq_4,mass_cluster_freq_5,mass_cluster_freq_6, mass_cluster_freq_7, mass_cluster_freq_8, mass_cluster_freq_9,mass_cluster_freq_10, mass_cluster_freq_11, mass_cluster_freq_12, mass_cluster_freq_13,mass_cluster_freq_14,mass_cluster_freq_15))
+  
+  names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
+  
+  vacc_time <- 5
 }
 
 threads_total <- 1

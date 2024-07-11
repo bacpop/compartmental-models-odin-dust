@@ -1,1 +1,2 @@
 load("/Users/llorenz/Documents/PhD_Project/Code/1st_project/odin-dust-examples/WrightFisherModel_2024/det_mcmc1_4params_ggCPP.rds")
+load("/Users/llorenz/Documents/PhD_Project/Code/1st_project/odin-dust-examples/WrightFisherModel_2024/ggC_delta_ranking.rds")

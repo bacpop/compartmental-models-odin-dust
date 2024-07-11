@@ -444,7 +444,7 @@ PP_intermed_gene_presence_absence_consensus_2007 <- readRDS(file = "PP_intermed_
 PP_mass_VT <- rep(0, no_PopPUNK_clusters)
 
 for (i in 1:no_PopPUNK_clusters){
-  PP_mass_VT[i] <- ceiling(median(as.integer(PopPUNK_clusters[PopPUNK_clusters$Cluster == i,"VT"]=="VT")))
+  PP_mass_VT[i] <- ceiling(median(as.integer(PopPUNK_clusters[PopPUNK_clusters$Cluster == unique(PopPUNK_clusters$Cluster)[i],"VT"]=="VT")))
 }
 # 1 means VT
 # 0 means NVT
@@ -701,6 +701,7 @@ plot(sort(ggC_pre_vacc_gene_freq),(1 - sort(ggC_pre_vacc_gene_freq) * (1 - sort(
 ```{r}
 #save delta ranking
 #saveRDS(ggC_delta_ranking, file = "ggC_delta_ranking.rds")
+saveRDS(ggC_delta_data2, file = "ggC_delta_ranking.rds")
 #saveRDS(ggC_inv_delta_ranking, file = "ggC_inv_delta_ranking.rds")
 #saveRDS(ggC_delta_ranking4, file = "ggC_delta_ranking_peri-pre.rds")
 #saveRDS(ggC_delta_ranking2, file = "ggC_delta_ranking_post-pre.rds")

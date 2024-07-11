@@ -61,7 +61,7 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   intermed_gene_presence_absence_consensus <- readRDS(file = "ggCPP_intermed_gene_presence_absence_consensus.rds")
   intermed_gene_presence_absence_consensus_matrix <- sapply(intermed_gene_presence_absence_consensus[-1,-1],as.double)
   model_start_pop <- readRDS(file = "PP_model_start_pop.rds")
-  delta_ranking <- readRDS(file = "ggC_delta_ranking.rds")
+  delta_ranking <- readRDS(file = "ggC_delta_ranking8.rds")
   mass_cluster_freq_1 <- readRDS(file = "PP_mass_cluster_freq_1.rds")
   mass_cluster_freq_2 <- readRDS(file = "PP_mass_cluster_freq_2.rds")
   mass_cluster_freq_3 <- readRDS(file = "PP_mass_cluster_freq_3.rds")

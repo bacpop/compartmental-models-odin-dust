@@ -641,6 +641,9 @@ gann <- ga(type = "real-valued", fitness = ga_fit_FindGenes_ggCPP, lower = rep(0
 # crossover = ga_spCrossover, mutation = gabin_raMutation
 summary(gann)
 
+gann <- ga(type = "binary", fitness = ga_fit_FindGenes_ggCPP, lower = rep(0, length(best_best_vec)), upper = rep(1,length(best_best_vec)), 
+           seed = 123, elitism = 50, maxiter = 3, popSize = 300, run = 30, nBits = 1774)
+
 
 decode2 <- function(x)
 { 
@@ -792,3 +795,42 @@ segments(x0 = 1:1774,    # Add standard deviations
          y0 = rowMeans(apply((gann@population), 1, decode3)) - local_ga_sd,
          x1 = 1:1774,
          y1 = rowMeans(apply((gann@population), 1, decode3)) + local_ga_sd)
+
+### try binary ga
+
+fitting_closure_max_binary <- function(all_other_params, data1, data2){
+  null_fit_dfoptim_fl <- function(fit_params){
+    rnd_vect_full <- fit_params
+    
+    all_other_params$delta_bool = rnd_vect_full
+    WFmodel_ggCPP <- WF$new(pars = all_other_params,
+                            time = 1,
+                            n_particles = 10L,
+                            n_threads = 4L,
+                            seed = 1L)
+    #n_particles <- 10L
+    #n_times <- 73
+    #x <- array(NA, dim = c(WFmodel_ggCPP$info()$len, n_particles, n_times))
+    
+    #for (t in seq_len(n_times)) {
+    #  x[ , , t] <- WFmodel_ggCPP$run(t)
+    #}
+    #time <- x[1, 1, ]
+    #x <- x[-1, , ]
+    simMeanggCPP2 <- rowMeans(WFmodel_ggCPP$run(36)[-1,])
+    simMeanggCPP3 <- rowMeans(WFmodel_ggCPP$run(72)[-1,])
+    combined_compare(simMeanggCPP2,data1) + combined_compare(simMeanggCPP3,data2) 
+    #- combined_compare(x[,1,37],data1) - combined_compare(x[,1,73],data2) 
+  }
+}
+ga_fit_FindGenes_ggCPP_bin <- fitting_closure_max_binary(FindGenes_ggCPP_params, PP_mass_cluster_freq_2, PP_mass_cluster_freq_3)
+gann <- ga(type = "binary", nBits = 1774, fitness = ga_fit_FindGenes_ggCPP_bin, lower = rep(0, length(best_best_vec)), upper = rep(1,length(best_best_vec)), 
+           seed = 113, elitism = 50, maxiter = 10, popSize = 300, run = 10, pcrossover = 0.8, pmutation = 0.3, crossover = gabin_spCrossover, mutation = gabin_raMutation)
+# better seed: 123  Mean = -685.3895 | Best = -453.6379
+
+plot(gann)
+summary(gann)
+sum(gann@solution)
+#[1] 905
+
+# no progress either... hm. I might need to define better crossover and mutation functions.
