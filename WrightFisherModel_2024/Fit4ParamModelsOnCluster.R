@@ -238,7 +238,7 @@ if(length(args)>=3){
 worker_nodes <- 1
 if(length(args)>=4){
   print(paste("Setting the number of workers to ", args[4]))
-  threads_total <- as.integer(args[4])
+  worker_nodes <- as.integer(args[4])
 }
 stoch_run <- FALSE
 if(length(args)>=5 & args[5]=="stoch"){
@@ -417,7 +417,7 @@ control <- mcstate::pmcmc_control(
   adaptive_proposal = TRUE,
   n_chains = 4, n_workers = 4, n_threads_total = 4)
 det_pmcmc_run2 <- mcstate::pmcmc(det_mcmc_pars, det_filter, control = control)
-processed_chains <- mcstate::pmcmc_thin(det_pmcmc_run2, burnin = 1000, thin = 1)
+processed_chains <- mcstate::pmcmc_thin(det_pmcmc_run2, burnin = 2000, thin = 1)
 parameter_mean_hpd <- apply(processed_chains$pars, 2, mean)
 print(parameter_mean_hpd)
 par(mfrow = c(1,1))
@@ -443,25 +443,32 @@ if(stoch_run == TRUE){
   
   filter <- mcstate::particle_filter$new(data = fitting_mass_data,
                                          model = WF,
-                                         n_particles = 96,
+                                         n_particles = 6,
                                          compare = combined_compare,
                                          n_threads = 8)
   
-  n_steps <- 50
+  n_steps <- 2
   n_burnin <- 0
   
-  control <- mcstate::pmcmc_control(n_steps, n_chains = 4, n_workers = 2,save_state = TRUE,
+  control <- mcstate::pmcmc_control(n_steps, n_chains = 1, n_workers = 1,save_state = TRUE,
                                     save_trajectories = TRUE,
                                     progress = TRUE,
-                                    n_threads_total = 8)
-  pmcmc_run <- mcstate::pmcmc(mcmc_pars, filter, control = control)
+                                    n_threads_total = 1)
+  pmcmc_run <- mcstate::pmcmc(det_mcmc_pars, filter, control = control)
   
+  filter <- mcstate::particle_filter$new(data = fitting_mass_data,
+                                         model = WF,
+                                         n_particles = 96,
+                                         compare = combined_compare,
+                                         n_threads = 8)
+  n_steps <- 2000
+  n_burnin <- 0
   control <- mcstate::pmcmc_control(
     n_steps,
     save_state = TRUE, 
     save_trajectories = TRUE,
     progress = TRUE, 
-    n_chains = 8, n_workers = worker_nodes, 
+    n_chains = 4, n_workers = worker_nodes, 
     n_threads_total = threads_total)
   #control <- mcstate::pmcmc_control(
   #  n_steps,
@@ -470,7 +477,7 @@ if(stoch_run == TRUE){
   #  progress = TRUE, 
   #  n_chains = 2)
   
-  stoch_pmcmc_run2 <- mcstate::pmcmc(pars <<- det_mcmc_pars, filter, control = control)
+  stoch_pmcmc_run2 <- mcstate::pmcmc(det_mcmc_pars, filter, control = control)
   par(mfrow = c(1,1))
   
   stoch_mcmc2 <- coda::as.mcmc(cbind(stoch_pmcmc_run2$probabilities, stoch_pmcmc_run2$pars))
@@ -482,9 +489,9 @@ if(stoch_run == TRUE){
   plot(stoch_mcmc2)
   dev.off()
   
-  processed_chains <- mcstate::pmcmc_thin(stoch_pmcmc_run2, burnin = 250, thin = 1)
+  processed_chains <- mcstate::pmcmc_thin(stoch_pmcmc_run2, burnin = 200, thin = 1)
   parameter_mean_hpd <- apply(processed_chains$pars, 2, mean)
-  parameter_mean_hpd
+  print(parameter_mean_hpd)
   print("stoch_mcmc_2 final log likelihood")
   processed_chains$probabilities[nrow(processed_chains$probabilities),2]
   print("stoch_mcmc_2 mean log likelihood")

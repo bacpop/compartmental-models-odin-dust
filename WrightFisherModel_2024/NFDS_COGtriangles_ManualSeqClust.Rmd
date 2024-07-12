@@ -3779,3 +3779,91 @@ lollipop_cluster_freqs_VTandNVT_labelSero(year = "2005", plot_title = "PopPUNK a
 lollipop_cluster_freqs_VTandNVT_labelSero(year = "2009", plot_title = "PopPUNK and ggCaller", data1 = nepal_cluster_freq_5[which(Nepal_PP_cluster_freq>1)]/sum(nepal_cluster_freq_5[which(Nepal_PP_cluster_freq>1)]), model_name_1 ="Model", model1 = simMeanggCPP5_Nepal[which(Nepal_PP_cluster_freq>1)]/sum(simMeanggCPP5_Nepal[which(Nepal_PP_cluster_freq>1)]), Nepal_VT[which(Nepal_PP_cluster_freq>1)], SeroLabel = Nepal_PP_serotype_comp[which(Nepal_PP_cluster_freq>1)])
 ```
 
+### analyse results from genetic algorithm for finding NFDS genes
+```{r}
+ga_results <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_07_12/gann.rds")
+summary(ga_results)
+sum(ga_results@solution)
+```
+
+```{r}
+WF_model <- odin.dust::odin_dust("NFDS_Model_FindGenes.R")
+```
+
+```{r}
+PopPUNK_clusters <- readRDS("PopPUNK_clusters.rds")
+ggCPP_intermed_gene_presence_absence_consensus <- readRDS(file = "ggCPP_intermed_gene_presence_absence_consensus.rds")
+ggCPP_intermed_gene_presence_absence_consensus_matrix <- sapply(ggCPP_intermed_gene_presence_absence_consensus[-1,-1],as.double)
+PP_model_start_pop <- readRDS(file = "PP_model_start_pop.rds")
+ggC_delta_ranking <- readRDS(file = "ggC_delta_ranking.rds")
+PP_mass_cluster_freq_1 <- readRDS(file = "PP_mass_cluster_freq_1.rds")
+PP_mass_cluster_freq_2 <- readRDS(file = "PP_mass_cluster_freq_2.rds")
+PP_mass_cluster_freq_3 <- readRDS(file = "PP_mass_cluster_freq_3.rds")
+PP_mass_VT <- readRDS(file = "PP_mass_VT.rds")
+PP_mass_clusters <- length(unique(PopPUNK_clusters$Cluster))
+PP_avg_cluster_freq <- rep(1/PP_mass_clusters, PP_mass_clusters)
+
+FindGenes_ggCPP_params <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = 0.3090376, sigma_w = 0, prop_f = 1, m = 0.03104461, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.15977862, vacc_time = 0, delta_bool = (as.vector(ga_results@solution)))
+
+
+#ggCPP_params <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = log(0.11313856), delta = ggC_delta_data2, m = log(0.01107152), migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.14340557, vacc_time = 0)
+WFmodel <- WF_model$new(pars = FindGenes_ggCPP_params,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+
+#n_particles <- 10L
+#n_times <- 73
+#x <- array(NA, dim = c(WFmodel$info()$len, n_particles, n_times))
+
+#for (t in seq_len(n_times)) {
+#  x[ , , t] <- WFmodel$run(t)
+#}
+#time <- x[1, 1, ]
+#x <- x[-1, , ]
+#combined_compare(x[,1,37],PP_mass_cluster_freq_2) + combined_compare(x[,1,73],PP_mass_cluster_freq_3)
+
+simMeanggCPP2 <- rowMeans(WFmodel$run(37)[-1,])
+simMeanggCPP3 <- rowMeans(WFmodel$run(73)[-1,])
+combined_compare(simMeanggCPP2,PP_mass_cluster_freq_2) + combined_compare(simMeanggCPP3,PP_mass_cluster_freq_3) 
+
+local_cols <- rainbow(12)
+plot(PP_mass_cluster_freq_3/sum(PP_mass_cluster_freq_3), type = "p", ylim=c(0,0.3))
+points(PP_mass_cluster_freq_1/sum(PP_mass_cluster_freq_1), col = "orange")
+points(PP_mass_cluster_freq_2/sum(PP_mass_cluster_freq_2), col = "red")
+
+# create a dataset
+cluster <- rep(unique(PopPUNK_clusters$Cluster),3)
+cluster_iter <- rep(1:length(unique(PopPUNK_clusters$Cluster)),3)
+time <- c(rep("1" , length(unique(PopPUNK_clusters$Cluster))),rep("2", length(unique(PopPUNK_clusters$Cluster))),rep("3", length(unique(PopPUNK_clusters$Cluster))))
+value <- c(PP_mass_cluster_freq_1/sum(PP_mass_cluster_freq_1), PP_mass_cluster_freq_2/sum(PP_mass_cluster_freq_2),PP_mass_cluster_freq_3/sum(PP_mass_cluster_freq_3))
+data_points_df <- data.frame(cluster,cluster_iter,time,value)
+
+ 
+# Grouped
+library(ggplot2)
+ggplot(data_points_df, aes(fill=time, y=value, x=cluster_iter)) + 
+    geom_bar(position="dodge", stat="identity")
+
+
+
+test <- data_points_df[1:10, "X2"]
+barplot(test)
+barplot(data_points_df[,2], beside = TRUE)
+
+
+
+plot(PP_mass_cluster_freq_3/sum(PP_mass_cluster_freq_3), type = "l", ylim=c(0,1))
+points(simMeanggCPP3/sum(simMeanggCPP3), col = local_cols[1], pch = 4)
+points(x[,1,72]/sum(x[,1,73]), col = local_cols[2])
+points(x[,2,72]/sum(x[,2,73]), col = local_cols[3])
+points(x[,3,72]/sum(x[,3,73]), col = local_cols[4])
+points(x[,4,72]/sum(x[,4,73]), col = local_cols[5])
+points(x[,5,73]/sum(x[,5,73]), col = local_cols[6])
+points(x[,6,73]/sum(x[,6,73]), col = local_cols[7])
+points(x[,7,73]/sum(x[,7,73]), col = local_cols[8])
+points(x[,8,73]/sum(x[,8,73]), col = local_cols[9])
+points(x[,9,73]/sum(x[,9,73]), col = local_cols[10])
+points(x[,10,73]/sum(x[,10,73]), col = local_cols[11])
+```

@@ -450,12 +450,12 @@ for (i in 1:no_PopPUNK_clusters){
 # 0 means NVT
 # if cluster is 50/50 it will count as VT
 
-PP_mass_VT_mean <- rep(0, no_PopPUNK_clusters)
+#PP_mass_VT_mean <- rep(0, no_PopPUNK_clusters)
 
-for (i in 1:no_PopPUNK_clusters){
-  PP_mass_VT_mean[i] <- (mean(as.integer(PopPUNK_clusters[PopPUNK_clusters$Cluster == i,"VT"]=="VT")))
-}
-saveRDS(PP_mass_VT_mean, file = "PP_mass_VT_mean.rds")
+#for (i in 1:no_PopPUNK_clusters){
+#  PP_mass_VT_mean[i] <- (mean(as.integer(PopPUNK_clusters[PopPUNK_clusters$Cluster == i,"VT"]=="VT")))
+#}
+#saveRDS(PP_mass_VT_mean, file = "PP_mass_VT_mean.rds")
 ```
 
 ```{r}
@@ -469,9 +469,9 @@ PP_mass_cluster_freq_1 <- rep(0,no_PopPUNK_clusters)
 PP_mass_cluster_freq_2 <- rep(0,no_PopPUNK_clusters)
 PP_mass_cluster_freq_3 <- rep(0,no_PopPUNK_clusters)
 for (i in 1:no_PopPUNK_clusters){
-  PP_mass_cluster_freq_1[i] <- length(which(PopPUNK_clusters[which(PopPUNK_clusters$Cluster==i),]$"SeqYear"==2001))
-  PP_mass_cluster_freq_2[i] <- length(which(PopPUNK_clusters[which(PopPUNK_clusters$Cluster==i),]$"SeqYear"==2004))
-  PP_mass_cluster_freq_3[i] <- length(which(PopPUNK_clusters[which(PopPUNK_clusters$Cluster==i),]$"SeqYear"==2007))
+  PP_mass_cluster_freq_1[i] <- length(which(PopPUNK_clusters[which(PopPUNK_clusters$Cluster==unique(PopPUNK_clusters$Cluster)[i]),]$"SeqYear"==2001))
+  PP_mass_cluster_freq_2[i] <- length(which(PopPUNK_clusters[which(PopPUNK_clusters$Cluster==unique(PopPUNK_clusters$Cluster)[i]),]$"SeqYear"==2004))
+  PP_mass_cluster_freq_3[i] <- length(which(PopPUNK_clusters[which(PopPUNK_clusters$Cluster==unique(PopPUNK_clusters$Cluster)[i]),]$"SeqYear"==2007))
 }
 ```
 
