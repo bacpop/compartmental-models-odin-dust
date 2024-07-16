@@ -273,13 +273,19 @@ saveRDS(Navajo_VT, file = "Navajo_VT.rds")
 Navajo_cluster_freqs <- vector(mode = "list", length = length(Navajo_time_points_selected))
 
 for(j in 1:length(Navajo_time_points_selected)){
-  Navajo_cluster_freqs[[j]] <- rep(0, no_Navajo_PP)
+  Navajo_cluster_freqs[[j]] <- rep(NA, no_Navajo_PP)
   for (i in unique(Navajo_PP$Cluster)){
     Navajo_cluster_freqs[[j]][which(unique(Navajo_PP$Cluster) == i)] <- length(which(Navajo_meta_data[Navajo_meta_IDtoInd[Navajo_PP[Navajo_PP$Cluster == i,"Taxon"]],]$Year==Navajo_time_points_selected[j]))
   }
 }
 
-Navajo_cluster_freqs[[6]] <- rep(NA, no_Navajo_PP)
+for(j in 1:length(Navajo_time_points_selected)){
+  if(sum(Navajo_cluster_freqs[[j]])==0){
+    Navajo_cluster_freqs[[j]] <- rep(NA, no_Navajo_PP)
+  }
+}
+
+#Navajo_cluster_freqs[[6]] <- rep(NA, no_Navajo_PP)
 # 901 data points in total
 Navajo_cluster_freqs_preVac <- rep(0, no_Navajo_PP)
 for (i in 1:length(Navajo_time_points_preVac1)) {

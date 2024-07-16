@@ -88,10 +88,11 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   intermed_gene_presence_absence_consensus_matrix <- sapply(intermed_gene_presence_absence_consensus[-1,-1],as.double)
   model_start_pop <- readRDS(file = "PP_model_start_pop.rds")
   delta_ranking <- readRDS(file = "ggC_delta_ranking.rds")
+  #delta_ranking <- readRDS(file = "ggC_delta_ranking3.rds")
   mass_cluster_freq_1 <- readRDS(file = "PP_mass_cluster_freq_1.rds")
   mass_cluster_freq_2 <- readRDS(file = "PP_mass_cluster_freq_2.rds")
   mass_cluster_freq_3 <- readRDS(file = "PP_mass_cluster_freq_3.rds")
-  mass_VT <- readRDS(file = "PP_mass_VT_mean.rds")
+  #mass_VT <- readRDS(file = "PP_mass_VT_mean.rds")
   mass_VT <- readRDS(file = "PP_mass_VT.rds")
   mass_clusters <- length(unique(seq_clusters$Cluster))
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
@@ -493,9 +494,9 @@ if(stoch_run == TRUE){
   parameter_mean_hpd <- apply(processed_chains$pars, 2, mean)
   print(parameter_mean_hpd)
   print("stoch_mcmc_2 final log likelihood")
-  processed_chains$probabilities[nrow(processed_chains$probabilities),2]
+  print(processed_chains$probabilities[nrow(processed_chains$probabilities),2])
   print("stoch_mcmc_2 mean log likelihood")
-  mean(processed_chains$probabilities[,2])
+  print(mean(processed_chains$probabilities[,2]))
   
   saveRDS(stoch_pmcmc_run2, paste(output_filename, "_stoch_pmcmc_run2.rds", sep = ""))
 }

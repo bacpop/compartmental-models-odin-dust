@@ -107,7 +107,7 @@ ga_fit_FindGenes_ggCPP_bin <- fitting_closure_max_binary(FindGenes_ggCPP_params,
 # better seed: 123  Mean = -685.3895 | Best = -453.6379
 
 gann <- ga(type = "binary", nBits = 1770, fitness = ga_fit_FindGenes_ggCPP_bin, lower = rep(0, 1770), upper = rep(1,1770), 
-           elitism = 1000, maxiter = 100, popSize = 100000, run = 10, pcrossover = 0.8, pmutation = 0.1, crossover = gabin_spCrossover, mutation = gabin_raMutation, parallel = 48)
+           elitism = 10000, maxiter = 100, popSize = 1000000, run = 20, pcrossover = 0.8, pmutation = 0.5, crossover = gabin_spCrossover, mutation = gabin_raMutation, parallel = 48)
 
 #plot(gann)
 print(summary(gann))
