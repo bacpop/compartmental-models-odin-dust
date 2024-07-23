@@ -750,10 +750,11 @@ plot(sort(ggC_pre_vacc_gene_freq),(1 - sort(ggC_pre_vacc_gene_freq) * (1 - sort(
 ```{r}
 #save delta ranking
 #saveRDS(ggC_delta_ranking, file = "ggC_delta_ranking.rds")
-saveRDS(ggC_delta_data2, file = "ggC_delta_ranking.rds")
+saveRDS(ggC_delta_ranking2, file = "ggC_delta_ranking.rds")
 #saveRDS(ggC_inv_delta_ranking, file = "ggC_inv_delta_ranking.rds")
 #saveRDS(ggC_delta_ranking4, file = "ggC_delta_ranking_peri-pre.rds")
 #saveRDS(ggC_delta_ranking2, file = "ggC_delta_ranking_post-pre.rds")
+saveRDS(ggC_delta_data3, file = "ggC_delta_ranking.rds")
 saveRDS(ggC_delta_data2, file = "ggC_delta_data_post-pre.rds")
 saveRDS(ggC_delta_data3, file = "ggC_delta_data3.rds")
 saveRDS(ggC_delta_ranking8, file = "ggC_delta_ranking8.rds")

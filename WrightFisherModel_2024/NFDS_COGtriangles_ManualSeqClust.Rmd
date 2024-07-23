@@ -3784,6 +3784,10 @@ lollipop_cluster_freqs_VTandNVT_labelSero(year = "2009", plot_title = "PopPUNK a
 ga_results <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_07_12/gann.rds")
 summary(ga_results)
 sum(ga_results@solution)
+
+ga_results <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_07_22/GA/gann.rds")
+summary(ga_results)
+sum(ga_results@solution)
 ```
 
 ```{r}
@@ -3913,19 +3917,112 @@ for (i in 1:mass_clusters) {
 ```
 
 ```{r}
-ggCPP_params <- list(dt = 1/36, species_no =mass_clusters,  gene_no = nrow(intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double( model_start_pop), Pop_eq = as.double( model_start_pop), capacity = sum( model_start_pop), Genotypes = intermed_gene_presence_absence_consensus_matrix, sigma_f = -2.1045558, prop_f = 0.2779808, sigma_w =0 , delta = delta_ranking, m = -2.6229395, migVec =  avg_cluster_freq, vaccTypes =  mass_VT, v = 0.2710917 , vacc_time = 0)
+# deterministic fit from July 17: -2.0986254  0.2779427 -2.6195911  0.2701895 
+# deterministic fit from July 16 (only on local machine): sigma_f = -2.0589658, prop_f = 0.2793454, sigma_w =-1000, m = -2.6405403, v = 0.2697361
+
+
+ggCPP_params <- list(dt = 1/36, species_no =mass_clusters,  gene_no = nrow(intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double( model_start_pop), Pop_eq = as.double( model_start_pop), capacity = sum( model_start_pop), Genotypes = intermed_gene_presence_absence_consensus_matrix, sigma_f = -2.0986254, prop_f = 0.2779427, sigma_w =-1000 , delta = delta_ranking, m = -2.6195911, migVec =  avg_cluster_freq, vaccTypes =  mass_VT, v = 0.2701895 , vacc_time = 0)
 WFmodel <- WF_model$new(pars = ggCPP_params,
                          time = 1,
                          n_particles = 10L,
                          n_threads = 4L,
                          seed = 1L)
 
-simMeanggCPP5_Navajo <- rowMeans(WFmodel$run(157)[-1,])
+simMeanggCPP10_Navajo <- rowMeans(WFmodel$run(109)[-1,])
 
-lollipop_cluster_freqs_VTandNVT_labelSero(year = "tp 14", plot_title = "PopPUNK and ggCaller", data1 = mass_cluster_freq_14/sum(mass_cluster_freq_14), model_name_1 ="Model", model1 = simMeanggCPP5_Navajo/sum(simMeanggCPP5_Navajo), VT_vec = mass_VT, SeroLabel = Navajo_PP_serotype_comp)
+simMeanggCPP13_Navajo <- rowMeans(WFmodel$run(145)[-1,])
+simMeanggCPP14_Navajo <- rowMeans(WFmodel$run(157)[-1,])
+simMeanggCPP15_Navajo <- rowMeans(WFmodel$run(169)[-1,])
 
-lollipop_cluster_freqs_VTandNVT_labelSero(year = "tp 14", plot_title = "PopPUNK and ggCaller", data1 = mass_cluster_freq_14/sum(mass_cluster_freq_14), model_name_1 ="tp 1", model1 = mass_cluster_freq_1/sum(mass_cluster_freq_1), VT_vec = mass_VT, SeroLabel = Navajo_PP_serotype_comp)
+lollipop_cluster_freqs_VTandNVT_labelSero(year = "tp 10", plot_title = "PopPUNK and ggCaller", data1 = mass_cluster_freq_10/sum(mass_cluster_freq_10), model_name_1 ="Model", model1 = simMeanggCPP10_Navajo/sum(simMeanggCPP10_Navajo), VT_vec = mass_VT, SeroLabel = Navajo_PP_serotype_comp)
 
-lollipop_cluster_freqs_VTandNVT_labelSero(year = "tp 14", plot_title = "PopPUNK and ggCaller", data1 =mass_cluster_freq_1/sum(mass_cluster_freq_1), model_name_1 ="Model", model1 = simMeanggCPP5_Navajo/sum(simMeanggCPP5_Navajo), VT_vec = mass_VT, SeroLabel = Navajo_PP_serotype_comp)
+lollipop_cluster_freqs_VTandNVT_labelSero(year = "tp 13", plot_title = "PopPUNK and ggCaller", data1 = mass_cluster_freq_13/sum(mass_cluster_freq_13), model_name_1 ="Model", model1 = simMeanggCPP13_Navajo/sum(simMeanggCPP13_Navajo), VT_vec = mass_VT, SeroLabel = Navajo_PP_serotype_comp)
+
+lollipop_cluster_freqs_VTandNVT_labelSero(year = "tp 14", plot_title = "PopPUNK and ggCaller", data1 = mass_cluster_freq_14/sum(mass_cluster_freq_14), model_name_1 ="Model", model1 = simMeanggCPP14_Navajo/sum(simMeanggCPP14_Navajo), VT_vec = mass_VT, SeroLabel = Navajo_PP_serotype_comp)
+
+lollipop_cluster_freqs_VTandNVT_labelSero(year = "tp 15", plot_title = "PopPUNK and ggCaller", data1 = mass_cluster_freq_15/sum(mass_cluster_freq_15), model_name_1 ="Model", model1 = simMeanggCPP15_Navajo/sum(simMeanggCPP15_Navajo), VT_vec = mass_VT, SeroLabel = Navajo_PP_serotype_comp)
+# this is not very meaningful because it is just 28 data points
+
+lollipop_cluster_freqs_VTandNVT_labelSero(year = "data tp 13 vs 14", plot_title = "PopPUNK and ggCaller", data1 = mass_cluster_freq_13/sum(mass_cluster_freq_13), model_name_1 ="tp 14", model1 = mass_cluster_freq_14/sum(mass_cluster_freq_14), VT_vec = mass_VT, SeroLabel = Navajo_PP_serotype_comp)
+
+lollipop_cluster_freqs_VTandNVT_labelSero(year = "data tp 14 vs 15", plot_title = "PopPUNK and ggCaller", data1 = mass_cluster_freq_14/sum(mass_cluster_freq_14), model_name_1 ="tp 15", model1 = mass_cluster_freq_15/sum(mass_cluster_freq_15), VT_vec = mass_VT, SeroLabel = Navajo_PP_serotype_comp)
+
+lollipop_cluster_freqs_VTandNVT_labelSero(year = "tp 14", plot_title = "PopPUNK and ggCaller", data1 = model_start_pop/sum(model_start_pop), model_name_1 ="Model", model1 = simMeanggCPP14_Navajo/sum(simMeanggCPP14_Navajo), VT_vec = mass_VT, SeroLabel = Navajo_PP_serotype_comp)
+
+lollipop_cluster_freqs_VTandNVT_labelSero(year = "tp 14", plot_title = "PopPUNK and ggCaller", data1 = mass_cluster_freq_1/sum(mass_cluster_freq_1), model_name_1 ="tp 1", model1 =  mass_cluster_freq_14/sum(mass_cluster_freq_14), VT_vec = mass_VT, SeroLabel = Navajo_PP_serotype_comp)
+
+lollipop_cluster_freqs_2x2_VTandNVT_labelSero(year = "Data change vs Model change", plot_title = "PopPUNK and ggCaller", data_name = "data tp 1", data1 = mass_cluster_freq_1/sum(mass_cluster_freq_1), model_name_1 ="data tp 14", model1 =  mass_cluster_freq_14/sum(mass_cluster_freq_14), model_name_2 ="model tp 14", model2 =  simMeanggCPP14_Navajo/sum(simMeanggCPP14_Navajo), VT_vec = mass_VT, SeroLabel = Navajo_PP_serotype_comp)
+
+#lollipop_cluster_freqs_VTandNVT_labelSero(year = "tp 14", plot_title = "PopPUNK and ggCaller", data1 =mass_cluster_freq_1/sum(mass_cluster_freq_1), model_name_1 ="Model", model1 = simMeanggCPP5_Navajo/sum(simMeanggCPP5_Navajo), VT_vec = mass_VT, SeroLabel = Navajo_PP_serotype_comp)
+```
+
+```{r}
+Navajo_data_df <- data.frame(matrix(c(mass_cluster_freq_1/sum(mass_cluster_freq_1), mass_cluster_freq_2/sum(mass_cluster_freq_2), mass_cluster_freq_3/sum(mass_cluster_freq_3), mass_cluster_freq_9/sum(mass_cluster_freq_9), mass_cluster_freq_10/sum(mass_cluster_freq_10), mass_cluster_freq_13/sum(mass_cluster_freq_13), mass_cluster_freq_14/sum(mass_cluster_freq_14)), ncol = 1))
+Navajo_data_df$strain <- rep(1:length(mass_cluster_freq_1),7)
+Navajo_data_df$year <- sort(rep(c("1998","1999","2000","2006","2007","2010","2011"),length(mass_cluster_freq_1)))
+colnames(Navajo_data_df)[1] <- "value"
+
+library("viridis") 
+ggplot(Navajo_data_df, aes(fill=year, y=value, x=strain)) + 
+    geom_bar(position="dodge", stat="identity") +
+  scale_fill_viridis(discrete = TRUE)
+```
+
+```{r}
+# 4 param fit
+Navajo_4param_fit <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_07_17/Navajo_fit/Navajo_ggCaller_PopPUNK_det_pmcmc_run2.rds")
+Navajo_4param_fit_mcmc <- coda::as.mcmc(cbind(Navajo_4param_fit$probabilities, Navajo_4param_fit$pars))
+coda::effectiveSize(Navajo_4param_fit_mcmc)
+summary(coda::as.mcmc(Navajo_4param_fit_mcmc))
+
+# 5 param fit
+Navajo_5param_fit <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_07_17/Navajo_5paramfit/Navajo_ggCaller_PopPUNK_det_pmcmc_run2.rds")
+Navajo_5param_fit_mcmc <- coda::as.mcmc(cbind(Navajo_5param_fit$probabilities, Navajo_5param_fit$pars))
+
+coda::effectiveSize(Navajo_5param_fit_mcmc)
+summary(coda::as.mcmc(Navajo_5param_fit_mcmc))
+
+```
+
+```{r}
+# 4 param fit
+# Mass
+Mass_4param_fit <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_07_16/Mass_fit/4param_ggCaller_PopPUNK_det_pmcmc_run2.rds")
+Mass_4param_fit_mcmc <- coda::as.mcmc(cbind(Mass_4param_fit$probabilities, Mass_4param_fit$pars))
+coda::effectiveSize(Mass_4param_fit_mcmc)
+summary(coda::as.mcmc(Mass_4param_fit_mcmc))
+
+# 5 param fit
+Mass_5param_fit <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_07_17/Mass_5paramfit/Mass_ggCaller_PopPUNK_det_pmcmc_run2.rds")
+Mass_5param_fit_mcmc <- coda::as.mcmc(cbind(Mass_5param_fit$probabilities, Mass_5param_fit$pars))
+
+coda::effectiveSize(Mass_5param_fit_mcmc)
+summary(coda::as.mcmc(Mass_5param_fit_mcmc))
+
+```
+
+```{r}
+# 5 param fit: -2.50384352 -476.25811203    0.27730687   -2.95914643    0.08597233 
+ggCPP_params <- list(dt = 1/36, species_no =mass_clusters,  gene_no = nrow(intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double( model_start_pop), Pop_eq = as.double( model_start_pop), capacity = sum( model_start_pop), Genotypes = intermed_gene_presence_absence_consensus_matrix, sigma_f = -2.50384352, prop_f = 0.27730687, sigma_w =-476.25811203, delta = delta_ranking, m = -2.95914643, migVec =  avg_cluster_freq, vaccTypes =  mass_VT, v = 0.08597233  , vacc_time = 0)
+WFmodel <- WF_model$new(pars = ggCPP_params,
+                         time = 1,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+
+simMeanggCPP10_Navajo_5p <- rowMeans(WFmodel$run(109)[-1,])
+
+simMeanggCPP13_Navajo_5p <- rowMeans(WFmodel$run(145)[-1,])
+simMeanggCPP14_Navajo_5p <- rowMeans(WFmodel$run(157)[-1,])
+simMeanggCPP15_Navajo_5p <- rowMeans(WFmodel$run(169)[-1,])
+
+lollipop_cluster_freqs_VTandNVT_labelSero(year = "tp 10", plot_title = "PopPUNK and ggCaller", data1 = mass_cluster_freq_10/sum(mass_cluster_freq_10), model_name_1 ="Model", model1 = simMeanggCPP10_Navajo_5p/sum(simMeanggCPP10_Navajo_5p), VT_vec = mass_VT, SeroLabel = Navajo_PP_serotype_comp)
+
+lollipop_cluster_freqs_VTandNVT_labelSero(year = "tp 13", plot_title = "PopPUNK and ggCaller", data1 = mass_cluster_freq_13/sum(mass_cluster_freq_13), model_name_1 ="Model", model1 = simMeanggCPP13_Navajo_5p/sum(simMeanggCPP13_Navajo_5p), VT_vec = mass_VT, SeroLabel = Navajo_PP_serotype_comp)
+
+lollipop_cluster_freqs_VTandNVT_labelSero(year = "tp 14", plot_title = "PopPUNK and ggCaller", data1 = mass_cluster_freq_14/sum(mass_cluster_freq_14), model_name_1 ="Model", model1 = simMeanggCPP14_Navajo_5p/sum(simMeanggCPP14_Navajo_5p), VT_vec = mass_VT, SeroLabel = Navajo_PP_serotype_comp)
+
+
+lollipop_cluster_freqs_2x2_VTandNVT_labelSero(year = "Data change vs Model change", plot_title = "PopPUNK and ggCaller", data_name = "data tp 14", data1 = mass_cluster_freq_14/sum(mass_cluster_freq_14), model_name_1 ="model 4 param", model1 =  simMeanggCPP14_Navajo/sum(simMeanggCPP14_Navajo), model_name_2 ="model 5 param", model2 =  simMeanggCPP14_Navajo_5p/sum(simMeanggCPP14_Navajo_5p), VT_vec = mass_VT, SeroLabel = Navajo_PP_serotype_comp)
 ```
 

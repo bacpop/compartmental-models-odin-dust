@@ -29,7 +29,7 @@ lollipop_cluster_freqs <- function(plot_title = "Generic Plot Title",data1, data
                        name   = "Group") +
     coord_flip()+
     #theme_ipsum() +
-    theme(legend.position = "none") +
+    theme(legend.position.inside = "none") +
     ggtitle("2001") +
     ylab("Frequency") +
     xlab("Clusters") +
@@ -44,7 +44,7 @@ lollipop_cluster_freqs <- function(plot_title = "Generic Plot Title",data1, data
                        name   = "Group") +
     coord_flip()+
     #theme_ipsum() +
-    theme(legend.position = "none") +
+    theme(legend.position.inside = "none") +
     ggtitle("2004") +
     ylab("Frequency") +
     xlab("Clusters") +
@@ -59,7 +59,7 @@ lollipop_cluster_freqs <- function(plot_title = "Generic Plot Title",data1, data
                        name   = "Legend") +
     coord_flip()+
     #theme_ipsum() +
-    theme(legend.position = c(.8,.8),legend.text = element_text(size = 20),legend.title = element_text(size = 20)) +
+    theme(legend.position.inside = c(.8,.8),legend.text = element_text(size = 20),legend.title = element_text(size = 20)) +
     ggtitle("2007") +
     ylab("Frequency") +
     xlab("Clusters") +
@@ -93,7 +93,7 @@ lollipop_cluster_freqs_3points <- function(year = "year unknown", plot_title = "
                        name   = "Group") +
     coord_flip()+
     #theme_ipsum() +
-    theme(legend.position = c(.8,.8),legend.text = element_text(size = 20),legend.title = element_text(size = 20)) +
+    theme(legend.position.inside = c(.8,.8),legend.text = element_text(size = 20),legend.title = element_text(size = 20)) +
     ggtitle(year) +
     ylab("Frequency") +
     xlab("Clusters") +
@@ -126,7 +126,7 @@ lollipop_cluster_freqs_2x2points <- function(year = "year unknown", plot_title =
                        name   = "Group") +
     coord_flip()+
     #theme_ipsum() +
-    theme(legend.position = c(.8,.8),legend.text = element_text(size = 20),legend.title = element_text(size = 20)) +
+    theme(legend.position.inside = c(.8,.8),legend.text = element_text(size = 20),legend.title = element_text(size = 20)) +
     ggtitle(year) +
     ylab("Frequency") +
     xlab("Clusters") +
@@ -158,7 +158,7 @@ lollipop_cluster_freqs_VTandNVT <- function(year = "year unknown", plot_title = 
     scale_shape_manual(values=c(19, 1))+
     coord_flip()+
     #theme_ipsum() +
-    theme(legend.position = c(.8,.8),legend.text = element_text(size = 20),legend.title = element_text(size = 20)) +
+    theme(legend.position.inside = c(.8,.8),legend.text = element_text(size = 20),legend.title = element_text(size = 20)) +
     ggtitle(year) +
     ylab("Frequency") +
     xlab("Clusters") +
@@ -195,7 +195,7 @@ lollipop_cluster_freqs_VTandNVT_labelSero <- function(year = "year unknown", plo
     scale_shape_manual(values=c(19, 1))+
     coord_flip()+
     #theme_ipsum() +
-    theme(legend.position = c(.8,.8),legend.text = element_text(size = 20),legend.title = element_text(size = 20)) +
+    theme(legend.position.inside = c(.8,.8),legend.text = element_text(size = 20),legend.title = element_text(size = 20)) +
     ggtitle(year) +
     ylab("Frequency") +
     xlab("Clusters") +
@@ -235,7 +235,7 @@ lollipop_cluster_freqs_2x2_VTandNVT <- function(year = "year unknown", plot_titl
     scale_shape_manual(values=c(19, 1))+
     coord_flip()+
     #theme_ipsum() +
-    theme(legend.position = c(.8,.8),legend.text = element_text(size = 20),legend.title = element_text(size = 20)) +
+    theme(legend.position.inside = c(.8,.8),legend.text = element_text(size = 20),legend.title = element_text(size = 20)) +
     ggtitle(year) +
     ylab("Frequency") +
     xlab("Clusters") +
@@ -274,7 +274,7 @@ lollipop_cluster_freqs_2x2_VTandNVT_labelSero <- function(year = "year unknown",
     scale_shape_manual(values=c(19, 1))+
     coord_flip()+
     #theme_ipsum() +
-    theme(legend.position = c(.8,.8),legend.text = element_text(size = 20),legend.title = element_text(size = 20)) +
+    theme(legend.position.inside = c(.8,.8),legend.text = element_text(size = 20),legend.title = element_text(size = 20)) +
     ggtitle(year) +
     ylab("Frequency") +
     xlab("Clusters") +
@@ -310,7 +310,7 @@ lollipop_cluster_freqs_VTandNVT_labelSero_flipped <- function(year = "year unkno
                        name   = "Group") +
     scale_shape_manual(values=c(19, 1))+
     #theme_ipsum() +
-    theme(legend.position = c(.8,.8),legend.text = element_text(size = 20),legend.title = element_text(size = 20)) +
+    theme(legend.position.inside = c(.8,.8),legend.text = element_text(size = 20),legend.title = element_text(size = 20)) +
     ggtitle(year) +
     ylab("Frequency") +
     xlab("Clusters") +

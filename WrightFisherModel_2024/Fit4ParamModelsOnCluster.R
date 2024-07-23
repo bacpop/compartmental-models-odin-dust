@@ -229,6 +229,30 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
   
   vacc_time <- 5
+} else if(args[1] == "UK" & args[2] == "PopPUNK"){
+  seq_clusters <- readRDS("UK_PP.rds")
+  intermed_gene_presence_absence_consensus <- readRDS(file = "UK_ggCaller_intermed_consensus.rds")
+  intermed_gene_presence_absence_consensus_matrix <- sapply(intermed_gene_presence_absence_consensus[-1,-1],as.double)
+  model_start_pop <- readRDS(file = "UK_model_start_pop.rds")
+  delta_ranking <- readRDS(file = "UK_delta_ranking.rds")
+  mass_cluster_freq_1 <- readRDS(file = "UK_cluster_freqs_1.rds")
+  mass_cluster_freq_2 <- readRDS(file = "UK_cluster_freqs_2.rds")
+  mass_cluster_freq_3 <- readRDS(file = "UK_cluster_freqs_3.rds")
+  mass_cluster_freq_4 <- readRDS(file = "UK_cluster_freqs_4.rds")
+  mass_cluster_freq_5 <- readRDS(file = "UK_cluster_freqs_5.rds")
+  mass_cluster_freq_6 <- readRDS(file = "UK_cluster_freqs_6.rds")
+  mass_cluster_freq_7 <- readRDS(file = "UK_cluster_freqs_7.rds")
+  mass_VT <- readRDS(file = "UK_VT.rds")
+  mass_clusters <- length(unique(seq_clusters$Cluster))
+  avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
+  output_filename <- "UK_ggCaller_PopPUNK"
+  
+  dt <- 1/12
+  peripost_mass_cluster_freq <- data.frame("year" = 1:6, rbind(mass_cluster_freq_2,mass_cluster_freq_3,mass_cluster_freq_4,mass_cluster_freq_5,mass_cluster_freq_6, mass_cluster_freq_7))
+  
+  names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
+  
+  vacc_time <- 0
 }
 
 threads_total <- 1
