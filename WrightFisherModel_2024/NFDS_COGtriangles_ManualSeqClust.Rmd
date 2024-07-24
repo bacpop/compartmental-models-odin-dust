@@ -87,6 +87,19 @@ combined_compare <- function(state, observed, pars = NULL) {
   result
 }
 
+#combined_compare <- function(state, observed, pars = NULL) {
+#  result <- 0
+  #data_size <- sum(mass_cluster_freq_1)
+  #model_size = 15000
+#  data_size <- sum(observed)
+#  model_size = sum(state)
+  
+#  for (i in 1:length(observed)){
+#    result <- result + ll_pois((observed[i]/data_size)*100, (state[i]/model_size)*100)
+#  }
+#  result
+#}
+
 fit_dfoptim <- function(params){
   all_params <- list(dt = 1/36, species_no = mass_clusters,  gene_no = nrow(intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(model_start_pop), Pop_eq = as.double(model_start_pop), capacity = sum(model_start_pop), Genotypes = intermed_gene_presence_absence_consensus_matrix, sigma_f = params[1], sigma_w = params[2], prop_f = params[3], delta = delta_ranking, m = params[4], migVec = avg_cluster_freq, vaccTypes = mass_VT, v = params[5], vacc_time = 0)
   WFmodel <- WF_nG_h_vP$new(pars = all_params,
@@ -2606,12 +2619,18 @@ for (i in 1:PP_mass_clusters) {
 ```{r}
 source("CreateLollipopPlot.R")
 
+# ggCPP mass fit 24.07.24: -0.4404874  0.1125722 -3.9657678  0.1111540 
+# trying out likelihood weighted by cluster size
+
+#with normal likelihood: -1.8680105  0.2718083 -4.5788394  0.1291080 
 
 # ggCPP fit (step function model)
 ### ggCaller PopPUNK
-params_ggCPP <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = 0.1133391187, sigma_w = 0.0003826182, prop_f = 0.3803189582, delta = ggC_delta_ranking, m = 0.0108386117, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.1441624728, vacc_time = 0)
+params_ggCPP <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = -0.4404874, sigma_w = -1000, prop_f = 0.1125722, delta = ggC_delta_ranking, m = -3.9657678, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.1111540, vacc_time = 0)
+
+params_ggCPP <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = -1.8680105, sigma_w = -1000, prop_f = 0.2718083, delta = ggC_delta_ranking, m = -4.5788394, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.1291080, vacc_time = 0)
 WFmodel_ggCPP <- WF_nG_h_vP$new(pars = params_ggCPP,
-                                   time = 1,
+                                   time = 0,
                                    n_particles = 10L,
                                    n_threads = 4L,
                                    seed = 1L)
@@ -3919,20 +3938,22 @@ for (i in 1:mass_clusters) {
 ```{r}
 # deterministic fit from July 17: -2.0986254  0.2779427 -2.6195911  0.2701895 
 # deterministic fit from July 16 (only on local machine): sigma_f = -2.0589658, prop_f = 0.2793454, sigma_w =-1000, m = -2.6405403, v = 0.2697361
+# deterministic fit from July 23: -2.1088261  0.2794157 -2.6403792  0.3132826 
+# deterministic fit from July 23, with vaccTime=2: -2.1082122  0.2792276 -2.6361788  0.3067672 
+# deterministic fit from July 24, with vaccTime=2 and 6A in PCV7: -2.2767165  0.2876572 -2.6442156  0.4553816
 
-
-ggCPP_params <- list(dt = 1/36, species_no =mass_clusters,  gene_no = nrow(intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double( model_start_pop), Pop_eq = as.double( model_start_pop), capacity = sum( model_start_pop), Genotypes = intermed_gene_presence_absence_consensus_matrix, sigma_f = -2.0986254, prop_f = 0.2779427, sigma_w =-1000 , delta = delta_ranking, m = -2.6195911, migVec =  avg_cluster_freq, vaccTypes =  mass_VT, v = 0.2701895 , vacc_time = 0)
+ggCPP_params <- list(dt = 1/36, species_no =mass_clusters,  gene_no = nrow(intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double( model_start_pop), Pop_eq = as.double( model_start_pop), capacity = sum( model_start_pop), Genotypes = intermed_gene_presence_absence_consensus_matrix, sigma_f = -2.2767165, prop_f = 0.2876572, sigma_w =-1000 , delta = delta_ranking, m = -2.6442156, migVec =  avg_cluster_freq, vaccTypes =  mass_VT, v = 0.4553816 , vacc_time = 2)
 WFmodel <- WF_model$new(pars = ggCPP_params,
-                         time = 1,
+                         time = 0,
                          n_particles = 10L,
                          n_threads = 4L,
                          seed = 1L)
 
-simMeanggCPP10_Navajo <- rowMeans(WFmodel$run(109)[-1,])
+simMeanggCPP10_Navajo <- rowMeans(WFmodel$run(108)[-1,])
 
-simMeanggCPP13_Navajo <- rowMeans(WFmodel$run(145)[-1,])
-simMeanggCPP14_Navajo <- rowMeans(WFmodel$run(157)[-1,])
-simMeanggCPP15_Navajo <- rowMeans(WFmodel$run(169)[-1,])
+simMeanggCPP13_Navajo <- rowMeans(WFmodel$run(144)[-1,])
+simMeanggCPP14_Navajo <- rowMeans(WFmodel$run(156)[-1,])
+simMeanggCPP15_Navajo <- rowMeans(WFmodel$run(168)[-1,])
 
 lollipop_cluster_freqs_VTandNVT_labelSero(year = "tp 10", plot_title = "PopPUNK and ggCaller", data1 = mass_cluster_freq_10/sum(mass_cluster_freq_10), model_name_1 ="Model", model1 = simMeanggCPP10_Navajo/sum(simMeanggCPP10_Navajo), VT_vec = mass_VT, SeroLabel = Navajo_PP_serotype_comp)
 
@@ -3982,6 +4003,60 @@ Navajo_5param_fit_mcmc <- coda::as.mcmc(cbind(Navajo_5param_fit$probabilities, N
 coda::effectiveSize(Navajo_5param_fit_mcmc)
 summary(coda::as.mcmc(Navajo_5param_fit_mcmc))
 
+
+# 4 param fit with vaccTime=2
+Navajo_4param_fit <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_07_23/Navajo_VaccTime2/Navajo_ggCaller_PopPUNK_det_pmcmc_run2.rds")
+Navajo_4param_fit_mcmc <- coda::as.mcmc(cbind(Navajo_4param_fit$probabilities, Navajo_4param_fit$pars))
+coda::effectiveSize(Navajo_4param_fit_mcmc)
+summary(coda::as.mcmc(Navajo_4param_fit_mcmc))
+
+# 4 param fit with vacc2 (pcv7 and pcv13 seperately)
+Navajo_4param_fit <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_07_23/Navajo_vacc2/Navajo_ggCaller_PopPUNK2vacc_det_pmcmc_run2.rds")
+Navajo_4param_fit_mcmc <- coda::as.mcmc(cbind(Navajo_4param_fit$probabilities, Navajo_4param_fit$pars))
+coda::effectiveSize(Navajo_4param_fit_mcmc)
+summary(coda::as.mcmc(Navajo_4param_fit_mcmc))
+
+# 4 param fit with vaccTime=2 with 6A in PCV7
+Navajo_4param_fit <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_07_24/Navajo_newPCV7/Navajo_ggCaller_PopPUNK_det_pmcmc_run2.rds")
+Navajo_4param_fit_mcmc <- coda::as.mcmc(cbind(Navajo_4param_fit$probabilities, Navajo_4param_fit$pars))
+coda::effectiveSize(Navajo_4param_fit_mcmc)
+summary(coda::as.mcmc(Navajo_4param_fit_mcmc))
+
+# 4 param fit with vacc2 (pcv7 and pcv13 seperately) with 6A in PCV7
+Navajo_4param_fit <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_07_24/Navajo_newPCV7_2vacc/Navajo_ggCaller_PopPUNK2vacc_det_pmcmc_run2.rds")
+Navajo_4param_fit_mcmc <- coda::as.mcmc(cbind(Navajo_4param_fit$probabilities, Navajo_4param_fit$pars))
+coda::effectiveSize(Navajo_4param_fit_mcmc)
+summary(coda::as.mcmc(Navajo_4param_fit_mcmc))
+```
+
+```{r}
+# new deterministic fit from July 24 2vacc: -2.5483028  0.2767303 -2.9747911  0.1604086  
+# that includes 6A in PCV7
+
+mass_VT1 <- readRDS(file = "Navajo_VT.rds")
+mass_VT2 <- readRDS(file = "Navajo_VT2.rds")
+
+ggCPP_params <- list(dt = 1/12, species_no =mass_clusters,  gene_no = nrow(intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double( model_start_pop), Pop_eq = as.double( model_start_pop), capacity = sum( model_start_pop), Genotypes = intermed_gene_presence_absence_consensus_matrix, sigma_f = -2.5483028, prop_f = 0.2767303, sigma_w =-1000 , delta = delta_ranking, m = -2.9747911, migVec =  avg_cluster_freq, vaccTypes1 =  mass_VT1, vaccTypes2 =  mass_VT2, v = 0.1604086 , vacc_time1 = 2, vacc_time2 = 12)
+WF_model <- odin.dust::odin_dust("NFDS_Model_2vacc.R")
+WFmodel <- WF_model$new(pars = ggCPP_params,
+                         time = 0,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+
+simMeanggCPP1_Navajo <- rowMeans(WFmodel$run(0)[-1,])
+
+simMeanggCPP10_Navajo <- rowMeans(WFmodel$run(108)[-1,])
+simMeanggCPP13_Navajo <- rowMeans(WFmodel$run(144)[-1,])
+simMeanggCPP14_Navajo <- rowMeans(WFmodel$run(156)[-1,])
+simMeanggCPP15_Navajo <- rowMeans(WFmodel$run(168)[-1,])
+
+
+lollipop_cluster_freqs_VTandNVT_labelSero(year = "tp 10", plot_title = "PopPUNK and ggCaller", data1 = mass_cluster_freq_10/sum(mass_cluster_freq_10), model_name_1 ="Model", model1 = simMeanggCPP10_Navajo/sum(simMeanggCPP10_Navajo), VT_vec = mass_VT, SeroLabel = Navajo_PP_serotype_comp)
+
+lollipop_cluster_freqs_VTandNVT_labelSero(year = "tp 13", plot_title = "PopPUNK and ggCaller", data1 = mass_cluster_freq_13/sum(mass_cluster_freq_13), model_name_1 ="Model", model1 = simMeanggCPP13_Navajo/sum(simMeanggCPP13_Navajo), VT_vec = mass_VT, SeroLabel = Navajo_PP_serotype_comp)
+
+lollipop_cluster_freqs_VTandNVT_labelSero(year = "tp 14", plot_title = "PopPUNK and ggCaller", data1 = mass_cluster_freq_14/sum(mass_cluster_freq_14), model_name_1 ="Model", model1 = simMeanggCPP14_Navajo/sum(simMeanggCPP14_Navajo), VT_vec = mass_VT, SeroLabel = Navajo_PP_serotype_comp)
 ```
 
 ```{r}
@@ -4026,3 +4101,124 @@ lollipop_cluster_freqs_VTandNVT_labelSero(year = "tp 14", plot_title = "PopPUNK 
 lollipop_cluster_freqs_2x2_VTandNVT_labelSero(year = "Data change vs Model change", plot_title = "PopPUNK and ggCaller", data_name = "data tp 14", data1 = mass_cluster_freq_14/sum(mass_cluster_freq_14), model_name_1 ="model 4 param", model1 =  simMeanggCPP14_Navajo/sum(simMeanggCPP14_Navajo), model_name_2 ="model 5 param", model2 =  simMeanggCPP14_Navajo_5p/sum(simMeanggCPP14_Navajo_5p), VT_vec = mass_VT, SeroLabel = Navajo_PP_serotype_comp)
 ```
 
+# UK
+```{r}
+# 4 param fit
+UK_4param_fit <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_07_23/UK/UK_ggCaller_PopPUNK_det_pmcmc_run2.rds")
+UK_4param_fit_mcmc <- coda::as.mcmc(cbind(UK_4param_fit$probabilities, UK_4param_fit$pars))
+coda::effectiveSize(UK_4param_fit_mcmc)
+summary(coda::as.mcmc(UK_4param_fit_mcmc))
+
+# 4 param fit with two vaccines
+UK_4param_fit <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_07_23/UK_vacc2/UK_ggCaller_PopPUNK2vacc_det_pmcmc_run2.rds")
+UK_4param_fit_mcmc <- coda::as.mcmc(cbind(UK_4param_fit$probabilities, UK_4param_fit$pars))
+coda::effectiveSize(UK_4param_fit_mcmc)
+summary(coda::as.mcmc(UK_4param_fit_mcmc))
+
+# 4 param fit with 6A in PCV7
+UK_4param_fit <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_07_24/UK_newPCV7/UK_ggCaller_PopPUNK_det_pmcmc_run2.rds")
+UK_4param_fit_mcmc <- coda::as.mcmc(cbind(UK_4param_fit$probabilities, UK_4param_fit$pars))
+coda::effectiveSize(UK_4param_fit_mcmc)
+summary(coda::as.mcmc(UK_4param_fit_mcmc))
+
+# 4 param fit with two vaccines with 6A in PCV7
+UK_4param_fit <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_07_24/UK_newPCV7_2vacc/UK_ggCaller_PopPUNK2vacc_det_pmcmc_run2.rds")
+UK_4param_fit_mcmc <- coda::as.mcmc(cbind(UK_4param_fit$probabilities, UK_4param_fit$pars))
+coda::effectiveSize(UK_4param_fit_mcmc)
+summary(coda::as.mcmc(UK_4param_fit_mcmc))
+
+```
+
+```{r}
+seq_clusters <- readRDS("UK_PP.rds")
+  intermed_gene_presence_absence_consensus <- readRDS(file = "UK_ggCaller_intermed_consensus.rds")
+  intermed_gene_presence_absence_consensus_matrix <- sapply(intermed_gene_presence_absence_consensus[-1,-1],as.double)
+  model_start_pop <- readRDS(file = "UK_model_start_pop.rds")
+  delta_ranking <- readRDS(file = "UK_delta_ranking.rds")
+  mass_cluster_freq_1 <- readRDS(file = "UK_cluster_freqs_1.rds")
+  mass_cluster_freq_2 <- readRDS(file = "UK_cluster_freqs_2.rds")
+  mass_cluster_freq_3 <- readRDS(file = "UK_cluster_freqs_3.rds")
+  mass_cluster_freq_4 <- readRDS(file = "UK_cluster_freqs_4.rds")
+  mass_cluster_freq_5 <- readRDS(file = "UK_cluster_freqs_5.rds")
+  mass_cluster_freq_6 <- readRDS(file = "UK_cluster_freqs_6.rds")
+  mass_cluster_freq_7 <- readRDS(file = "UK_cluster_freqs_7.rds")
+  mass_VT <- readRDS(file = "UK_VT.rds")
+  mass_clusters <- length(unique(seq_clusters$Cluster))
+  avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
+  output_filename <- "UK_ggCaller_PopPUNK"
+  
+  dt <- 1/12
+  peripost_mass_cluster_freq <- data.frame("year" = 1:6, rbind(mass_cluster_freq_2,mass_cluster_freq_3,mass_cluster_freq_4,mass_cluster_freq_5,mass_cluster_freq_6, mass_cluster_freq_7))
+  
+  names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
+  
+  vacc_time <- 0
+# compute serotype composition of PP clusters
+UK_PP_serotype_comp <- rep(0,mass_clusters)
+for (i in 1:mass_clusters) {
+  UK_PP_serotype_comp[i] <- paste(unique(seq_clusters$Serotype[which(seq_clusters$Cluster==unique(seq_clusters$Cluster)[i])]), collapse = ", ")
+}
+```
+
+```{r}
+# deterministic fit from July 23: -1.4405979  0.1000423 -3.9348562  0.1414027 
+# new deterministic fit from July 24 with 6A in PCV7: -2.2864083  0.1005419 -4.0242875  0.1131342 
+mass_VT <- readRDS(file = "UK_VT.rds")
+
+ggCPP_params <- list(dt = 1/12, species_no =mass_clusters,  gene_no = nrow(intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double( model_start_pop), Pop_eq = as.double( model_start_pop), capacity = sum( model_start_pop), Genotypes = intermed_gene_presence_absence_consensus_matrix, sigma_f = -2.2864083, prop_f = 0.1005419, sigma_w =-1000 , delta = delta_ranking, m = -4.0242875, migVec =  avg_cluster_freq, vaccTypes =  mass_VT, v = 0.1131342 , vacc_time = 0)
+WF_model <- odin.dust::odin_dust("NFDS_Model.R")
+WFmodel <- WF_model$new(pars = ggCPP_params,
+                         time = 0,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+
+simMeanggCPP1_UK <- rowMeans(WFmodel$run(0)[-1,])
+
+simMeanggCPP4_UK <- rowMeans(WFmodel$run(36)[-1,])
+simMeanggCPP5_UK <- rowMeans(WFmodel$run(48)[-1,])
+simMeanggCPP6_UK <- rowMeans(WFmodel$run(60)[-1,])
+simMeanggCPP7_UK <- rowMeans(WFmodel$run(72)[-1,])
+
+
+lollipop_cluster_freqs_VTandNVT_labelSero(year = "Winter 2012/13", plot_title = "PopPUNK and ggCaller", data1 = mass_cluster_freq_7/sum(mass_cluster_freq_7), model_name_1 ="Model", model1 = simMeanggCPP7_UK/sum(simMeanggCPP7_UK), VT_vec = mass_VT, SeroLabel = UK_PP_serotype_comp)
+
+lollipop_cluster_freqs_VTandNVT_labelSero(year = "Winter 2011/12", plot_title = "PopPUNK and ggCaller", data1 = mass_cluster_freq_6/sum(mass_cluster_freq_6), model_name_1 ="Model", model1 = simMeanggCPP6_UK/sum(simMeanggCPP6_UK), VT_vec = mass_VT, SeroLabel = UK_PP_serotype_comp)
+
+lollipop_cluster_freqs_VTandNVT_labelSero(year = "Winter 2009/10", plot_title = "PopPUNK and ggCaller", data1 = mass_cluster_freq_4/sum(mass_cluster_freq_4), model_name_1 ="Model", model1 = simMeanggCPP4_UK/sum(simMeanggCPP4_UK), VT_vec = mass_VT, SeroLabel = UK_PP_serotype_comp)
+```
+
+```{r}
+# deterministic fit from July 23 2vacc: -1.93371832  0.09901734 -4.00039067  0.12526164 
+mass_VT_no6A <- readRDS(file = "UK_VT_no6A.rds")
+
+# new deterministic fit from July 24 2vacc: -2.4253023  0.1009613 -3.9979980  0.1056966 
+# that includes 6A in PCV7
+
+mass_VT1 <- readRDS(file = "UK_VT.rds")
+mass_VT2 <- readRDS(file = "UK_VT2.rds")
+
+ggCPP_params <- list(dt = 1/12, species_no =mass_clusters,  gene_no = nrow(intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double( model_start_pop), Pop_eq = as.double( model_start_pop), capacity = sum( model_start_pop), Genotypes = intermed_gene_presence_absence_consensus_matrix, sigma_f = -2.4253023, prop_f = 0.1009613, sigma_w =-1000 , delta = delta_ranking, m = -3.9979980, migVec =  avg_cluster_freq, vaccTypes1 =  mass_VT1, vaccTypes2 =  mass_VT2, v = 0.1056966 , vacc_time1 = 0, vacc_time2 = 4)
+WF_model <- odin.dust::odin_dust("NFDS_Model_2vacc.R")
+WFmodel <- WF_model$new(pars = ggCPP_params,
+                         time = 0,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+
+simMeanggCPP1_UK <- rowMeans(WFmodel$run(0)[-1,])
+
+simMeanggCPP4_UK <- rowMeans(WFmodel$run(36)[-1,])
+simMeanggCPP5_UK <- rowMeans(WFmodel$run(48)[-1,])
+simMeanggCPP6_UK <- rowMeans(WFmodel$run(60)[-1,])
+simMeanggCPP7_UK <- rowMeans(WFmodel$run(72)[-1,])
+
+
+lollipop_cluster_freqs_VTandNVT_labelSero(year = "Winter 2012/13", plot_title = "PopPUNK and ggCaller", data1 = mass_cluster_freq_7/sum(mass_cluster_freq_7), model_name_1 ="Model", model1 = simMeanggCPP7_UK/sum(simMeanggCPP7_UK), VT_vec = mass_VT, SeroLabel = UK_PP_serotype_comp)
+
+lollipop_cluster_freqs_VTandNVT_labelSero(year = "Winter 2011/12", plot_title = "PopPUNK and ggCaller", data1 = mass_cluster_freq_6/sum(mass_cluster_freq_6), model_name_1 ="Model", model1 = simMeanggCPP6_UK/sum(simMeanggCPP6_UK), VT_vec = mass_VT, SeroLabel = UK_PP_serotype_comp)
+
+lollipop_cluster_freqs_VTandNVT_labelSero(year = "Winter 2009/10", plot_title = "PopPUNK and ggCaller", data1 = mass_cluster_freq_4/sum(mass_cluster_freq_4), model_name_1 ="Model", model1 = simMeanggCPP4_UK/sum(simMeanggCPP4_UK), VT_vec = mass_VT, SeroLabel = UK_PP_serotype_comp)
+
+lollipop_cluster_freqs_VTandNVT_labelSero(year = "Data 2006 vs 2012", plot_title = "PopPUNK and ggCaller", data1 = mass_cluster_freq_1/sum(mass_cluster_freq_1), model_name_1 ="Data 2012", model1 = mass_cluster_freq_7/sum(mass_cluster_freq_7), VT_vec = mass_VT, SeroLabel = UK_PP_serotype_comp)
+```

@@ -255,12 +255,24 @@ PCV13_VTs <- rep(0,length(unique(UK_metadata$Serotype)))
 names(PCV13_VTs) <- unique(UK_metadata$Serotype)
 PCV13_VTs[c("1", "3", "4","5","6A","6B", "7F", "9V", "14", "18C", "19A", "19F", "23F")] <- 1
 
+PCV7_VTs_no6A <- rep(0,length(unique(UK_metadata$Serotype)))
+names(PCV7_VTs_no6A) <- unique(UK_metadata$Serotype)
+PCV7_VTs_no6A[c("4","6B", "9V", "14", "18C", "19F", "23F")] <- 1
+
+# add 6A to PCV7 because there is strong cross-immunity btw PVC7 and 6A (4.Croucher, N. J. et al. Population genomics of post-vaccine changes in pneumococcal epidemiology. Nat. Genet. 45, 656–663 (2013).)
 PCV7_VTs <- rep(0,length(unique(UK_metadata$Serotype)))
 names(PCV7_VTs) <- unique(UK_metadata$Serotype)
-PCV7_VTs[c("4","6B", "9V", "14", "18C", "19F", "23F")] <- 1
+PCV7_VTs[c("4","6A", "6B", "9V", "14", "18C", "19F", "23F")] <- 1
 
 UK_SeqToSero_dict <- UK_metadata$Serotype
 names(UK_SeqToSero_dict) <- UK_metadata$Accession
+
+# calculate Vaccine Type consensus for clusters
+UK_VT_no6A <- rep(0, no_UK_PP)
+
+for (i in unique(UK_PP$Cluster)){
+  UK_VT_no6A[(which(unique(UK_PP$Cluster) == i))] <- ceiling(median(as.integer(PCV7_VTs_no6A[UK_SeqToSero_dict[UK_PP[UK_PP$Cluster == i,"Taxon"]]])))
+}
 
 # calculate Vaccine Type consensus for clusters
 UK_VT <- rep(0, no_UK_PP)
@@ -271,11 +283,20 @@ for (i in unique(UK_PP$Cluster)){
 # 1 means VT
 # 0 means NVT
 # if cluster is 50/50 it will count as VT
+
+# calculate Vaccine Type consensus for clusters for PCV13
+UK_VT2 <- rep(0, no_UK_PP)
+
+for (i in unique(UK_PP$Cluster)){
+  UK_VT2[(which(unique(UK_PP$Cluster) == i))] <- ceiling(median(as.integer(PCV13_VTs[UK_SeqToSero_dict[UK_PP[UK_PP$Cluster == i,"Taxon"]]])))
+}
 ```
 
 ```{r}
 #save VTs
+saveRDS(UK_VT_no6A, file = "UK_VT_no6A.rds")
 saveRDS(UK_VT, file = "UK_VT.rds")
+saveRDS(UK_VT2, file = "UK_VT2.rds")
 ```
 
 # calculate cluster frequencies for different years

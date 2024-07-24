@@ -30,7 +30,7 @@ if(length(args)==0){
 
 
 # read in model from file
-WF <- odin.dust::odin_dust("NFDS_Model.R", options=odin_options(verbose = TRUE))
+WF <- odin.dust::odin_dust("NFDS_Model_2vacc.R", options=odin_options(verbose = TRUE))
 
 # likelihood for fitting:
 ll_pois <<- function(obs, model) {
@@ -218,7 +218,8 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   mass_cluster_freq_13 <- readRDS(file = "Navajo_cluster_freqs_13.rds")
   mass_cluster_freq_14 <- readRDS(file = "Navajo_cluster_freqs_14.rds")
   mass_cluster_freq_15 <- readRDS(file = "Navajo_cluster_freqs_15.rds")
-  mass_VT <- readRDS(file = "Navajo_VT.rds")
+  mass_VT1 <- readRDS(file = "Navajo_VT.rds")
+  mass_VT2 <- readRDS(file = "Navajo_VT2.rds")
   mass_clusters <- length(unique(seq_clusters$Cluster))
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
   output_filename <- "Navajo_ggCaller_PopPUNK"
@@ -228,7 +229,8 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   
   names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
   
-  vacc_time <- 2 # trying vacc time =2 instead of 5 as before
+  vacc_time1 <- 2
+  vacc_time2 <- 12
 } else if(args[1] == "UK" & args[2] == "PopPUNK"){
   seq_clusters <- readRDS("UK_PP.rds")
   intermed_gene_presence_absence_consensus <- readRDS(file = "UK_ggCaller_intermed_consensus.rds")
@@ -242,7 +244,8 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   mass_cluster_freq_5 <- readRDS(file = "UK_cluster_freqs_5.rds")
   mass_cluster_freq_6 <- readRDS(file = "UK_cluster_freqs_6.rds")
   mass_cluster_freq_7 <- readRDS(file = "UK_cluster_freqs_7.rds")
-  mass_VT <- readRDS(file = "UK_VT.rds")
+  mass_VT1 <- readRDS(file = "UK_VT.rds")
+  mass_VT2 <- readRDS(file = "UK_VT2.rds")
   mass_clusters <- length(unique(seq_clusters$Cluster))
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
   output_filename <- "UK_ggCaller_PopPUNK"
@@ -252,7 +255,8 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   
   names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
   
-  vacc_time <- 0
+  vacc_time1 <- 0
+  vacc_time2 <- 4
 }
 
 threads_total <- 1
@@ -297,7 +301,8 @@ Genotypes <- intermed_gene_presence_absence_consensus_matrix
 
 capacity <- sum(model_start_pop)
 delta <- delta_ranking
-vaccTypes <- mass_VT
+vaccTypes1 <- mass_VT1
+vaccTypes2 <- mass_VT2
 #vacc_time <- 0
 #dt <- 1/36
 migVec <- avg_cluster_freq
@@ -321,7 +326,7 @@ migVec <- avg_cluster_freq
 #  }
 #}
 
-complex_params = list(species_no = species_no, Pop_ini = Pop_ini, Pop_eq = Pop_eq, Genotypes = intermed_gene_presence_absence_consensus[-1,-1], capacity = capacity, delta = delta, vaccTypes = vaccTypes, gene_no = gene_no, vacc_time = vacc_time, dt = dt, migVec = migVec, sigma_w = pmcmc_sigma_w)
+complex_params = list(species_no = species_no, Pop_ini = Pop_ini, Pop_eq = Pop_eq, Genotypes = intermed_gene_presence_absence_consensus[-1,-1], capacity = capacity, delta = delta, vaccTypes1 = vaccTypes1, vaccTypes2 = vaccTypes2, gene_no = gene_no, vacc_time1 = vacc_time1, vacc_time2 = vacc_time2, dt = dt, migVec = migVec, sigma_w = pmcmc_sigma_w)
 
 
 
@@ -400,7 +405,7 @@ parameter_mean_hpd <- apply(processed_chains$pars, 2, mean)
 print(parameter_mean_hpd)
 
 det_mcmc1 <- coda::as.mcmc(cbind(det_pmcmc_run$probabilities, det_pmcmc_run$pars))
-pdf(file = paste(output_filename,"det_mcmc1.pdf",sep = "_"),   # The directory you want to save the file in
+pdf(file = paste(output_filename,"2vacc_det_mcmc1.pdf",sep = "_"),   # The directory you want to save the file in
     width = 6, # The width of the plot in inches
     height = 12)
 plot(det_mcmc1)
@@ -448,7 +453,7 @@ print(parameter_mean_hpd)
 par(mfrow = c(1,1))
 
 det_mcmc2 <- coda::as.mcmc(cbind(det_pmcmc_run2$probabilities, det_pmcmc_run2$pars))
-pdf(file = paste(output_filename,"det_mcmc2.pdf",sep = "_"),   # The directory you want to save the file in
+pdf(file = paste(output_filename,"2vacc_det_mcmc2.pdf",sep = "_"),   # The directory you want to save the file in
     width = 6, # The width of the plot in inches
     height = 12)
 plot(det_mcmc2)
@@ -458,7 +463,7 @@ processed_chains$probabilities[nrow(processed_chains$probabilities),2]
 print("det_mcmc_2 mean log likelihood")
 mean(processed_chains$probabilities[,2])
 
-saveRDS(det_pmcmc_run2, paste(output_filename, "_det_pmcmc_run2.rds", sep = ""))
+saveRDS(det_pmcmc_run2, paste(output_filename, "2vacc_det_pmcmc_run2.rds", sep = ""))
 
 if(stoch_run == TRUE){
   det_proposal_matrix <- cov(processed_chains$pars)
@@ -508,7 +513,7 @@ if(stoch_run == TRUE){
   stoch_mcmc2 <- coda::as.mcmc(cbind(stoch_pmcmc_run2$probabilities, stoch_pmcmc_run2$pars))
   
   
-  pdf(file = paste(output_filename,"stoch_mcmc2.pdf",sep = "_"),   # The directory you want to save the file in
+  pdf(file = paste(output_filename,"2vacc_stoch_mcmc2.pdf",sep = "_"),   # The directory you want to save the file in
       width = 6, # The width of the plot in inches
       height = 12)
   plot(stoch_mcmc2)
@@ -522,7 +527,7 @@ if(stoch_run == TRUE){
   print("stoch_mcmc_2 mean log likelihood")
   print(mean(processed_chains$probabilities[,2]))
   
-  saveRDS(stoch_pmcmc_run2, paste(output_filename, "_stoch_pmcmc_run2.rds", sep = ""))
+  saveRDS(stoch_pmcmc_run2, paste(output_filename, "2vacc_stoch_pmcmc_run2.rds", sep = ""))
 }
 
 

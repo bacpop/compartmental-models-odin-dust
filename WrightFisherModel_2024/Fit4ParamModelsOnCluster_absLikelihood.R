@@ -58,13 +58,13 @@ combined_compare <- function(state, observed, pars = NULL) {
     
     if (is.na(observed[[as.character(i)]])) {
       # Creates vector of zeros in ll with same length, if no data
-      ll_obs <- numeric(length( state[1+i, , drop = TRUE]/model_size * data_size))
+      ll_obs <- numeric(length( state[1+i, , drop = TRUE]/model_size *data_size))
     } else {
-      lambda <-  state[1+i, , drop = TRUE]/model_size * data_size + rexp(n = length( state[1+i, , drop = TRUE]/model_size * data_size), rate = exp_noise)
-      ll_obs <- dpois(x = observed[[as.character(i)]], lambda = lambda, log = TRUE)
+      lambda <-  (state[1+i, , drop = TRUE]/model_size)*data_size + rexp(n = length( state[1+i, , drop = TRUE]), rate = exp_noise)
+      ll_obs <- dpois(x = ((observed[[as.character(i)]])), lambda = lambda, log = TRUE)
     }
     
-    result <- result + ll_obs
+    result <- result + (observed[[as.character(i)]] * ll_obs)
   }
   result
 }
