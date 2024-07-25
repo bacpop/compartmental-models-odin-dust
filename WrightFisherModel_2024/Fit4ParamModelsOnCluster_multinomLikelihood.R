@@ -50,24 +50,25 @@ combined_compare <- function(state, observed, pars = NULL) {
   result <- 0
   #data_size <- sum(mass_cluster_freq_1)
   #model_size = 15000
-  #data_size <- sum(unlist(observed))
-  data_size <- sum(unlist(observed[as.character(1:(nrow(state)-1))]))
-  #model_size = sum(unlist(state))
+  data_size <- sum(unlist(observed))
   model_size = sum(unlist(state[-1, , drop = TRUE]))
   exp_noise <- 1e6
-  for (i in 1:(nrow(state)-1)){
-    
-    
-    if (is.na(observed[[as.character(i)]])) {
+  #for (i in 1:(nrow(state)-1)){
+  model_vals <- state[-1, , drop = TRUE]
+  data_vals <- unlist(observed[as.character(1:(nrow(state)-1))])
+  #print(data_size)
+  #print(model_size)
+  #print(model_vals)
+  #print(data_vals)
+    if (is.na(data_vals)[1]) {
       # Creates vector of zeros in ll with same length, if no data
-      ll_obs <- numeric(length( state[1+i, , drop = TRUE]/model_size * data_size))
+      ll_obs <- numeric(length(data_vals))
     } else {
-      lambda <-  state[1+i, , drop = TRUE]/model_size * data_size + rexp(n = length( state[1+i, , drop = TRUE]/model_size * data_size), rate = exp_noise)
-      ll_obs <- dpois(x = observed[[as.character(i)]], lambda = lambda, log = TRUE)
+      #lambda <-  (state[1+i, , drop = TRUE]/model_size)*data_size + rexp(n = length( state[1+i, , drop = TRUE]), rate = exp_noise)
+      ll_obs <- dmultinom(x = (data_vals), prob = model_vals/model_size, log = TRUE)
     }
     
-    result <- result + ll_obs
-  }
+  result <- ll_obs
   result
 }
 

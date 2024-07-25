@@ -2622,13 +2622,18 @@ source("CreateLollipopPlot.R")
 # ggCPP mass fit 24.07.24: -0.4404874  0.1125722 -3.9657678  0.1111540 
 # trying out likelihood weighted by cluster size
 
+# ggCPP mass fit (local) 25.07.24 with multinomial likelihood: 
+# -1.6970825  0.2478567 -4.0487967  0.1525169 
+
 #with normal likelihood: -1.8680105  0.2718083 -4.5788394  0.1291080 
 
 # ggCPP fit (step function model)
 ### ggCaller PopPUNK
 params_ggCPP <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = -0.4404874, sigma_w = -1000, prop_f = 0.1125722, delta = ggC_delta_ranking, m = -3.9657678, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.1111540, vacc_time = 0)
 
-params_ggCPP <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = -1.8680105, sigma_w = -1000, prop_f = 0.2718083, delta = ggC_delta_ranking, m = -4.5788394, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.1291080, vacc_time = 0)
+params_ggCPP <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = -1.6970825, sigma_w = -1000, prop_f = 0.1125722, delta = ggC_delta_ranking, m = -4.0487967, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.1525169, vacc_time = 0)
+
+params_ggCPP <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = -1.8680105, sigma_w = -1000, prop_f = 0.2478567, delta = ggC_delta_ranking, m = -4.5788394, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.1291080, vacc_time = 0)
 WFmodel_ggCPP <- WF_nG_h_vP$new(pars = params_ggCPP,
                                    time = 0,
                                    n_particles = 10L,
@@ -3807,6 +3812,10 @@ sum(ga_results@solution)
 ga_results <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_07_22/GA/gann.rds")
 summary(ga_results)
 sum(ga_results@solution)
+
+ga_results <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_07_25/GA/gann.rds")
+summary(ga_results)
+sum(ga_results@solution)
 ```
 
 ```{r}
@@ -3850,6 +3859,21 @@ WFmodel <- WF_model$new(pars = FindGenes_ggCPP_params,
 simMeanggCPP2 <- rowMeans(WFmodel$run(37)[-1,])
 simMeanggCPP3 <- rowMeans(WFmodel$run(73)[-1,])
 combined_compare(simMeanggCPP2,PP_mass_cluster_freq_2) + combined_compare(simMeanggCPP3,PP_mass_cluster_freq_3) 
+
+# combine gene vector to delta
+ggC_delta_ranking2 <- readRDS("ggC_delta_ranking.rds")
+ggC_delta_data2 <- readRDS("ggC_delta_data_post-pre.rds")
+
+ggC_delta_data2_copy <- ggC_delta_data2
+names(ggC_delta_data2_copy) <- 1:1770
+ggC_delta_data2_copy <- sort(ggC_delta_data2_copy)
+
+found_genes <- (as.vector(ga_results@solution))
+found_genes_copy <- (as.vector(ga_results@solution))[as.integer(names(ggC_delta_data2_copy))]
+
+plot(1-ggC_delta_data2_copy, ylim = c(0,1), main = "delta statistics vs. genes from GA")
+points(found_genes_copy, col = "red", pch = ".")
+legend(0.2,0.2, legend = c("delta stat", "GA"), col = c("black","red"), lty=1:2, cex = 1)
 
 local_cols <- rainbow(12)
 plot(PP_mass_cluster_freq_3/sum(PP_mass_cluster_freq_3), type = "p", ylim=c(0,0.3))
