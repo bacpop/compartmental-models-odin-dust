@@ -50,8 +50,12 @@ combined_compare <- function(state, observed, pars = NULL) {
   result <- 0
   #data_size <- sum(mass_cluster_freq_1)
   #model_size = 15000
-  data_size <- sum(unlist(observed))
-  model_size = sum(unlist(state))
+  #data_size <- sum(mass_cluster_freq_1)
+  #model_size = 15000
+  #data_size <- sum(unlist(observed))
+  data_size <- sum(unlist(observed[as.character(1:(nrow(state)-1))]))
+  #model_size = sum(unlist(state))
+  model_size = sum(unlist(state[-1, , drop = TRUE]))
   exp_noise <- 1e6
   for (i in 1:(nrow(state)-1)){
     
@@ -96,7 +100,7 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   mass_VT <- readRDS(file = "PP_mass_VT.rds")
   mass_clusters <- length(unique(seq_clusters$Cluster))
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
-  output_filename <- "4param_ggCaller_PopPUNK"
+  output_filename <- "4param_ggCaller_PopPUNK_weightedPois"
   # process data with particle filter:
   dt <- 1/36 # we assume that the generation time of Strep. pneumo is 1 month
   # we have data from 2001, 2004, 2007, so we want 3 (years) * 12 (months) = 36 updates in-between
@@ -116,7 +120,7 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   mass_VT <- readRDS(file = "PP_mass_VT.rds")
   mass_clusters <- length(unique(seq_clusters$Cluster))
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
-  output_filename <- "4param_COGtriangles_PopPUNK"
+  output_filename <- "4param_COGtriangles_PopPUNK_weightedPois"
   # process data with particle filter:
   dt <- 1/36 # we assume that the generation time of Strep. pneumo is 1 month
   # we have data from 2001, 2004, 2007, so we want 3 (years) * 12 (months) = 36 updates in-between
@@ -136,7 +140,7 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   mass_VT <- readRDS(file = "mass_VT.rds")
   mass_clusters <- length(unique(seq_clusters$SequenceCluster))
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
-  output_filename <- "4param_ggCaller_manSeqClusters"
+  output_filename <- "4param_ggCaller_manSeqClusters_weightedPois"
   # process data with particle filter:
   dt <- 1/36 # we assume that the generation time of Strep. pneumo is 1 month
   # we have data from 2001, 2004, 2007, so we want 3 (years) * 12 (months) = 36 updates in-between
@@ -156,7 +160,7 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   mass_VT <- readRDS(file = "mass_VT.rds")
   mass_clusters <- length(unique(seq_clusters$SequenceCluster))
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
-  output_filename <- "4param_COGtriangles_manSeqClusters"
+  output_filename <- "4param_COGtriangles_manSeqClusters_weightedPois"
   # process data with particle filter:
   dt <- 1/36 # we assume that the generation time of Strep. pneumo is 1 month
   # we have data from 2001, 2004, 2007, so we want 3 (years) * 12 (months) = 36 updates in-between
@@ -187,7 +191,7 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   mass_VT <- readRDS(file = "Nepal_VT.rds")
   mass_clusters <- length(unique(seq_clusters$Cluster))
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
-  output_filename <- "Nepal_ggCaller_PopPUNK"
+  output_filename <- "Nepal_ggCaller_PopPUNK_weightedPois"
   
   dt <- 1/12
   #peripost_mass_cluster_freq <- data.frame("year" = 1:13, rbind(mass_cluster_freq_2, mass_cluster_freq_3, mass_cluster_freq_4, mass_cluster_freq_5, mass_cluster_freq_6, mass_cluster_freq_7, mass_cluster_freq_8, mass_cluster_freq_9,mass_cluster_freq_10, mass_cluster_freq_11, mass_cluster_freq_12, mass_cluster_freq_13,mass_cluster_freq_14))
@@ -221,7 +225,7 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   mass_VT <- readRDS(file = "Navajo_VT.rds")
   mass_clusters <- length(unique(seq_clusters$Cluster))
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
-  output_filename <- "Navajo_ggCaller_PopPUNK"
+  output_filename <- "Navajo_ggCaller_PopPUNK_weightedPois"
   
   dt <- 1/12
   peripost_mass_cluster_freq <- data.frame("year" = 1:14, rbind(mass_cluster_freq_2,mass_cluster_freq_3,mass_cluster_freq_4,mass_cluster_freq_5,mass_cluster_freq_6, mass_cluster_freq_7, mass_cluster_freq_8, mass_cluster_freq_9,mass_cluster_freq_10, mass_cluster_freq_11, mass_cluster_freq_12, mass_cluster_freq_13,mass_cluster_freq_14,mass_cluster_freq_15))
@@ -245,7 +249,7 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   mass_VT <- readRDS(file = "UK_VT.rds")
   mass_clusters <- length(unique(seq_clusters$Cluster))
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
-  output_filename <- "UK_ggCaller_PopPUNK"
+  output_filename <- "UK_ggCaller_PopPUNK_weightedPois"
   
   dt <- 1/12
   peripost_mass_cluster_freq <- data.frame("year" = 1:6, rbind(mass_cluster_freq_2,mass_cluster_freq_3,mass_cluster_freq_4,mass_cluster_freq_5,mass_cluster_freq_6, mass_cluster_freq_7))
