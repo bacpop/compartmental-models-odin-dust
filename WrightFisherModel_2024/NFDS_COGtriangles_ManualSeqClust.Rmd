@@ -2629,12 +2629,22 @@ source("CreateLollipopPlot.R")
 
 # with corrected likelihood (26.07.24): -2.0958228  0.3107495 -4.4689789  0.1366157 
 
+# with weighted likelihood (26.07.24): -1.1594852  0.2353541 -4.1434129  0.2214515 
+
+# with multinomial likelihood (25.07.24): -2.1445454  0.3145671 -4.4065733  0.1369317 
+
 ### ggCaller PopPUNK
 params_ggCPP <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = -0.4404874, sigma_w = -1000, prop_f = 0.1125722, delta = ggC_delta_ranking, m = -3.9657678, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.1111540, vacc_time = 0)
 
 params_ggCPP <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = -1.6970825, sigma_w = -1000, prop_f = 0.1125722, delta = ggC_delta_ranking, m = -4.0487967, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.1525169, vacc_time = 0)
 
-params_ggCPP <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = -2.0958228, sigma_w = -1000, prop_f = 0.3107495, delta = ggC_delta_ranking, m = -4.4689789, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.1366157, vacc_time = 0)
+params_ggCPP <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = -2.0958228, sigma_w = -1000, prop_f = 0.3107495, delta = ggC_delta_ranking, m = -4.1434129, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.1366157, vacc_time = 0)
+
+#weighted
+params_ggCPP <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = -1.1594852, sigma_w = -1000, prop_f = 0.2353541, delta = ggC_delta_ranking, m = -4.4689789, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.2214515, vacc_time = 0)
+
+# mult
+params_ggCPP <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = -2.1445454, sigma_w = -1000, prop_f = 0.3145671, delta = ggC_delta_ranking, m = -4.4065733, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.1369317, vacc_time = 0)
 WFmodel_ggCPP <- WF_nG_h_vP$new(pars = params_ggCPP,
                                    time = 0,
                                    n_particles = 10L,
