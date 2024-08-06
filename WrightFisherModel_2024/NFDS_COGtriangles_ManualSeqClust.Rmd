@@ -2667,6 +2667,12 @@ coda::effectiveSize(Mass_4param_fit_mcmc)
 summary(coda::as.mcmc(Mass_4param_fit_mcmc))
 
 pairs(Mass_4param_fit$pars)
+
+## ggplot version
+library(ggplot2)
+library(GGally)
+ggpairs(Mass_4param_fit$pars, title = "Mass", upper = list(continuous = wrap("cor", size = 7)))
+
 ```
 
 
@@ -4094,6 +4100,11 @@ coda::effectiveSize(Navajo_4param_fit_mcmc)
 summary(coda::as.mcmc(Navajo_4param_fit_mcmc))
 
 pairs(Navajo_4param_fit$pars)
+
+## ggplot version
+library(ggplot2)
+library(GGally)
+ggpairs(Navajo_4param_fit$pars, title = "Navajo", upper = list(continuous = wrap("cor", size = 7)))
 ```
 
 ```{r}
@@ -4195,6 +4206,8 @@ coda::effectiveSize(UK_4param_fit_mcmc)
 summary(coda::as.mcmc(UK_4param_fit_mcmc))
 
 pairs(UK_4param_fit$pars)
+
+ggpairs(UK_4param_fit$pars, title = "Southampton", upper = list(continuous = wrap("cor", size = 7)))
 ```
 
 ```{r}
