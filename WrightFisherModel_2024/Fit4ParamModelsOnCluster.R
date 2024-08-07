@@ -30,7 +30,7 @@ if(length(args)==0){
 
 
 # read in model from file
-WF <- odin.dust::odin_dust("NFDS_Model.R", options=odin_options(verbose = TRUE))
+WF <- odin.dust::odin_dust("NFDS_Model.R")
 
 # likelihood for fitting:
 ll_pois <<- function(obs, model) {
@@ -323,9 +323,22 @@ migVec <- avg_cluster_freq
 #  }
 #}
 
+as_double_mtx <- function(x){
+  sapply(x,as.double)
+}
+
 complex_params = list(species_no = species_no, Pop_ini = Pop_ini, Pop_eq = Pop_eq, Genotypes = intermed_gene_presence_absence_consensus[-1,-1], capacity = capacity, delta = delta, vaccTypes = vaccTypes, gene_no = gene_no, vacc_time = vacc_time, dt = dt, migVec = migVec, sigma_w = pmcmc_sigma_w)
 
+complex_params = list(species_no = species_no, Pop_ini = Pop_ini, Pop_eq = Pop_eq, Genotypes = lapply(intermed_gene_presence_absence_consensus[-1,-1],as_double_mtx), capacity = capacity, delta = delta, vaccTypes = vaccTypes, gene_no = gene_no, vacc_time = vacc_time, dt = dt, migVec = migVec, sigma_w = pmcmc_sigma_w)
 
+
+transform <- function(complex_data) {
+  mcstate_transform <- function(mcstate_params) {
+    odin_dust_params <- c(complex_data, as.list(mcstate_params))
+    odin_dust_params
+  }
+  mcstate_transform
+}
 
 make_transform <- function(m) {
   function(theta) {
@@ -360,6 +373,8 @@ proposal_matrix <- diag(0.1,4) # the proposal matrix defines the covariance-vari
 
 #mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.1432, min = 0, max = 1), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 01), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), proposal_matrix, make_transform(complex_params))
 mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", -0.597837, min = -1000, max = 0), mcstate::pmcmc_parameter("prop_f", 0.125, min = 0, max = 1), mcstate::pmcmc_parameter("m", -4, min = -1000, max = 0), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), proposal_matrix, make_transform(complex_params))
+mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", -0.597837, min = -1000, max = 0), mcstate::pmcmc_parameter("prop_f", 0.125, min = 0, max = 1), mcstate::pmcmc_parameter("m", -4, min = -1000, max = 0), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), proposal_matrix, transform(complex_params))
+
 mcmc_pars$initial()
 
 #WF$public_methods$has_openmp()

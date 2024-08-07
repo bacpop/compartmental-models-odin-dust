@@ -2656,6 +2656,13 @@ simMeanggCPP3 <- rowMeans(WFmodel_ggCPP$run(72)[-1,])
 lollipop_cluster_freqs_VTandNVT_labelSero(year = "2001", plot_title = "PopPUNK and ggCaller", data1 = PP_mass_cluster_freq_1/sum(PP_mass_cluster_freq_1), model_name_1 ="Model", model1 = PP_model_start_pop/sum(PP_model_start_pop), PP_mass_VT, SeroLabel = PP_serotype_comp)
 lollipop_cluster_freqs_VTandNVT_labelSero(year = "2004", plot_title = "PopPUNK and ggCaller", data1 = PP_mass_cluster_freq_2/sum(PP_mass_cluster_freq_2), model_name_1 ="Model", model1 = simMeanggCPP2/sum(simMeanggCPP2), PP_mass_VT, SeroLabel = PP_serotype_comp)
 lollipop_cluster_freqs_VTandNVT_labelSero(year = "2007", plot_title = "PopPUNK and ggCaller", data1 = PP_mass_cluster_freq_3/sum(PP_mass_cluster_freq_3), model_name_1 ="Model", model1 = simMeanggCPP3/sum(simMeanggCPP3), PP_mass_VT, SeroLabel = PP_serotype_comp)
+
+
+lollipop_cluster_freqs_VTandNVT_labelSero_shaded(year = "2007", plot_title = "PopPUNK and ggCaller", data1 = PP_mass_cluster_freq_3/sum(PP_mass_cluster_freq_3), model_name_1 ="Model", model1 = simMeanggCPP3/sum(simMeanggCPP3), PP_mass_VT, SeroLabel = PP_serotype_comp)
+
+lollipop_cluster_freqs_VTandNVT_labelSero_log(year = "2007", plot_title = "PopPUNK and ggCaller log scale", data1 = PP_mass_cluster_freq_3/sum(PP_mass_cluster_freq_3), model_name_1 ="Model", model1 = simMeanggCPP3/sum(simMeanggCPP3), PP_mass_VT, SeroLabel = PP_serotype_comp)
+
+lollipop_cluster_freqs_VTandNVT_labelSero_relative(year = "2007", plot_title = "PopPUNK and ggCaller relative difference", data1 = PP_mass_cluster_freq_3/sum(PP_mass_cluster_freq_3), model_name_1 ="Model", model1 = simMeanggCPP3/sum(simMeanggCPP3), PP_mass_VT, SeroLabel = PP_serotype_comp)
 ```
 
 # pair plot
@@ -4046,6 +4053,9 @@ lollipop_cluster_freqs_VTandNVT_labelSero(year = "tp 14", plot_title = "PopPUNK 
 lollipop_cluster_freqs_2x2_VTandNVT_labelSero(year = "Data change vs Model change", plot_title = "PopPUNK and ggCaller", data_name = "data tp 1", data1 = mass_cluster_freq_1/sum(mass_cluster_freq_1), model_name_1 ="data tp 14", model1 =  mass_cluster_freq_14/sum(mass_cluster_freq_14), model_name_2 ="model tp 14", model2 =  simMeanggCPP14_Navajo/sum(simMeanggCPP14_Navajo), VT_vec = mass_VT, SeroLabel = Navajo_PP_serotype_comp)
 
 #lollipop_cluster_freqs_VTandNVT_labelSero(year = "tp 14", plot_title = "PopPUNK and ggCaller", data1 =mass_cluster_freq_1/sum(mass_cluster_freq_1), model_name_1 ="Model", model1 = simMeanggCPP5_Navajo/sum(simMeanggCPP5_Navajo), VT_vec = mass_VT, SeroLabel = Navajo_PP_serotype_comp)
+
+lollipop_cluster_freqs_VTandNVT_labelSero_shaded(year = "tp 13", plot_title = "PopPUNK and ggCaller", data1 = mass_cluster_freq_13/sum(mass_cluster_freq_13), model_name_1 ="Model", model1 = simMeanggCPP13_Navajo/sum(simMeanggCPP13_Navajo), VT_vec = mass_VT, SeroLabel = Navajo_PP_serotype_comp)
+
 ```
 
 ```{r}
@@ -4267,6 +4277,8 @@ lollipop_cluster_freqs_VTandNVT_labelSero(year = "Winter 2012/13", plot_title = 
 lollipop_cluster_freqs_VTandNVT_labelSero(year = "Winter 2011/12", plot_title = "PopPUNK and ggCaller", data1 = mass_cluster_freq_6/sum(mass_cluster_freq_6), model_name_1 ="Model", model1 = simMeanggCPP6_UK/sum(simMeanggCPP6_UK), VT_vec = mass_VT, SeroLabel = UK_PP_serotype_comp)
 
 lollipop_cluster_freqs_VTandNVT_labelSero(year = "Winter 2009/10", plot_title = "PopPUNK and ggCaller", data1 = mass_cluster_freq_4/sum(mass_cluster_freq_4), model_name_1 ="Model", model1 = simMeanggCPP4_UK/sum(simMeanggCPP4_UK), VT_vec = mass_VT, SeroLabel = UK_PP_serotype_comp)
+
+lollipop_cluster_freqs_VTandNVT_labelSero_shaded(year = "Winter 2012/13", plot_title = "PopPUNK and ggCaller", data1 = mass_cluster_freq_7/sum(mass_cluster_freq_7), model_name_1 ="Model", model1 = simMeanggCPP7_UK/sum(simMeanggCPP7_UK), VT_vec = mass_VT, SeroLabel = UK_PP_serotype_comp)
 ```
 
 ```{r}
@@ -4303,3 +4315,62 @@ lollipop_cluster_freqs_VTandNVT_labelSero(year = "Winter 2009/10", plot_title = 
 
 lollipop_cluster_freqs_VTandNVT_labelSero(year = "Data 2006 vs 2012", plot_title = "PopPUNK and ggCaller", data1 = mass_cluster_freq_1/sum(mass_cluster_freq_1), model_name_1 ="Data 2012", model1 = mass_cluster_freq_7/sum(mass_cluster_freq_7), VT_vec = mass_VT, SeroLabel = UK_PP_serotype_comp)
 ```
+
+# new version of VT-divers model
+```{r}
+WF <- odin.dust::odin_dust("NFDS_Model_VT.R")
+
+seq_clusters <- readRDS("PopPUNK_clusters.rds")
+  intermed_gene_presence_absence_consensus <- readRDS(file = "ggCPP_intermed_gene_presence_absence_consensus.rds")
+  intermed_gene_presence_absence_consensus_matrix <- sapply(intermed_gene_presence_absence_consensus[-1,-1],as.double)
+  model_start_pop <- readRDS(file = "PP_model_start_pop.rds")
+  delta_ranking <- readRDS(file = "ggC_delta_ranking.rds")
+  #delta_ranking <- readRDS(file = "ggC_delta_ranking3.rds")
+  mass_cluster_freq_1 <- readRDS(file = "PP_mass_cluster_freq_1.rds")
+  mass_cluster_freq_2 <- readRDS(file = "PP_mass_cluster_freq_2.rds")
+  mass_cluster_freq_3 <- readRDS(file = "PP_mass_cluster_freq_3.rds")
+  #mass_VT <- readRDS(file = "PP_mass_VT_mean.rds")
+  mass_VT <- readRDS(file = "PP_mass_VT.rds")
+  mass_clusters <- length(unique(seq_clusters$Cluster))
+  avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
+  output_filename <- "4param_ggCaller_PopPUNK"
+  # process data with particle filter:
+  dt <- 1/36 # we assume that the generation time of Strep. pneumo is 1 month
+  # we have data from 2001, 2004, 2007, so we want 3 (years) * 12 (months) = 36 updates in-between
+  ceil_mass_NVT <- rep(0, mass_clusters)
+  for (i in 1:mass_clusters){
+    ceil_mass_NVT[i] <- ceiling(mean(as.integer(seq_clusters[seq_clusters$Cluster == unique(seq_clusters$Cluster)[i],"VT"]=="NVT")))
+  }
+  #ceil_mass_NVT[is.nan(ceil_mass_NVT)] <- 0
+  mean_mass_VT_2001 <- rep(0, mass_clusters)
+  for (i in 1:mass_clusters){
+    mean_mass_VT_2001[i] <- (mean(as.integer(seq_clusters[seq_clusters$SeqYear == 2001 & seq_clusters$Cluster == unique(seq_clusters$Cluster)[i],"VT"]=="VT")))
+  }
+  mean_mass_VT_2001[is.nan(mean_mass_VT_2001)] <- 0
+  
+  NVT_mig <- rep(1/mass_clusters, mass_clusters) * (ceil_mass_NVT)
+  VT_mig <- rep(1/mass_clusters, mass_clusters) * (1-ceil_mass_NVT)
+  avg_cluster_freq <- as.matrix(cbind(NVT_mig,VT_mig))
+  model_start_pop <- matrix(as.double(c(model_start_pop * (1-mean_mass_VT_2001),model_start_pop * mean_mass_VT_2001)), byrow = FALSE, nrow = mass_clusters, ncol = 2)
+  output_filename <- "VT_ggCaller_PopPUNK"
+  peripost_mass_cluster_freq <- data.frame("year" = c(1, 2), rbind(mass_cluster_freq_2, mass_cluster_freq_3))
+  names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
+  vacc_time <- 0
+```
+
+```{r}
+ggCPP_params <- list(dt = 1/12, species_no =mass_clusters,  gene_no = nrow(intermed_gene_presence_absence_consensus)-1, Pop_ini = ( model_start_pop), Pop_eq = Pop_eq <- rowSums(model_start_pop), capacity = sum( model_start_pop), Genotypes = intermed_gene_presence_absence_consensus_matrix, sigma_f = -2.4253023, prop_f = 0.1009613, sigma_w =-1000 , delta = delta_ranking, m = -3.9979980, migVec =  avg_cluster_freq, v = 0.1056966 , vT = c(0,1), migVec = VT_mig, vacc_time = 0)
+
+WFmodel <- WF$new(pars = ggCPP_params,
+                         time = 0,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+
+VT_divers_0 <- rowMeans(WFmodel$run(0)[-1,])
+
+VT_divers_36 <- rowMeans(WFmodel$run(36)[-1,])
+VT_divers_72 <- rowMeans(WFmodel$run(48)[-1,])
+
+```
+
