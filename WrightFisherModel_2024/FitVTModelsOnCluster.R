@@ -41,74 +41,28 @@ ll_pois <<- function(obs, model) {
   ll_obs
 }
 
+states_likelihood <- names(index(WFmodel$info())$run)
+
 combined_compare <- function(state, observed, pars = NULL) {
   result <- 0
-  #data_size <- sum(mass_cluster_freq_1)
-  #model_size = 15000
-  #data_size <- sum(unlist(observed))
-  #print(state)
-  #state_length <- length(state)
-  #new_state <- (state[2:(state_length/2 + 1), , drop = TRUE]) + (state[(state_length/2 + 2):(state_length), , drop = TRUE])
-  #state <- new_state
   data_size <- sum(unlist(observed))
-  #model_size = sum(unlist(state))
   model_size = sum(unlist(state[-1, , drop = TRUE]))
   exp_noise <- 1e6
     
-    
-    #if (is.na(unlist(observed)[1])) {
-      # Creates vector of zeros in ll with same length, if no data
-    #  ll_obs <- numeric(length( state[-1, , drop = TRUE]/model_size * data_size))
-    #} else {
-    #  lambda <-  state[-1, , drop = TRUE]/model_size * data_size + rexp(n = length( state[-1, , drop = TRUE]/model_size * data_size), rate = exp_noise)
-    #  ll_obs <- dpois(x = observed, lambda = lambda, log = TRUE)
-    #}
-  for (i in 1:(nrow(state)-1)){
-    
-    
+  for (i in 1:(length(unlist(observed))-4)){ 
+    state_name <- paste("sum_clust", i, sep = "")
     if (is.na(observed[[as.character(i)]])) {
-      # Creates vector of zeros in ll with same length, if no data
-      ll_obs <- numeric(length( state[1+i, , drop = TRUE]/model_size * data_size))
+       #Creates vector of zeros in ll with same length, if no data
+      ll_obs <- numeric(length( state[state_name, , drop = TRUE]/model_size * data_size))
     } else {
-      lambda <-  state[1+i, , drop = TRUE]/model_size * data_size + rexp(n = length( state[1+i, , drop = TRUE]/model_size * data_size), rate = exp_noise)
+      lambda <-  state[state_name, , drop = TRUE]/model_size * data_size + rexp(n = length( state[state_name, , drop = TRUE]/model_size * data_size), rate = exp_noise)
       ll_obs <- dpois(x = observed[[as.character(i)]], lambda = lambda, log = TRUE)
     }
     
     result <- result + ll_obs
   }
   result
-    
-  result <- ll_obs
 }
-
-
-# likelihood for fitting:
-ll_pois <- function(obs, model) {
-  exp_noise <- 1e6
-  
-  if (is.na(obs)) {
-    # Creates vector of zeros in ll with same length, if no data
-    ll_obs <- numeric(length(model))
-  } else {
-    lambda <- model + rexp(n = length(model), rate = exp_noise)
-    ll_obs <- dpois(x = obs, lambda = lambda, log = TRUE)
-  }
-  ll_obs
-}
-
-#combined_compare <- function(state, observed, pars = NULL) {
-#  result <- 0
-  #data_size <- sum(mass_cluster_freq_1)
-  #model_size = 15000
-#  data_size <- sum(unlist(observed))
-#  model_size = sum(unlist(state[2:mass_clusters+1, , drop = TRUE]))
-  
-#  for (i in 1:mass_clusters){
-#    result <- result + ll_pois(observed[[as.character(i)]], state[1+i, , drop = TRUE]/model_size * data_size)
-#  }
-#  result
-#}
-
 
 if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   seq_clusters <- readRDS("PopPUNK_clusters.rds")
@@ -159,11 +113,26 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   mass_VT <- readRDS(file = "PP_mass_VT.rds")
   mass_clusters <- length(unique(seq_clusters$Cluster))
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
-  output_filename <- "4param_COGtriangles_PopPUNK"
+  output_filename <- "VT_COGtriangles_PopPUNK"
   # process data with particle filter:
   dt <- 1/36 # we assume that the generation time of Strep. pneumo is 1 month
   # we have data from 2001, 2004, 2007, so we want 3 (years) * 12 (months) = 36 updates in-between
   
+  ceil_mass_NVT <- rep(0, mass_clusters)
+  for (i in 1:mass_clusters){
+    ceil_mass_NVT[i] <- ceiling(mean(as.integer(seq_clusters[seq_clusters$Cluster == unique(seq_clusters$Cluster)[i],"VT"]=="NVT")))
+  }
+  #ceil_mass_NVT[is.nan(ceil_mass_NVT)] <- 0
+  mean_mass_VT_2001 <- rep(0, mass_clusters)
+  for (i in 1:mass_clusters){
+    mean_mass_VT_2001[i] <- (mean(as.integer(seq_clusters[seq_clusters$SeqYear == 2001 & seq_clusters$Cluster == unique(seq_clusters$Cluster)[i],"VT"]=="VT")))
+  }
+  mean_mass_VT_2001[is.nan(mean_mass_VT_2001)] <- 0
+  
+  NVT_mig <- rep(1/mass_clusters, mass_clusters) * (ceil_mass_NVT)
+  VT_mig <- rep(1/mass_clusters, mass_clusters) * (1-ceil_mass_NVT)
+  avg_cluster_freq <- data.frame(as.matrix(cbind(NVT_mig,VT_mig)))
+  model_start_pop <- matrix(as.double(c(model_start_pop * (1-mean_mass_VT_2001),model_start_pop * mean_mass_VT_2001)), byrow = FALSE, nrow = mass_clusters, ncol = 2)
   peripost_mass_cluster_freq <- data.frame("year" = c(1, 2), rbind(mass_cluster_freq_2, mass_cluster_freq_3))
   names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
   vacc_time <- 0
@@ -179,11 +148,26 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   mass_VT <- readRDS(file = "mass_VT.rds")
   mass_clusters <- length(unique(seq_clusters$SequenceCluster))
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
-  output_filename <- "4param_ggCaller_manSeqClusters"
+  output_filename <- "VT_ggCaller_manSeqClusters"
   # process data with particle filter:
   dt <- 1/36 # we assume that the generation time of Strep. pneumo is 1 month
   # we have data from 2001, 2004, 2007, so we want 3 (years) * 12 (months) = 36 updates in-between
   
+  ceil_mass_NVT <- rep(0, mass_clusters)
+  for (i in 1:mass_clusters){
+    ceil_mass_NVT[i] <- ceiling(mean(as.integer(seq_clusters[seq_clusters$Cluster == unique(seq_clusters$Cluster)[i],"VT"]=="NVT")))
+  }
+  #ceil_mass_NVT[is.nan(ceil_mass_NVT)] <- 0
+  mean_mass_VT_2001 <- rep(0, mass_clusters)
+  for (i in 1:mass_clusters){
+    mean_mass_VT_2001[i] <- (mean(as.integer(seq_clusters[seq_clusters$SeqYear == 2001 & seq_clusters$Cluster == unique(seq_clusters$Cluster)[i],"VT"]=="VT")))
+  }
+  mean_mass_VT_2001[is.nan(mean_mass_VT_2001)] <- 0
+  
+  NVT_mig <- rep(1/mass_clusters, mass_clusters) * (ceil_mass_NVT)
+  VT_mig <- rep(1/mass_clusters, mass_clusters) * (1-ceil_mass_NVT)
+  avg_cluster_freq <- data.frame(as.matrix(cbind(NVT_mig,VT_mig)))
+  model_start_pop <- matrix(as.double(c(model_start_pop * (1-mean_mass_VT_2001),model_start_pop * mean_mass_VT_2001)), byrow = FALSE, nrow = mass_clusters, ncol = 2)
   peripost_mass_cluster_freq <- data.frame("year" = c(1, 2), rbind(mass_cluster_freq_2, mass_cluster_freq_3))
   names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
   vacc_time <- 0
@@ -199,11 +183,26 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   mass_VT <- readRDS(file = "mass_VT.rds")
   mass_clusters <- length(unique(seq_clusters$SequenceCluster))
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
-  output_filename <- "4param_COGtriangles_manSeqClusters"
+  output_filename <- "VT_COGtriangles_manSeqClusters"
   # process data with particle filter:
   dt <- 1/36 # we assume that the generation time of Strep. pneumo is 1 month
   # we have data from 2001, 2004, 2007, so we want 3 (years) * 12 (months) = 36 updates in-between
   
+  ceil_mass_NVT <- rep(0, mass_clusters)
+  for (i in 1:mass_clusters){
+    ceil_mass_NVT[i] <- ceiling(mean(as.integer(seq_clusters[seq_clusters$Cluster == unique(seq_clusters$Cluster)[i],"VT"]=="NVT")))
+  }
+  #ceil_mass_NVT[is.nan(ceil_mass_NVT)] <- 0
+  mean_mass_VT_2001 <- rep(0, mass_clusters)
+  for (i in 1:mass_clusters){
+    mean_mass_VT_2001[i] <- (mean(as.integer(seq_clusters[seq_clusters$SeqYear == 2001 & seq_clusters$Cluster == unique(seq_clusters$Cluster)[i],"VT"]=="VT")))
+  }
+  mean_mass_VT_2001[is.nan(mean_mass_VT_2001)] <- 0
+  
+  NVT_mig <- rep(1/mass_clusters, mass_clusters) * (ceil_mass_NVT)
+  VT_mig <- rep(1/mass_clusters, mass_clusters) * (1-ceil_mass_NVT)
+  avg_cluster_freq <- data.frame(as.matrix(cbind(NVT_mig,VT_mig)))
+  model_start_pop <- matrix(as.double(c(model_start_pop * (1-mean_mass_VT_2001),model_start_pop * mean_mass_VT_2001)), byrow = FALSE, nrow = mass_clusters, ncol = 2)
   peripost_mass_cluster_freq <- data.frame("year" = c(1, 2), rbind(mass_cluster_freq_2, mass_cluster_freq_3))
   names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
   vacc_time <- 0
@@ -230,11 +229,27 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   mass_VT <- readRDS(file = "Nepal_VT.rds")
   mass_clusters <- length(unique(seq_clusters$Cluster))
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
-  output_filename <- "Nepal_ggCaller_PopPUNK"
+  output_filename <- "Nepal_VT_ggCaller_PopPUNK"
   
   dt <- 1/12
   #peripost_mass_cluster_freq <- data.frame("year" = 1:13, rbind(mass_cluster_freq_2, mass_cluster_freq_3, mass_cluster_freq_4, mass_cluster_freq_5, mass_cluster_freq_6, mass_cluster_freq_7, mass_cluster_freq_8, mass_cluster_freq_9,mass_cluster_freq_10, mass_cluster_freq_11, mass_cluster_freq_12, mass_cluster_freq_13,mass_cluster_freq_14))
   # now using 2009 as the start population (Nepal_cluster_freqs_5.rds)
+  
+  ceil_mass_NVT <- rep(0, mass_clusters)
+  for (i in 1:mass_clusters){
+    ceil_mass_NVT[i] <- ceiling(mean(as.integer(seq_clusters[seq_clusters$Cluster == unique(seq_clusters$Cluster)[i],"VT"]=="NVT")))
+  }
+  #ceil_mass_NVT[is.nan(ceil_mass_NVT)] <- 0
+  mean_mass_VT_2001 <- rep(0, mass_clusters)
+  for (i in 1:mass_clusters){
+    mean_mass_VT_2001[i] <- (mean(as.integer(seq_clusters[seq_clusters$SeqYear == 2001 & seq_clusters$Cluster == unique(seq_clusters$Cluster)[i],"VT"]=="VT")))
+  }
+  mean_mass_VT_2001[is.nan(mean_mass_VT_2001)] <- 0
+  
+  NVT_mig <- rep(1/mass_clusters, mass_clusters) * (ceil_mass_NVT)
+  VT_mig <- rep(1/mass_clusters, mass_clusters) * (1-ceil_mass_NVT)
+  avg_cluster_freq <- data.frame(as.matrix(cbind(NVT_mig,VT_mig)))
+  model_start_pop <- matrix(as.double(c(model_start_pop * (1-mean_mass_VT_2001),model_start_pop * mean_mass_VT_2001)), byrow = FALSE, nrow = mass_clusters, ncol = 2)
   peripost_mass_cluster_freq <- data.frame("year" = 1:9, rbind(mass_cluster_freq_6, mass_cluster_freq_7, mass_cluster_freq_8, mass_cluster_freq_9,mass_cluster_freq_10, mass_cluster_freq_11, mass_cluster_freq_12, mass_cluster_freq_13,mass_cluster_freq_14))
   
   names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
@@ -264,7 +279,7 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   mass_VT <- readRDS(file = "Navajo_VT.rds")
   mass_clusters <- length(unique(seq_clusters$Cluster))
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
-  output_filename <- "Navajo_ggCaller_PopPUNK"
+  output_filename <- "Navajo_VT_ggCaller_PopPUNK"
   
   dt <- 1/12
   peripost_mass_cluster_freq <- data.frame("year" = 1:14, rbind(mass_cluster_freq_2,mass_cluster_freq_3,mass_cluster_freq_4,mass_cluster_freq_5,mass_cluster_freq_6, mass_cluster_freq_7, mass_cluster_freq_8, mass_cluster_freq_9,mass_cluster_freq_10, mass_cluster_freq_11, mass_cluster_freq_12, mass_cluster_freq_13,mass_cluster_freq_14,mass_cluster_freq_15))
@@ -272,6 +287,22 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
   
   vacc_time <- 2 # trying vacc time =2 instead of 5 as before
+  
+  ceil_mass_NVT <- rep(0, mass_clusters)
+  for (i in 1:mass_clusters){
+    ceil_mass_NVT[i] <- ceiling(mean(as.integer(seq_clusters[seq_clusters$Cluster == unique(seq_clusters$Cluster)[i],"VT"]=="NVT")))
+  }
+  #ceil_mass_NVT[is.nan(ceil_mass_NVT)] <- 0
+  mean_mass_VT_2001 <- rep(0, mass_clusters)
+  for (i in 1:mass_clusters){
+    mean_mass_VT_2001[i] <- (mean(as.integer(seq_clusters[seq_clusters$SeqYear == 2001 & seq_clusters$Cluster == unique(seq_clusters$Cluster)[i],"VT"]=="VT")))
+  }
+  mean_mass_VT_2001[is.nan(mean_mass_VT_2001)] <- 0
+  
+  NVT_mig <- rep(1/mass_clusters, mass_clusters) * (ceil_mass_NVT)
+  VT_mig <- rep(1/mass_clusters, mass_clusters) * (1-ceil_mass_NVT)
+  avg_cluster_freq <- data.frame(as.matrix(cbind(NVT_mig,VT_mig)))
+  model_start_pop <- matrix(as.double(c(model_start_pop * (1-mean_mass_VT_2001),model_start_pop * mean_mass_VT_2001)), byrow = FALSE, nrow = mass_clusters, ncol = 2)
 } else if(args[1] == "UK" & args[2] == "PopPUNK"){
   seq_clusters <- readRDS("UK_PP.rds")
   intermed_gene_presence_absence_consensus <- readRDS(file = "UK_ggCaller_intermed_consensus.rds")
@@ -288,7 +319,7 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   mass_VT <- readRDS(file = "UK_VT.rds")
   mass_clusters <- length(unique(seq_clusters$Cluster))
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
-  output_filename <- "UK_ggCaller_PopPUNK"
+  output_filename <- "UK_VT_ggCaller_PopPUNK"
   
   dt <- 1/12
   peripost_mass_cluster_freq <- data.frame("year" = 1:6, rbind(mass_cluster_freq_2,mass_cluster_freq_3,mass_cluster_freq_4,mass_cluster_freq_5,mass_cluster_freq_6, mass_cluster_freq_7))
@@ -296,6 +327,21 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
   
   vacc_time <- 0
+  ceil_mass_NVT <- rep(0, mass_clusters)
+  for (i in 1:mass_clusters){
+    ceil_mass_NVT[i] <- ceiling(mean(as.integer(seq_clusters[seq_clusters$Cluster == unique(seq_clusters$Cluster)[i],"VT"]=="NVT")))
+  }
+  #ceil_mass_NVT[is.nan(ceil_mass_NVT)] <- 0
+  mean_mass_VT_2001 <- rep(0, mass_clusters)
+  for (i in 1:mass_clusters){
+    mean_mass_VT_2001[i] <- (mean(as.integer(seq_clusters[seq_clusters$SeqYear == 2001 & seq_clusters$Cluster == unique(seq_clusters$Cluster)[i],"VT"]=="VT")))
+  }
+  mean_mass_VT_2001[is.nan(mean_mass_VT_2001)] <- 0
+  
+  NVT_mig <- rep(1/mass_clusters, mass_clusters) * (ceil_mass_NVT)
+  VT_mig <- rep(1/mass_clusters, mass_clusters) * (1-ceil_mass_NVT)
+  avg_cluster_freq <- data.frame(as.matrix(cbind(NVT_mig,VT_mig)))
+  model_start_pop <- matrix(as.double(c(model_start_pop * (1-mean_mass_VT_2001),model_start_pop * mean_mass_VT_2001)), byrow = FALSE, nrow = mass_clusters, ncol = 2)
 }
 
 threads_total <- 1
@@ -321,117 +367,6 @@ fitting_mass_data <- mcstate::particle_filter_data(data = peripost_mass_cluster_
 det_filter <- particle_deterministic$new(data = fitting_mass_data,
                                          model = WF,
                                          compare = combined_compare)
-
-
-if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
-  seq_clusters <- readRDS("PopPUNK_clusters.rds")
-  intermed_gene_presence_absence_consensus <- readRDS(file = "ggCPP_intermed_gene_presence_absence_consensus.rds")
-  intermed_gene_presence_absence_consensus_matrix <- sapply(intermed_gene_presence_absence_consensus[-1,-1],as.double)
-  model_start_pop <- readRDS(file = "PP_model_start_pop.rds")
-  delta_ranking <- readRDS(file = "ggC_delta_ranking.rds")
-  mass_cluster_freq_1 <- readRDS(file = "PP_mass_cluster_freq_1.rds")
-  mass_cluster_freq_2 <- readRDS(file = "PP_mass_cluster_freq_2.rds")
-  mass_cluster_freq_3 <- readRDS(file = "PP_mass_cluster_freq_3.rds")
-  #mass_VT <- readRDS(file = "PP_mass_VT.rds")
-  mass_clusters <- length(unique(seq_clusters$Cluster))
-  #avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
-  ceil_mass_NVT <- rep(0, mass_clusters)
-  for (i in 1:mass_clusters){
-    ceil_mass_NVT[i] <- ceiling(mean(as.integer(seq_clusters[seq_clusters$Cluster == i,"VT"]=="NVT")))
-  }
-  mean_mass_VT_2001 <- rep(0, mass_clusters)
-  for (i in 1:mass_clusters){
-    mean_mass_VT_2001[i] <- (mean(as.integer(seq_clusters[seq_clusters$SeqYear == 2001 & seq_clusters$Cluster == i,"VT"]=="VT")))
-  }
-  mean_mass_VT_2001[is.nan(mean_mass_VT_2001)] <- 0
-  
-  NVT_mig <- rep(1/mass_clusters, mass_clusters) * (ceil_mass_NVT)
-  VT_mig <- rep(1/mass_clusters, mass_clusters) * (1-ceil_mass_NVT)
-  avg_cluster_freq <- cbind(NVT_mig,VT_mig)
-  model_start_pop <- matrix(as.double(c(model_start_pop * (1-mean_mass_VT_2001),model_start_pop * mean_mass_VT_2001)), byrow = FALSE, nrow = mass_clusters, ncol = 2)
-  output_filename <- "VT_ggCaller_PopPUNK"
-} else if(args[1] == "COGtriangles" & args[2] == "PopPUNK"){
-  seq_clusters <- readRDS("PopPUNK_clusters.rds")
-  intermed_gene_presence_absence_consensus <- readRDS(file = "PP_intermed_gene_presence_absence_consensus.rds")
-  intermed_gene_presence_absence_consensus_matrix <- sapply(intermed_gene_presence_absence_consensus[-1,-1],as.double)
-  model_start_pop <- readRDS(file = "PP_model_start_pop.rds")
-  delta_ranking <- readRDS(file = "delta_ranking.rds")
-  mass_cluster_freq_1 <- readRDS(file = "PP_mass_cluster_freq_1.rds")
-  mass_cluster_freq_2 <- readRDS(file = "PP_mass_cluster_freq_2.rds")
-  mass_cluster_freq_3 <- readRDS(file = "PP_mass_cluster_freq_3.rds")
-  #mass_VT <- readRDS(file = "PP_mass_VT.rds")
-  mass_clusters <- length(unique(seq_clusters$Cluster))
-  #avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
-  ceil_mass_NVT <- rep(0, mass_clusters)
-  for (i in 1:mass_clusters){
-    ceil_mass_NVT[i] <- ceiling(mean(as.integer(seq_clusters[seq_clusters$Cluster == i,"VT"]=="NVT")))
-  }
-  mean_mass_VT_2001 <- rep(0, mass_clusters)
-  for (i in 1:mass_clusters){
-    mean_mass_VT_2001[i] <- (mean(as.integer(seq_clusters[seq_clusters$SeqYear == 2001 & seq_clusters$Cluster == i,"VT"]=="VT")))
-  }
-  mean_mass_VT_2001[is.nan(mean_mass_VT_2001)] <- 0
-  
-  NVT_mig <- rep(1/mass_clusters, mass_clusters) * (ceil_mass_NVT)
-  VT_mig <- rep(1/mass_clusters, mass_clusters) * (1-ceil_mass_NVT)
-  avg_cluster_freq <- cbind(NVT_mig,VT_mig)
-  model_start_pop <- matrix(as.double(c(model_start_pop * (1-mean_mass_VT_2001),model_start_pop * mean_mass_VT_2001)), byrow = FALSE, nrow = mass_clusters, ncol = 2)
-  output_filename <- "VT_COGtriangles_PopPUNK"
-} else if(args[1] == "ggCaller" & args[2] == "manualSeqClusters"){
-  seq_clusters <- readRDS("Mass_Samples_accCodes.rds")
-  intermed_gene_presence_absence_consensus <- readRDS(file = "ggC_intermed_gene_presence_absence_consensus.rds")
-  intermed_gene_presence_absence_consensus_matrix <- sapply(intermed_gene_presence_absence_consensus[-1,-1],as.double)
-  model_start_pop <- readRDS(file = "model_start_pop.rds")
-  delta_ranking <- readRDS(file = "ggC_delta_ranking.rds")
-  mass_cluster_freq_1 <- readRDS(file = "mass_cluster_freq_1.rds")
-  mass_cluster_freq_2 <- readRDS(file = "mass_cluster_freq_2.rds")
-  mass_cluster_freq_3 <- readRDS(file = "mass_cluster_freq_3.rds")
-  #mass_VT <- readRDS(file = "mass_VT.rds")
-  mass_clusters <- length(unique(seq_clusters$SequenceCluster))
-  #avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
-  ceil_mass_NVT <- rep(0, mass_clusters)
-  for (i in 1:mass_clusters){
-    ceil_mass_NVT[i] <- ceiling(mean(as.integer(seq_clusters[seq_clusters$SequenceCluster == i-1,"Vaccine Type"]=="NVT")))
-  }
-  mean_mass_VT_2001 <- rep(0, mass_clusters)
-  for (i in 1:mass_clusters){
-    mean_mass_VT_2001[i] <- (mean(as.integer(seq_clusters[seq_clusters$SequenceCluster == i-1 & seq_clusters$`Year of Isolation`==2001,"Vaccine Type"]=="VT")))
-  }
-  mean_mass_VT_2001[is.nan(mean_mass_VT_2001)] <- 0
-  
-  NVT_mig <- rep(1/mass_clusters, mass_clusters) * (ceil_mass_NVT)
-  VT_mig <- rep(1/mass_clusters, mass_clusters) * (1-ceil_mass_NVT)
-  avg_cluster_freq <- cbind(NVT_mig,VT_mig)
-  model_start_pop <- matrix(as.double(c(model_start_pop * (1-mean_mass_VT_2001),model_start_pop * mean_mass_VT_2001)), byrow = FALSE, nrow = mass_clusters, ncol = 2)
-  output_filename <- "VT_ggCaller_manSeqClusters"
-} else if(args[1] == "COGtriangles" & args[2] == "manualSeqClusters"){
-  seq_clusters <- readRDS("Mass_Samples_accCodes.rds")
-  intermed_gene_presence_absence_consensus <- readRDS(file = "intermed_gene_presence_absence_consensus.rds")
-  intermed_gene_presence_absence_consensus_matrix <- sapply(intermed_gene_presence_absence_consensus[-1,-1],as.double)
-  model_start_pop <- readRDS(file = "model_start_pop.rds")
-  delta_ranking <- readRDS(file = "delta_ranking.rds")
-  mass_cluster_freq_1 <- readRDS(file = "mass_cluster_freq_1.rds")
-  mass_cluster_freq_2 <- readRDS(file = "mass_cluster_freq_2.rds")
-  mass_cluster_freq_3 <- readRDS(file = "mass_cluster_freq_3.rds")
-  #mass_VT <- readRDS(file = "mass_VT.rds")
-  mass_clusters <- length(unique(seq_clusters$SequenceCluster))
-  #avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
-  ceil_mass_NVT <- rep(0, mass_clusters)
-  for (i in 1:mass_clusters){
-    ceil_mass_NVT[i] <- ceiling(mean(as.integer(seq_clusters[seq_clusters$SequenceCluster == i-1,"Vaccine Type"]=="NVT")))
-  }
-  mean_mass_VT_2001 <- rep(0, mass_clusters)
-  for (i in 1:mass_clusters){
-    mean_mass_VT_2001[i] <- (mean(as.integer(seq_clusters[seq_clusters$SequenceCluster == i-1 & seq_clusters$`Year of Isolation`==2001,"Vaccine Type"]=="VT")))
-  }
-  mean_mass_VT_2001[is.nan(mean_mass_VT_2001)] <- 0
-  
-  NVT_mig <- rep(1/mass_clusters, mass_clusters) * (ceil_mass_NVT)
-  VT_mig <- rep(1/mass_clusters, mass_clusters) * (1-ceil_mass_NVT)
-  avg_cluster_freq <- cbind(NVT_mig,VT_mig)
-  model_start_pop <- matrix(as.double(c(model_start_pop * (1-mean_mass_VT_2001),model_start_pop * mean_mass_VT_2001)), byrow = FALSE, nrow = mass_clusters, ncol = 2)
-  output_filename <- "VT_COGtriangles_manSeqClusters"
-}
 
 
 # process data with particle filter:
@@ -521,7 +456,7 @@ proposal_matrix <- diag(0.1,4) # the proposal matrix defines the covariance-vari
 #mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.1432, min = 0, max = 1), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 01), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), proposal_matrix, make_transform(complex_params))
 mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", -0.597837, min = -1000, max = 0), mcstate::pmcmc_parameter("prop_f", 0.125, min = 0, max = 1), mcstate::pmcmc_parameter("m", -4, min = -1000, max = 0), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), proposal_matrix, make_transform(complex_params))
 mcmc_pars$initial()
-mcmc_pars$model(mcmc_pars$initial())
+#mcmc_pars$model(mcmc_pars$initial())
 
 #WF$public_methods$has_openmp()
 det_filter <- particle_deterministic$new(data = fitting_mass_data,
@@ -575,14 +510,25 @@ print("det_mcmc_1 mean log likelihood")
 mean(processed_chains$probabilities[,2])
 det_proposal_matrix <- cov(processed_chains$pars)
 
-#### It's running! (But I think there is still something wrong with the likelihood.)
-
-#det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0.075, max = 0.22), mcstate::pmcmc_parameter("sigma_w", 0.05, min = 0.000001, max = 0.0749), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 0.2), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 0.5)), det_proposal_matrix, make_transform(complex_params))
-det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", parameter_mean_hpd[1], min = 0.075, max = 0.22), mcstate::pmcmc_parameter("sigma_w", parameter_mean_hpd[2], min = 0.000001, max = 0.0749), mcstate::pmcmc_parameter("prop_f", parameter_mean_hpd[3], min = 0, max = 1), mcstate::pmcmc_parameter("m", parameter_mean_hpd[4], min = 0, max = 0.2), mcstate::pmcmc_parameter("v", parameter_mean_hpd[5], min = 0, max = 0.5)), det_proposal_matrix, make_transform(complex_params))
+det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", parameter_mean_hpd[1], min = -1000, max = 0), mcstate::pmcmc_parameter("prop_f", parameter_mean_hpd[2], min = 0, max = 1),mcstate::pmcmc_parameter("m", parameter_mean_hpd[3], min = -1000, max = 0), mcstate::pmcmc_parameter("v", parameter_mean_hpd[4], min = 0, max = 1)), det_proposal_matrix, make_transform(complex_params))
 
 det_filter <- particle_deterministic$new(data = fitting_mass_data,
                                          model = WF,
+                                         index = index,
                                          compare = combined_compare)
+
+n_steps <- 5
+n_burnin <- 0
+
+
+control <- mcstate::pmcmc_control(
+  n_steps,
+  save_state = TRUE, 
+  save_trajectories = TRUE,
+  progress = TRUE,
+  adaptive_proposal = TRUE,
+  n_chains = 1)
+det_pmcmc_run <- mcstate::pmcmc(det_mcmc_pars, det_filter, control = control)
 
 n_steps <- 20000
 n_burnin <- 0
@@ -594,22 +540,89 @@ control <- mcstate::pmcmc_control(
   save_trajectories = TRUE,
   progress = TRUE,
   adaptive_proposal = TRUE,
-  n_chains = 4)
+  n_chains = 4, n_workers = 4, n_threads_total = 4)
 det_pmcmc_run2 <- mcstate::pmcmc(det_mcmc_pars, det_filter, control = control)
+processed_chains <- mcstate::pmcmc_thin(det_pmcmc_run2, burnin = 2000, thin = 1)
+parameter_mean_hpd <- apply(processed_chains$pars, 2, mean)
+print(parameter_mean_hpd)
 par(mfrow = c(1,1))
 
 det_mcmc2 <- coda::as.mcmc(cbind(det_pmcmc_run2$probabilities, det_pmcmc_run2$pars))
-
 pdf(file = paste(output_filename,"det_mcmc2.pdf",sep = "_"),   # The directory you want to save the file in
     width = 6, # The width of the plot in inches
     height = 12)
 plot(det_mcmc2)
 dev.off()
-
-processed_chains <- mcstate::pmcmc_thin(det_pmcmc_run2, burnin = 1000, thin = 1)
-parameter_mean_hpd <- apply(processed_chains$pars, 2, mean)
-parameter_mean_hpd
-print("det_mcmc_2 log likelihood")
+print("det_mcmc_2 final log likelihood")
 processed_chains$probabilities[nrow(processed_chains$probabilities),2]
 print("det_mcmc_2 mean log likelihood")
 mean(processed_chains$probabilities[,2])
+
+saveRDS(det_pmcmc_run2, paste(output_filename, "_det_pmcmc_run2.rds", sep = ""))
+
+if(stoch_run == TRUE){
+  det_proposal_matrix <- cov(processed_chains$pars)
+  #det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.15, min = 0.075, max = 0.22), mcstate::pmcmc_parameter("sigma_w", 0.05, min = 0.000001, max = 0.0749), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 0.2), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 0.5)), det_proposal_matrix, make_transform(complex_params))
+  det_mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", parameter_mean_hpd[1], min = -1000, max = 0), mcstate::pmcmc_parameter("prop_f", parameter_mean_hpd[2], min = 0, max = 1),mcstate::pmcmc_parameter("m", parameter_mean_hpd[3], min = -1000, max = 0), mcstate::pmcmc_parameter("v", parameter_mean_hpd[4], min = 0, max = 1)), det_proposal_matrix, make_transform(complex_params))
+  
+  
+  filter <- mcstate::particle_filter$new(data = fitting_mass_data,
+                                         model = WF,
+                                         n_particles = 6,
+                                         index = index,
+                                         compare = combined_compare,
+                                         n_threads = 8)
+  
+  n_steps <- 2
+  n_burnin <- 0
+  
+  control <- mcstate::pmcmc_control(n_steps, n_chains = 1, n_workers = 1,save_state = TRUE,
+                                    save_trajectories = TRUE,
+                                    progress = TRUE,
+                                    n_threads_total = 1)
+  pmcmc_run <- mcstate::pmcmc(det_mcmc_pars, filter, control = control)
+  
+  filter <- mcstate::particle_filter$new(data = fitting_mass_data,
+                                         model = WF,
+                                         n_particles = 96,
+                                         index = index,
+                                         compare = combined_compare,
+                                         n_threads = 8)
+  n_steps <- 2000
+  n_burnin <- 0
+  control <- mcstate::pmcmc_control(
+    n_steps,
+    save_state = TRUE, 
+    save_trajectories = TRUE,
+    progress = TRUE, 
+    n_chains = 4, n_workers = worker_nodes, 
+    n_threads_total = threads_total)
+  #control <- mcstate::pmcmc_control(
+  #  n_steps,
+  #  save_state = TRUE, 
+  #  save_trajectories = TRUE,
+  #  progress = TRUE, 
+  #  n_chains = 2)
+  
+  stoch_pmcmc_run2 <- mcstate::pmcmc(det_mcmc_pars, filter, control = control)
+  par(mfrow = c(1,1))
+  
+  stoch_mcmc2 <- coda::as.mcmc(cbind(stoch_pmcmc_run2$probabilities, stoch_pmcmc_run2$pars))
+  
+  
+  pdf(file = paste(output_filename,"stoch_mcmc2.pdf",sep = "_"),   # The directory you want to save the file in
+      width = 6, # The width of the plot in inches
+      height = 12)
+  plot(stoch_mcmc2)
+  dev.off()
+  
+  processed_chains <- mcstate::pmcmc_thin(stoch_pmcmc_run2, burnin = 200, thin = 1)
+  parameter_mean_hpd <- apply(processed_chains$pars, 2, mean)
+  print(parameter_mean_hpd)
+  print("stoch_mcmc_2 final log likelihood")
+  print(processed_chains$probabilities[nrow(processed_chains$probabilities),2])
+  print("stoch_mcmc_2 mean log likelihood")
+  print(mean(processed_chains$probabilities[,2]))
+  
+  saveRDS(stoch_pmcmc_run2, paste(output_filename, "_stoch_pmcmc_run2.rds", sep = ""))
+}
