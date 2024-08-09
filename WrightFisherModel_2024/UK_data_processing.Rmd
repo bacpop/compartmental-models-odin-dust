@@ -86,6 +86,34 @@ UK_PP$Serotype <- UK_Serotype_dict[UK_PP$Taxon]
 
 UK_PP$Time <- UK_SeqYear_dict[UK_PP$Taxon]
 
+#UK_VT_dict <- UK_metadata$Vaccine
+#names(UK_VT_dict) <- UK_metadata$Accession
+
+#PCV7_dict <- c("NVT", "VT", "NVT")
+#names(PCV7_dict) <- c("NVT", "PCV7", "PCV13")
+
+#PCV13_dict <- c("NVT", "VT", "VT")
+#names(PCV13_dict) <- c("NVT", "PCV7", "PCV13")
+
+#UK_PP$VT_PCV7 <- PCV7_dict[UK_VT_dict[UK_PP$Taxon]]
+#UK_PP$VT_PCV13 <- PCV13_dict[UK_VT_dict[UK_PP$Taxon]]
+
+# create dictionary for VTs of the PCV10
+# 1, 4, 5, 6b, 7f, 9V, 14, 18c, 19f and 23f serotypes (source: NCBI)
+#PCV7: 4, 6B, 9V, 14, 18C, 19F and 23F. (source: https://journals.plos.org/plospathogens/article?id=10.1371/journal.ppat.1006966#sec018)
+# PCV13: (1, 3, 4, 5, 6A and 6B, 7F, 9V, 14, 19A, and 19F, 18C, and 23F) (source: https://www.ncbi.nlm.nih.gov/books/NBK507794/)
+PCV13_VTs <- rep("NVT",length(unique(UK_metadata$Serotype)))
+names(PCV13_VTs) <- unique(UK_metadata$Serotype)
+PCV13_VTs[c("1", "3", "4","5","6A","6B", "7F", "9V", "14", "18C", "19A", "19F", "23F")] <- "VT"
+
+# add 6A to PCV7 because there is strong cross-immunity btw PVC7 and 6A (4.Croucher, N. J. et al. Population genomics of post-vaccine changes in pneumococcal epidemiology. Nat. Genet. 45, 656–663 (2013).)
+PCV7_VTs <- rep("NVT",length(unique(UK_metadata$Serotype)))
+names(PCV7_VTs) <- unique(UK_metadata$Serotype)
+PCV7_VTs[c("4","6A", "6B", "9V", "14", "18C", "19F", "23F")] <- "VT"
+
+UK_PP$VT_PCV7 <- PCV7_VTs[UK_PP$Serotype]
+UK_PP$VT_PCV13 <- PCV13_VTs[UK_PP$Serotype]
+
 saveRDS(UK_PP,"UK_PP.rds")
 ```
 
@@ -247,7 +275,7 @@ saveRDS(UK_ggCaller_intermed_consensus,"UK_ggCaller_intermed_consensus.rds")
 ```{r}
 # introduction of PCV7 in 2006 and PCV13 in 2010
 
-# create dictionary for VTs of the PCV10
+# create dictionary for VTs of the PCV7
 # 1, 4, 5, 6b, 7f, 9V, 14, 18c, 19f and 23f serotypes (source: NCBI)
 #PCV7: 4, 6B, 9V, 14, 18C, 19F and 23F. (source: https://journals.plos.org/plospathogens/article?id=10.1371/journal.ppat.1006966#sec018)
 # PCV13: (1, 3, 4, 5, 6A and 6B, 7F, 9V, 14, 19A, and 19F, 18C, and 23F) (source: https://www.ncbi.nlm.nih.gov/books/NBK507794/)

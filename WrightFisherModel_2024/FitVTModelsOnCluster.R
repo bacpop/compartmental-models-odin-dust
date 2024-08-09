@@ -41,11 +41,10 @@ ll_pois <<- function(obs, model) {
   ll_obs
 }
 
-states_likelihood <- names(index(WFmodel$info())$run)
-
 combined_compare <- function(state, observed, pars = NULL) {
   result <- 0
-  data_size <- sum(unlist(observed))
+  #data_size <- sum(unlist(observed))
+  data_size <- sum(unlist(observed[as.character(1:(length(unlist(observed))-4))]))
   model_size = sum(unlist(state[-1, , drop = TRUE]))
   exp_noise <- 1e6
     
@@ -53,7 +52,7 @@ combined_compare <- function(state, observed, pars = NULL) {
     state_name <- paste("sum_clust", i, sep = "")
     if (is.na(observed[[as.character(i)]])) {
        #Creates vector of zeros in ll with same length, if no data
-      ll_obs <- numeric(length( state[state_name, , drop = TRUE]/model_size * data_size))
+      ll_obs <- numeric(length( state[state_name, , drop = TRUE]))
     } else {
       lambda <-  state[state_name, , drop = TRUE]/model_size * data_size + rexp(n = length( state[state_name, , drop = TRUE]/model_size * data_size), rate = exp_noise)
       ll_obs <- dpois(x = observed[[as.character(i)]], lambda = lambda, log = TRUE)
@@ -293,16 +292,16 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
     ceil_mass_NVT[i] <- ceiling(mean(as.integer(seq_clusters[seq_clusters$Cluster == unique(seq_clusters$Cluster)[i],"VT"]=="NVT")))
   }
   #ceil_mass_NVT[is.nan(ceil_mass_NVT)] <- 0
-  mean_mass_VT_2001 <- rep(0, mass_clusters)
+  mean_mass_VT_start <- rep(0, mass_clusters)
   for (i in 1:mass_clusters){
-    mean_mass_VT_2001[i] <- (mean(as.integer(seq_clusters[seq_clusters$SeqYear == 2001 & seq_clusters$Cluster == unique(seq_clusters$Cluster)[i],"VT"]=="VT")))
+    mean_mass_VT_start[i] <- (mean(as.integer(seq_clusters[seq_clusters$SeqYear == 1999 & seq_clusters$Cluster == unique(seq_clusters$Cluster)[i],"VT"]=="VT")))
   }
-  mean_mass_VT_2001[is.nan(mean_mass_VT_2001)] <- 0
+  mean_mass_VT_start[is.nan(mean_mass_VT_start)] <- 0
   
   NVT_mig <- rep(1/mass_clusters, mass_clusters) * (ceil_mass_NVT)
   VT_mig <- rep(1/mass_clusters, mass_clusters) * (1-ceil_mass_NVT)
   avg_cluster_freq <- data.frame(as.matrix(cbind(NVT_mig,VT_mig)))
-  model_start_pop <- matrix(as.double(c(model_start_pop * (1-mean_mass_VT_2001),model_start_pop * mean_mass_VT_2001)), byrow = FALSE, nrow = mass_clusters, ncol = 2)
+  model_start_pop <- matrix(as.double(c(model_start_pop * (1-mean_mass_VT_start),model_start_pop * mean_mass_VT_start)), byrow = FALSE, nrow = mass_clusters, ncol = 2)
 } else if(args[1] == "UK" & args[2] == "PopPUNK"){
   seq_clusters <- readRDS("UK_PP.rds")
   intermed_gene_presence_absence_consensus <- readRDS(file = "UK_ggCaller_intermed_consensus.rds")
@@ -329,12 +328,12 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   vacc_time <- 0
   ceil_mass_NVT <- rep(0, mass_clusters)
   for (i in 1:mass_clusters){
-    ceil_mass_NVT[i] <- ceiling(mean(as.integer(seq_clusters[seq_clusters$Cluster == unique(seq_clusters$Cluster)[i],"VT"]=="NVT")))
+    ceil_mass_NVT[i] <- ceiling(mean(as.integer(seq_clusters[seq_clusters$Cluster == unique(seq_clusters$Cluster)[i],"VT_PCV7"]=="NVT")))
   }
   #ceil_mass_NVT[is.nan(ceil_mass_NVT)] <- 0
   mean_mass_VT_2001 <- rep(0, mass_clusters)
   for (i in 1:mass_clusters){
-    mean_mass_VT_2001[i] <- (mean(as.integer(seq_clusters[seq_clusters$SeqYear == 2001 & seq_clusters$Cluster == unique(seq_clusters$Cluster)[i],"VT"]=="VT")))
+    mean_mass_VT_2001[i] <- (mean(as.integer(seq_clusters[seq_clusters$Time == 2006 & seq_clusters$Cluster == unique(seq_clusters$Cluster)[i],"VT_PCV7"]=="VT")))
   }
   mean_mass_VT_2001[is.nan(mean_mass_VT_2001)] <- 0
   
