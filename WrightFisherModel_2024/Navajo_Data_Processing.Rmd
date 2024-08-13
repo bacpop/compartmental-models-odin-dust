@@ -73,12 +73,24 @@ names(Navajo_Serotype_dict) <- Navajo_meta_data$Accession
 Navajo_PP$Serotype <- Navajo_Serotype_dict[Navajo_PP$Taxon]
 
 # Add VT information
-Navajo_VT_PCV7_dict <- Navajo_meta_data$PCV7.actual
-names(Navajo_VT_PCV7_dict) <- Navajo_meta_data$Accession
+PCV7_VTs <- rep("NVT",length(unique(Navajo_meta_data$Sero)))
+names(PCV7_VTs) <- unique(Navajo_meta_data$Sero)
+PCV7_VTs[c("4","6B", "9V", "14", "18C", "19F", "23F")] <- "VT"
 
-Navajo_PP$VT <- Navajo_VT_PCV7_dict[Navajo_PP$Taxon]
+#Navajo_VT_PCV7_dict <- Navajo_meta_data$PCV7.actual
+#names(Navajo_VT_PCV7_dict) <- Navajo_meta_data$Accession
 
-# ADD sequencing year info
+#Navajo_PP$VT <- Navajo_VT_PCV7_dict[Navajo_PP$Taxon]
+Navajo_PP$VT <- PCV7_VTs[Navajo_Serotype_dict[Navajo_PP$Taxon]]
+
+# Add PCV13 info
+PCV13_VTs <- rep("NVT",length(unique(Navajo_meta_data$Sero)))
+names(PCV13_VTs) <- unique(Navajo_meta_data$Sero)
+PCV13_VTs[c("1", "3", "4","5","6A","6B", "7F", "9V", "14", "18C", "19A", "19F", "23F")] <- "VT"
+
+Navajo_PP$VT_PCV13 <- PCV13_VTs[Navajo_Serotype_dict[Navajo_PP$Taxon]]
+
+# Add sequencing year info
 Navajo_Year_dict <- Navajo_meta_data$Year
 names(Navajo_Year_dict) <- Navajo_meta_data$Accession
 

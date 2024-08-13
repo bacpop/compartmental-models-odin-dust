@@ -2670,6 +2670,22 @@ lollipop_cluster_freqs_VTandNVT_labelSero_shaded(year = "2007", plot_title = "Po
 lollipop_cluster_freqs_VTandNVT_labelSero_log(year = "2007", plot_title = "PopPUNK and ggCaller log scale", data1 = PP_mass_cluster_freq_3/sum(PP_mass_cluster_freq_3), model_name_1 ="Model", model1 = simMeanggCPP3/sum(simMeanggCPP3), PP_mass_VT, SeroLabel = PP_serotype_comp)
 
 lollipop_cluster_freqs_VTandNVT_labelSero_relative(year = "2007", plot_title = "PopPUNK and ggCaller relative difference", data1 = PP_mass_cluster_freq_3/sum(PP_mass_cluster_freq_3), model_name_1 ="Model", model1 = simMeanggCPP3/sum(simMeanggCPP3), PP_mass_VT, SeroLabel = PP_serotype_comp)
+
+
+# add null model to plot
+# params (08.03.2024): m = 0.008118758, v = 0.031313422 
+WF_null <- odin.dust::odin_dust("null_NFDS_Model.R")
+null_params_ggCPP <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, delta = ggC_delta_ranking, m = 0.008118758, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.031313422, vacc_time = 0)
+
+nullWFmodel_ggCPP <- WF_null$new(pars = null_params_ggCPP,
+                                   time = 0,
+                                   n_particles = 10L,
+                                   n_threads = 4L,
+                                   seed = 1L)
+NullsimMeanggCPP2 <- rowMeans(nullWFmodel_ggCPP$run(36)[-1,])
+NullsimMeanggCPP3 <- rowMeans(nullWFmodel_ggCPP$run(72)[-1,])
+
+lollipop_cluster_freqs_2x2_VTandNVT_labelSero_relative(year = "2007", plot_title = "Massachusetts - PopPUNK and ggCaller relative difference", data1 = PP_mass_cluster_freq_3/sum(PP_mass_cluster_freq_3), model_name_1 ="Model", model1 = simMeanggCPP3/sum(simMeanggCPP3), model2 = NullsimMeanggCPP3/sum(NullsimMeanggCPP3), model_name_2 = "Null Model", VT_vec = PP_mass_VT, SeroLabel = PP_serotype_comp)
 ```
 
 # pair plot
@@ -4207,7 +4223,7 @@ abline(lm(sq_error_vals ~ mass_cluster_freq_14[order(mass_cluster_freq_14)]), co
 model_scaled <- lm(scaled_error_vals ~ (mass_cluster_freq_14[order(mass_cluster_freq_14)])[which(data_vals!=0)])
 summary(model_scaled)
 
-plot((mass_cluster_freq_14[order(mass_cluster_freq_14)])[which(data_vals!=0)],scaled_error_vals, ylab = "squared error/cluster size", xlab = "Cluster size (data)", main = "Relative Squared error model vs. data for Navajo, tp 14")
+plot((mass_cluster_freq_14[order(mass_cluster_freq_14)])[which(data_vals!=0)],scaled_error_vals, ylab = "absolute error/cluster size", xlab = "Cluster size (data)", main = "Relative absolute error model vs. data for Navajo, tp 14")
 abline(lm(scaled_error_vals ~ mass_cluster_freq_14[order(mass_cluster_freq_14)][which(data_vals!=0)]), col = "red")
 ```
 
