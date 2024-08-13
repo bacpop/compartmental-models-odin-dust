@@ -2643,6 +2643,7 @@ params_ggCPP <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(g
 
 params_ggCPP <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = -1.6970825, sigma_w = -1000, prop_f = 0.1125722, delta = ggC_delta_ranking, m = -4.0487967, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.1525169, vacc_time = 0)
 
+#corrected
 params_ggCPP <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = -2.0958228, sigma_w = -1000, prop_f = 0.3107495, delta = ggC_delta_ranking, m = -4.1434129, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.1366157, vacc_time = 0)
 
 #weighted
@@ -2650,6 +2651,7 @@ params_ggCPP <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(g
 
 # mult
 params_ggCPP <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = -2.1445454, sigma_w = -1000, prop_f = 0.3145671, delta = ggC_delta_ranking, m = -4.4065733, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.1369317, vacc_time = 0)
+
 WFmodel_ggCPP <- WF_nG_h_vP$new(pars = params_ggCPP,
                                    time = 0,
                                    n_particles = 10L,
@@ -2690,9 +2692,30 @@ ggpairs(Mass_4param_fit$pars, title = "Mass", upper = list(continuous = wrap("co
 #install.packages("bayestestR")
 library(bayestestR)
 map_estimate(Mass_4param_fit$pars[, 2])
-
 ```
 
+```{r}
+# plot correlation of cluster size and error
+data_order <- order(PP_mass_cluster_freq_3)
+data_vals <- (PP_mass_cluster_freq_3/sum(PP_mass_cluster_freq_3))[data_order]
+model_vals <- (simMeanggCPP3/sum(simMeanggCPP3))[data_order]
+error_vals <- abs(data_vals - model_vals)
+sq_error_vals <- (data_vals - model_vals)**2
+
+model <- lm(error_vals ~ PP_mass_cluster_freq_3[order(PP_mass_cluster_freq_3)])
+summary(model)
+
+
+plot(PP_mass_cluster_freq_3[order(PP_mass_cluster_freq_3)],error_vals, ylab = "absolute error", xlab = "Cluster size (data)", main = "Absolute error model vs. data for Mass 2007")
+abline(lm(error_vals ~ PP_mass_cluster_freq_3[order(PP_mass_cluster_freq_3)]), col = "red")
+
+
+model_sqr <- lm(sq_error_vals ~ PP_mass_cluster_freq_3[order(PP_mass_cluster_freq_3)])
+summary(model_sqr)
+
+plot(PP_mass_cluster_freq_3[order(PP_mass_cluster_freq_3)],sq_error_vals, ylab = "squared error", xlab = "Cluster size (data)", main = "Squared error model vs. data for Mass 2007")
+abline(lm(sq_error_vals ~ PP_mass_cluster_freq_3[order(PP_mass_cluster_freq_3)]), col = "red")
+```
 
 ```{r}
 # ggCPP fit (logistic function model)
@@ -4114,7 +4137,7 @@ Navajo_4param_fit_mcmc <- coda::as.mcmc(cbind(Navajo_4param_fit$probabilities, N
 coda::effectiveSize(Navajo_4param_fit_mcmc)
 summary(coda::as.mcmc(Navajo_4param_fit_mcmc))
 
-# 4 param fit with vacc2 (pcv7 and pcv13 seperately) with 6A in PCV7
+# 4 param fit with vacc2 (pcv7 and pcv13 separately) with 6A in PCV7
 Navajo_4param_fit <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_07_24/Navajo_newPCV7_2vacc/Navajo_ggCaller_PopPUNK2vacc_det_pmcmc_run2.rds")
 Navajo_4param_fit_mcmc <- coda::as.mcmc(cbind(Navajo_4param_fit$probabilities, Navajo_4param_fit$pars))
 coda::effectiveSize(Navajo_4param_fit_mcmc)
@@ -4156,6 +4179,36 @@ lollipop_cluster_freqs_VTandNVT_labelSero(year = "tp 10", plot_title = "PopPUNK 
 lollipop_cluster_freqs_VTandNVT_labelSero(year = "tp 13", plot_title = "PopPUNK and ggCaller", data1 = mass_cluster_freq_13/sum(mass_cluster_freq_13), model_name_1 ="Model", model1 = simMeanggCPP13_Navajo/sum(simMeanggCPP13_Navajo), VT_vec = mass_VT, SeroLabel = Navajo_PP_serotype_comp)
 
 lollipop_cluster_freqs_VTandNVT_labelSero(year = "tp 14", plot_title = "PopPUNK and ggCaller", data1 = mass_cluster_freq_14/sum(mass_cluster_freq_14), model_name_1 ="Model", model1 = simMeanggCPP14_Navajo/sum(simMeanggCPP14_Navajo), VT_vec = mass_VT, SeroLabel = Navajo_PP_serotype_comp)
+```
+
+```{r}
+# plot correlation of cluster size and error
+data_order <- order(mass_cluster_freq_14)
+data_vals <- (mass_cluster_freq_14/sum(mass_cluster_freq_14))[data_order]
+model_vals <- (simMeanggCPP14_Navajo/sum(simMeanggCPP14_Navajo))[data_order]
+error_vals <- abs(data_vals - model_vals)
+sq_error_vals <- (data_vals - model_vals)**2
+scaled_error_vals <- abs(data_vals[which(data_vals!=0)] - model_vals[which(data_vals!=0)])/(data_vals[which(data_vals!=0)])
+
+model <- lm(error_vals ~ mass_cluster_freq_14[order(mass_cluster_freq_14)])
+summary(model)
+
+
+plot(mass_cluster_freq_14[order(mass_cluster_freq_14)],error_vals, ylab = "absolute error", xlab = "Cluster size (data)", main = "Absolute error model vs. data for Navajo, tp 14")
+abline(lm(error_vals ~ mass_cluster_freq_14[order(mass_cluster_freq_14)]), col = "red")
+
+
+model_sqr <- lm(sq_error_vals ~ mass_cluster_freq_14[order(mass_cluster_freq_14)])
+summary(model_sqr)
+
+plot(mass_cluster_freq_14[order(mass_cluster_freq_14)],sq_error_vals, ylab = "squared error", xlab = "Cluster size (data)", main = "Squared error model vs. data for Navajo, tp 14")
+abline(lm(sq_error_vals ~ mass_cluster_freq_14[order(mass_cluster_freq_14)]), col = "red")
+
+model_scaled <- lm(scaled_error_vals ~ (mass_cluster_freq_14[order(mass_cluster_freq_14)])[which(data_vals!=0)])
+summary(model_scaled)
+
+plot((mass_cluster_freq_14[order(mass_cluster_freq_14)])[which(data_vals!=0)],scaled_error_vals, ylab = "squared error/cluster size", xlab = "Cluster size (data)", main = "Relative Squared error model vs. data for Navajo, tp 14")
+abline(lm(scaled_error_vals ~ mass_cluster_freq_14[order(mass_cluster_freq_14)][which(data_vals!=0)]), col = "red")
 ```
 
 ```{r}
@@ -4326,6 +4379,31 @@ lollipop_cluster_freqs_VTandNVT_labelSero(year = "Winter 2009/10", plot_title = 
 
 lollipop_cluster_freqs_VTandNVT_labelSero(year = "Data 2006 vs 2012", plot_title = "PopPUNK and ggCaller", data1 = mass_cluster_freq_1/sum(mass_cluster_freq_1), model_name_1 ="Data 2012", model1 = mass_cluster_freq_7/sum(mass_cluster_freq_7), VT_vec = mass_VT, SeroLabel = UK_PP_serotype_comp)
 ```
+
+```{r}
+# plot correlation of cluster size and error
+data_order <- order(mass_cluster_freq_7)
+data_vals <- (mass_cluster_freq_7/sum(mass_cluster_freq_7))[data_order]
+model_vals <- (simMeanggCPP7_UK/sum(simMeanggCPP7_UK))[data_order]
+error_vals <- abs(data_vals - model_vals)
+sq_error_vals <- (data_vals - model_vals)**2
+plot(mass_cluster_freq_7[order(mass_cluster_freq_7)],error_vals, ylab = "absolute error", xlab = "Cluster size (data)", main = "Absolute error model vs. data for Southampton, 2012/13")
+plot(mass_cluster_freq_7[order(mass_cluster_freq_7)],sq_error_vals, ylab = "absolute error", xlab = "Cluster size (data)", main = "Absolute error model vs. data for Southampton, 2012/13")
+
+model <- lm(error_vals ~ mass_cluster_freq_7[order(mass_cluster_freq_7)])
+summary(model)
+
+plot(mass_cluster_freq_7[order(mass_cluster_freq_7)],error_vals, ylab = "absolute error", xlab = "Cluster size (data)", main = "Absolute error model vs. data for Southampton, 2012/13")
+abline(lm(error_vals ~ mass_cluster_freq_7[order(mass_cluster_freq_7)]), col = "red")
+
+
+model_sqr <- lm(sq_error_vals ~ mass_cluster_freq_7[order(mass_cluster_freq_7)])
+summary(model_sqr)
+
+plot(mass_cluster_freq_7[order(mass_cluster_freq_7)],sq_error_vals, ylab = "squared error", xlab = "Cluster size (data)", main = "Squared error model vs. data for Southampton, 2012/13")
+abline(lm(sq_error_vals ~ mass_cluster_freq_7[order(mass_cluster_freq_7)]), col = "red")
+```
+
 
 # new version of VT-divers model
 ```{r}

@@ -72,6 +72,18 @@ names(Navajo_Serotype_dict) <- Navajo_meta_data$Accession
 
 Navajo_PP$Serotype <- Navajo_Serotype_dict[Navajo_PP$Taxon]
 
+# Add VT information
+Navajo_VT_PCV7_dict <- Navajo_meta_data$PCV7.actual
+names(Navajo_VT_PCV7_dict) <- Navajo_meta_data$Accession
+
+Navajo_PP$VT <- Navajo_VT_PCV7_dict[Navajo_PP$Taxon]
+
+# ADD sequencing year info
+Navajo_Year_dict <- Navajo_meta_data$Year
+names(Navajo_Year_dict) <- Navajo_meta_data$Accession
+
+Navajo_PP$SeqYear <- Navajo_Year_dict[Navajo_PP$Taxon]
+
 saveRDS(Navajo_PP,"Navajo_PP.rds")
 ```
 
