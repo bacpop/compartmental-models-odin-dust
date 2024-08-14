@@ -402,3 +402,75 @@ UK_delta_ranking <- rank(UK_delta_data)
 saveRDS(UK_delta_ranking,"UK_delta_ranking.rds")
 ```
 
+### Data processing for PPxSero model
+```{r}
+PopPUNK_clusters <- readRDS("UK_PP.rds")
+UK_model_start_pop <- readRDS("UK_model_start_pop.rds")
+mass_clusters <- length(unique(PopPUNK_clusters$Cluster))
+UK_avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
+
+
+PPxSero_matrix <- matrix(0, nrow = length(unique(PopPUNK_clusters$Cluster)), ncol = length(unique(PopPUNK_clusters$Serotype)))
+# sort(unique(PopPUNK_clusters$Serotype))
+# [1] "10A"   "11A"   "14"    "15A"   "15B/C" "15F"   "16F"   "17F"   "18C"   "19A"   "19F"   "21"    "22F"   "23A"
+#[15] "23B"   "23F"   "3"     "31"    "33F"   "34"    "35B"   "35F"   "37"    "38"    "6A"    "6B"    "6C"    "7C" 
+#[29] "7F"    "9N"    "9V"    "NT"
+
+SerotypeToIndex_dict <- 1:length(unique(PopPUNK_clusters$Serotype))
+names(SerotypeToIndex_dict) <- sort(unique(PopPUNK_clusters$Serotype))
+
+IndexToSerotype_dict <- sort(unique(PopPUNK_clusters$Serotype))
+names(IndexToSerotype_dict) <- 1:length(unique(PopPUNK_clusters$Serotype))
+
+PPclustToIndex_dict <- 1:length(unique(PopPUNK_clusters$Cluster))
+names(PPclustToIndex_dict) <- sort(unique(PopPUNK_clusters$Cluster))
+
+for (i in 1:nrow(PopPUNK_clusters)) {
+  PPxSero_matrix[PPclustToIndex_dict[as.character(PopPUNK_clusters$Cluster[i])],SerotypeToIndex_dict[PopPUNK_clusters$Serotype[i]]] <- 1
+}
+# matrix shows information whether PP and serotype co-occur in the dataset (1=TRUE)
+# this can be used as the migration matrix:
+#PPxSero_matrix_prob <- PPxSero_matrix / sum(PPxSero_matrix)
+#PPxSero_matrix_prob <- matrix(sapply(PPxSero_matrix_prob,as.double), nrow = nrow(PPxSero_matrix), ncol = ncol(PPxSero_matrix))
+#saveRDS(PPxSero_matrix_prob, "Navajo_PPsero_mig.rds")
+
+
+PPxSero_matrix_prob2 <-  matrix(0, nrow = length(unique(PopPUNK_clusters$Cluster)), ncol = length(unique(PopPUNK_clusters$Serotype)))
+for (i in 1:length(unique(PopPUNK_clusters$Cluster))) {
+  PPxSero_matrix_prob2[i,] <- ((PPxSero_matrix[i,] * UK_avg_cluster_freq[i])/sum(PPxSero_matrix[i,]))
+}
+saveRDS(PPxSero_matrix_prob2, "UK_PPsero_mig.rds")
+# new migration matrix that is closer to original one
+
+# start population:
+PPsero_startpop <- matrix(0, nrow = length(unique(PopPUNK_clusters$Cluster)), ncol = length(unique(PopPUNK_clusters$Serotype)))
+
+for (i in which(PopPUNK_clusters$SeqYear=="1998")) {
+  PPsero_startpop[PPclustToIndex_dict[PopPUNK_clusters$Cluster[i]],SerotypeToIndex_dict[PopPUNK_clusters$Serotype[i]]] <- PPsero_startpop[PPclustToIndex_dict[PopPUNK_clusters$Cluster[i]],SerotypeToIndex_dict[PopPUNK_clusters$Serotype[i]]] + 1
+}
+#PPsero_startpop <- PPsero_startpop * 15000 / sum(PPsero_startpop)
+
+
+PP_expand_factor <- 15000 / sum(PPsero_startpop)
+exp_noise <- 10
+#PPsero_startpop_corr <- matrix(sapply((PPsero_startpop + matrix(rexp(n = ncol(PPsero_startpop) * nrow(PPsero_startpop), rate = exp_noise), nrow= nrow(PPsero_startpop), ncol = ncol(PPsero_startpop))) * PP_expand_factor, rpois, n=1), nrow= nrow(PPsero_startpop), ncol = ncol(PPsero_startpop))
+#PPsero_startpop_corr <- matrix(sapply(PPsero_startpop_corr,as.double), nrow= nrow(PPsero_startpop), ncol = ncol(PPsero_startpop))
+#saveRDS(PPsero_startpop_corr, "PPsero_startpop.rds")
+
+# this lead to a start population that is way too evenly distributed across the different clusters
+# instead, I could maybe use the existing PP_model_start_pop and distribute it to the different serotypes?
+PPsero_startpop2 <-  matrix(0, nrow = length(unique(PopPUNK_clusters$Cluster)), ncol = length(unique(PopPUNK_clusters$Serotype)))
+for (i in 1:length(unique(PopPUNK_clusters$Cluster))) {
+  PPsero_startpop2[i,] <- round((PPxSero_matrix[i,] * UK_model_start_pop[i])/sum(PPxSero_matrix[i,]))
+}
+saveRDS(PPsero_startpop2, "UK_PPsero_startpop.rds")
+# this is very close to the original PP_model_start_pop
+# maybe I am giving out too much information because the serotype distribution is exactly the real one?
+
+# serotype VT vector
+SeroVT <- rep(0, length(unique(PopPUNK_clusters$Serotype)))
+for (i in 1:nrow(PopPUNK_clusters)) {
+  SeroVT[SerotypeToIndex_dict[PopPUNK_clusters$Serotype[i]]] <- as.integer(PopPUNK_clusters$VT_PCV7[i]=="VT")
+}
+saveRDS(SeroVT, "UK_SeroVT.rds")
+```

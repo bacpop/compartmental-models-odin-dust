@@ -15,11 +15,17 @@ freq[] <- sum(gene_freq[i,1:species_no]) / Pop_size
 
 # overall deviation of loci for genomes
 # idea 1: make a Boolean vector for strongly selected genes
-delta_bool[] <- if ((delta[i] <= prop_f * gene_no)) 1 else 0
-pi_f_freq[,] <-  Genotypes[i,j] * (eq[i] - freq[i]) * delta_bool[i]
-pi_f_genotypes[] <- sum(pi_f_freq[1:gene_no,i])
+#delta_bool[] <- if ((delta[i] <= prop_f * gene_no)) 1 else 0
+#pi_f_freq[,] <-  Genotypes[i,j] * (eq[i] - freq[i]) * delta_bool[i]
+#pi_f_genotypes[] <- sum(pi_f_freq[1:gene_no,i])
 
 #pi_w_freq[,] <-  Genotypes[i,j] * (eq[i] - freq[i]) * (1 - delta_bool[i])
+#pi_w_genotypes[] <- sum(pi_w_freq[1:gene_no,i])
+
+pi_f_freq[,] <- if ((delta[i] <= prop_f * gene_no)) Genotypes[i,j] * (eq[i] - freq[i]) else 0
+pi_f_genotypes[] <- sum(pi_f_freq[1:gene_no,i])
+
+#pi_w_freq[,] <-  if ((delta[i] <= prop_f * gene_no)) 0 else Genotypes[i,j] * (eq[i] - freq[i])
 #pi_w_genotypes[] <- sum(pi_w_freq[1:gene_no,i])
 
 # Genotype specific probability to produce offspring
@@ -91,7 +97,7 @@ dim(pi_f_genotypes) <- species_no
 #dim(pi_w_freq) <- c(gene_no, species_no)
 #dim(pi_w_genotypes) <- species_no
 dim(delta) <- gene_no
-dim(delta_bool) <- gene_no
+#dim(delta_bool) <- gene_no
 #dim(FitnessMatrix) <- c(gene_no,species_no) # a matrix that stores the presence and the fitness for each gene and genotype
 dim(Genotypes) <- c(gene_no, species_no) # we have in each column the genes (present/not present, i.e. 1/0) of one genotype
 dim(Pop) <- c(species_no,sero_no)
