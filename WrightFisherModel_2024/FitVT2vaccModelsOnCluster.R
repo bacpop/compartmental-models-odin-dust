@@ -195,22 +195,35 @@ if(args[1] == "Nepal" & args[2] == "PopPUNK"){
   
   names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
   
-  vacc_time <- 0
-  ceil_mass_NVT <- rep(0, mass_clusters)
+  vacc_time1 <- 0
+  vacc_time2 <- 4
+  
+  ceil_mass_NVT1 <- rep(0, mass_clusters)
   for (i in 1:mass_clusters){
-    ceil_mass_NVT[i] <- ceiling(mean(as.integer(seq_clusters[seq_clusters$Cluster == unique(seq_clusters$Cluster)[i],"VT_PCV7"]=="NVT")))
+    ceil_mass_NVT1[i] <- ceiling(mean(as.integer(seq_clusters[seq_clusters$Cluster == unique(seq_clusters$Cluster)[i],"VT_PCV7"]=="NVT")))
+  }
+  ceil_mass_NVT2 <- rep(0, mass_clusters)
+  for (i in 1:mass_clusters){
+    ceil_mass_NVT2[i] <- ceiling(mean(as.integer(seq_clusters[seq_clusters$Cluster == unique(seq_clusters$Cluster)[i],"VT_PCV13"]=="NVT")))
   }
   #ceil_mass_NVT[is.nan(ceil_mass_NVT)] <- 0
-  mean_mass_VT_2001 <- rep(0, mass_clusters)
+  mean_mass_VT1_start <- rep(0, mass_clusters)
   for (i in 1:mass_clusters){
-    mean_mass_VT_2001[i] <- (mean(as.integer(seq_clusters[seq_clusters$Time == 2006 & seq_clusters$Cluster == unique(seq_clusters$Cluster)[i],"VT_PCV7"]=="VT")))
+    mean_mass_VT1_start[i] <- (mean(as.integer(seq_clusters[seq_clusters$Time == 2006 & seq_clusters$Cluster == unique(seq_clusters$Cluster)[i],"VT_PCV7"]=="VT")))
   }
-  mean_mass_VT_2001[is.nan(mean_mass_VT_2001)] <- 0
+  mean_mass_VT1_start[is.nan(mean_mass_VT1_start)] <- 0
+  mean_mass_VT2_start <- rep(0, mass_clusters)
+  for (i in 1:mass_clusters){
+    mean_mass_VT2_start[i] <- (mean(as.integer(seq_clusters[seq_clusters$Time == 2006 & seq_clusters$Cluster == unique(seq_clusters$Cluster)[i],"VT_PCV13"]=="VT")))
+  }
+  mean_mass_VT2_start[is.nan(mean_mass_VT2_start)] <- 0
+  mean_mass_VT2_start <- mean_mass_VT2_start - mean_mass_VT1_start
   
-  NVT_mig <- rep(1/mass_clusters, mass_clusters) * (ceil_mass_NVT)
-  VT_mig <- rep(1/mass_clusters, mass_clusters) * (1-ceil_mass_NVT)
-  avg_cluster_freq <- data.frame(as.matrix(cbind(NVT_mig,VT_mig)))
-  model_start_pop <- matrix(as.double(c(model_start_pop * (1-mean_mass_VT_2001),model_start_pop * mean_mass_VT_2001)), byrow = FALSE, nrow = mass_clusters, ncol = 2)
+  NVT_mig <- rep(1/mass_clusters, mass_clusters) * (ceil_mass_NVT2)
+  VT_mig <- rep(1/mass_clusters, mass_clusters) * (1-ceil_mass_NVT1) 
+  VT2_mig <- rep(1/mass_clusters, mass_clusters) * (1-ceil_mass_NVT2) * ceil_mass_NVT1
+  avg_cluster_freq <- data.frame(as.matrix(cbind(NVT_mig,VT_mig,VT2_mig)))
+  model_start_pop <- matrix(as.double(c(model_start_pop * (1-(mean_mass_VT1_start + mean_mass_VT2_start)),model_start_pop * mean_mass_VT1_start, model_start_pop * mean_mass_VT2_start)), byrow = FALSE, nrow = mass_clusters, ncol = 3)
 }
 
 threads_total <- 1
