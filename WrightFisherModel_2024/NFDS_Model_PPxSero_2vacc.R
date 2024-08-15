@@ -31,7 +31,8 @@ pi_f_genotypes[] <- sum(pi_f_freq[1:gene_no,i])
 # Genotype specific probability to produce offspring
 # those are the individuals' probabilities multiplied by the number of individual that have this genotype
 #probs[,] <- ((1 + sigma_f)^pi_f_genotypes[i] * (1 + sigma_w)^pi_w_genotypes[i]) * Pop[i,j] * (1- (as.integer(time >= vacc_time) * vT[j] * v))
-probs[,] <- (1 + exp(sigma_f))^pi_f_genotypes[i] * Pop[i,j] * (1- (as.integer(time >= vacc_time) * vaccTypes[j] * v))
+#probs[,] <- (1 + exp(sigma_f))^pi_f_genotypes[i] * Pop[i,j] * (1- (as.integer(time >= vacc_time) * vaccTypes[j] * v))
+probs[,] <- (1 + exp(sigma_f))^pi_f_genotypes[i] * Pop[i,j] * (1- (as.integer(time >= vacc_time1) * as.integer(time < vacc_time2) * vaccTypes1[j] * v)) * (1- (as.integer(time >= vacc_time2) * vaccTypes2[j] * v))
 
 
 
@@ -78,9 +79,11 @@ delta[] <- user()
 m <- user() # migration rate
 #GeneFitness[] <- user() # fitness vector for different genes
 Genotypes[,] <- user() # each column is a genotype, giving the information which genes are present in that genotype and which are not
-vaccTypes[] <- user() # Boolean vector (0/1) whether genotype is affected by vaccine (1) or not (0)
+vaccTypes1[] <- user() # Boolean vector (0/1) whether genotype is affected by vaccine (1) or not (0)
+vaccTypes2[] <- user() # Boolean vector (0/1) whether genotype is affected by vaccine (1) or not (0)
 v <- user() # effect size of vaccine on vaccine genotypes
-vacc_time <- user() # time when the vaccination happens / starts to have an effect
+vacc_time1 <- user() # time when the vaccination happens / starts to have an effect
+vacc_time2 <- user() # time when the vaccination happens / starts to have an effect
 migVec[,] <- user()
 
 #dim(probs2) <- gene_no
@@ -103,7 +106,8 @@ dim(Genotypes) <- c(gene_no, species_no) # we have in each column the genes (pre
 dim(Pop) <- c(species_no,sero_no)
 dim(y) <- c(species_no,sero_no)
 dim(probs) <- c(species_no,sero_no)
-dim(vaccTypes) <- sero_no
+dim(vaccTypes1) <- sero_no
+dim(vaccTypes2) <- sero_no
 dim(migVec) <- c(species_no,sero_no)
 #dim(GeneFitness) <- gene_no
 #dim(GenotypeFitness) <- species_no

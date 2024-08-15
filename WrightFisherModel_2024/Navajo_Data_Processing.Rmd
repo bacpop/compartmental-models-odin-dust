@@ -73,22 +73,22 @@ names(Navajo_Serotype_dict) <- Navajo_meta_data$Accession
 Navajo_PP$Serotype <- Navajo_Serotype_dict[Navajo_PP$Taxon]
 
 # Add VT information
-PCV7_VTs <- rep("NVT",length(unique(Navajo_meta_data$Sero)))
-names(PCV7_VTs) <- unique(Navajo_meta_data$Sero)
-PCV7_VTs[c("4", "6A","6B", "9V", "14", "18C", "19F", "23F")] <- "VT"
+PCV7_VTs_1 <- rep("NVT",length(unique(Navajo_meta_data$Sero)))
+names(PCV7_VTs_1) <- unique(Navajo_meta_data$Sero)
+PCV7_VTs_1[c("4", "6A","6B", "9V", "14", "18C", "19F", "23F")] <- "VT"
 
 #Navajo_VT_PCV7_dict <- Navajo_meta_data$PCV7.actual
 #names(Navajo_VT_PCV7_dict) <- Navajo_meta_data$Accession
 
 #Navajo_PP$VT <- Navajo_VT_PCV7_dict[Navajo_PP$Taxon]
-Navajo_PP$VT <- PCV7_VTs[Navajo_Serotype_dict[Navajo_PP$Taxon]]
+Navajo_PP$VT <- PCV7_VTs_1[Navajo_Serotype_dict[Navajo_PP$Taxon]]
 
 # Add PCV13 info
-PCV13_VTs <- rep("NVT",length(unique(Navajo_meta_data$Sero)))
-names(PCV13_VTs) <- unique(Navajo_meta_data$Sero)
-PCV13_VTs[c("1", "3", "4","5","6A","6B", "7F", "9V", "14", "18C", "19A", "19F", "23F")] <- "VT"
+PCV13_VTs_1 <- rep("NVT",length(unique(Navajo_meta_data$Sero)))
+names(PCV13_VTs_1) <- unique(Navajo_meta_data$Sero)
+PCV13_VTs_1[c("1", "3", "4","5","6A","6B", "7F", "9V", "14", "18C", "19A", "19F", "23F")] <- "VT"
 
-Navajo_PP$VT_PCV13 <- PCV13_VTs[Navajo_Serotype_dict[Navajo_PP$Taxon]]
+Navajo_PP$VT_PCV13 <- PCV13_VTs_1[Navajo_Serotype_dict[Navajo_PP$Taxon]]
 
 # Add sequencing year info
 Navajo_Year_dict <- Navajo_meta_data$Year
@@ -270,9 +270,9 @@ PCV13_VTs <- rep(0,length(unique(Navajo_meta_data$Sero)))
 names(PCV13_VTs) <- unique(Navajo_meta_data$Sero)
 PCV13_VTs[c("1", "3", "4","5","6A","6B", "7F", "9V", "14", "18C", "19A", "19F", "23F")] <- 1
 
-PCV7_VTs <- rep(0,length(unique(Navajo_meta_data$Sero)))
-names(PCV7_VTs) <- unique(Navajo_meta_data$Sero)
-PCV7_VTs[c("4","6B", "9V", "14", "18C", "19F", "23F")] <- 1
+#PCV7_VTs <- rep(0,length(unique(Navajo_meta_data$Sero)))
+#names(PCV7_VTs) <- unique(Navajo_meta_data$Sero)
+#PCV7_VTs[c("4","6B", "9V", "14", "18C", "19F", "23F")] <- 1
 
 # add 6A to PCV7 because there is strong cross-immunity btw PVC7 and 6A (4.Croucher, N. J. et al. Population genomics of post-vaccine changes in pneumococcal epidemiology. Nat. Genet. 45, 656–663 (2013).)
 PCV7_VTs <- rep(0,length(unique(Navajo_meta_data$Sero)))
@@ -336,6 +336,40 @@ for (i in 1:length(Navajo_time_points_selected)) {
   file_name <- paste("Navajo_cluster_freqs_", as.character(i),".rds", sep = "")
   saveRDS(Navajo_cluster_freqs[[i]], file_name)
 }
+
+
+# repeat this but split VTs from NVTs per cluster
+Navajo_VT_cluster_freqs <- vector(mode = "list", length = length(Navajo_time_points_selected))
+Navajo_NVT_cluster_freqs <- vector(mode = "list", length = length(Navajo_time_points_selected))
+for(j in 1:length(Navajo_time_points_selected)){
+  Navajo_VT_cluster_freqs[[j]] <- rep(NA, no_Navajo_PP)
+  Navajo_NVT_cluster_freqs[[j]] <- rep(NA, no_Navajo_PP)
+  for (i in unique(Navajo_PP$Cluster)){
+    Navajo_VT_cluster_freqs[[j]][which(unique(Navajo_PP$Cluster) == i)] <- length(intersect(which(Navajo_meta_data[Navajo_meta_IDtoInd[Navajo_PP[Navajo_PP$Cluster == i,"Taxon"]],]$Year==Navajo_time_points_selected[j]),  which(PCV7_VTs[Navajo_meta_data[Navajo_meta_IDtoInd[Navajo_PP[Navajo_PP$Cluster == i,"Taxon"]],]$Sero]==1)))
+  Navajo_NVT_cluster_freqs[[j]][which(unique(Navajo_PP$Cluster) == i)] <- length(intersect(which(Navajo_meta_data[Navajo_meta_IDtoInd[Navajo_PP[Navajo_PP$Cluster == i,"Taxon"]],]$Year==Navajo_time_points_selected[j]),  which(PCV7_VTs[Navajo_meta_data[Navajo_meta_IDtoInd[Navajo_PP[Navajo_PP$Cluster == i,"Taxon"]],]$Sero]==0)))
+  }
+}
+
+for(j in 1:length(Navajo_time_points_selected)){
+  if(sum(Navajo_VT_cluster_freqs[[j]])==0){
+    Navajo_VT_cluster_freqs[[j]] <- rep(NA, no_Navajo_PP)
+  }
+}
+
+for(j in 1:length(Navajo_time_points_selected)){
+  if(sum(Navajo_NVT_cluster_freqs[[j]])==0){
+    Navajo_NVT_cluster_freqs[[j]] <- rep(NA, no_Navajo_PP)
+  }
+}
+
+for (i in 1:length(Navajo_time_points_selected)) {
+  file_name <- paste("Navajo_VT_cluster_freqs_", as.character(i),".rds", sep = "")
+  saveRDS(Navajo_VT_cluster_freqs[[i]], file_name)
+  
+  file_name <- paste("Navajo_NVT_cluster_freqs_", as.character(i),".rds", sep = "")
+  saveRDS(Navajo_NVT_cluster_freqs[[i]], file_name)
+}
+
 ```
 
 #create initial population

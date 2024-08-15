@@ -175,7 +175,7 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   mass_VT <- readRDS(file = "UK_SeroVT.rds")
   
   avg_cluster_freq <- readRDS(file = "UK_PPsero_mig.rds")
-  output_filename <- "UK_gPPxSero_gCaller_PopPUNK"
+  output_filename <- "UK_PPxSero_ggCaller_PopPUNK"
   
   dt <- 1/12
   peripost_mass_cluster_freq <- data.frame("year" = 1:6, rbind(mass_cluster_freq_2,mass_cluster_freq_3,mass_cluster_freq_4,mass_cluster_freq_5,mass_cluster_freq_6, mass_cluster_freq_7))
@@ -275,8 +275,8 @@ make_transform <- function(m) {
 
 
 proposal_matrix <- diag(0.1,4) # the proposal matrix defines the covariance-variance matrix for a mult normal dist
-proposal_matrix[1,1] <- exp(0.1)
-proposal_matrix[3,3] <- exp(0.1)
+#proposal_matrix[1,1] <- exp(0.1)
+#proposal_matrix[3,3] <- exp(0.1)
 # here, all parameters are proposed independently. 
 # think about this, this might not actually be true
 #mcmc_pars <- mcstate::pmcmc_parameters$new(list(pmcmc_sigma_f, pmcmc_sigma_w, pmcmc_prop_f, pmcmc_m, pmcmc_v), proposal_matrix, transform)
@@ -302,6 +302,7 @@ index <- function(info) {
 # think about this, this might not actually be true
 #mcmc_pars <- mcstate::pmcmc_parameters$new(list(pmcmc_sigma_f, pmcmc_sigma_w, pmcmc_prop_f, pmcmc_m, pmcmc_v), proposal_matrix, transform)
 #mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.1432, min = 0, max = 1), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 01), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), proposal_matrix, make_transform(complex_params))
+#mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", -0.597837, min = -1000, max = 0), mcstate::pmcmc_parameter("prop_f", 0.125, min = 0, max = 1), mcstate::pmcmc_parameter("m", -4, min = -1000, max = -2), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), proposal_matrix, make_transform(complex_params))
 mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", -0.597837, min = -1000, max = 0), mcstate::pmcmc_parameter("prop_f", 0.125, min = 0, max = 1), mcstate::pmcmc_parameter("m", -4, min = -1000, max = 0), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), proposal_matrix, make_transform(complex_params))
 mcmc_pars$initial()
 #mcmc_pars$model(mcmc_pars$initial())

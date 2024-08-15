@@ -473,4 +473,11 @@ for (i in 1:nrow(PopPUNK_clusters)) {
   SeroVT[SerotypeToIndex_dict[PopPUNK_clusters$Serotype[i]]] <- as.integer(PopPUNK_clusters$VT_PCV7[i]=="VT")
 }
 saveRDS(SeroVT, "UK_SeroVT.rds")
+
+# serotype VT vector PCV13
+SeroVT_PCV13 <- rep(0, length(unique(PopPUNK_clusters$Serotype)))
+for (i in 1:nrow(PopPUNK_clusters)) {
+  SeroVT_PCV13[SerotypeToIndex_dict[PopPUNK_clusters$Serotype[i]]] <- as.integer(PopPUNK_clusters$VT_PCV13[i]=="VT")
+}
+saveRDS(SeroVT_PCV13, "UK_SeroVT_PCV13.rds")
 ```

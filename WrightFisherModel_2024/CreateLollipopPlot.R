@@ -168,7 +168,7 @@ lollipop_cluster_freqs_VTandNVT <- function(year = "year unknown", plot_title = 
 }
 
 # Creating a joint Lollipop plot for VTs and NVTs
-lollipop_cluster_freqs_VTandNVT_labelSero <- function(year = "year unknown", plot_title = "Generic Plot Title",data1, model_name_1 ="Model 1", model1, VT_vec, SeroLabel){
+lollipop_cluster_freqs_VTandNVT_labelSero <- function(year = "year unknown", plot_title = "Generic Plot Title",data_name_1 ="Data",data1, model_name_1 ="Model 1", model1, VT_vec, SeroLabel){
   lollipop_data_1 <- data.frame(
     x=1:length(data1),
     model_1=model1,
@@ -409,7 +409,7 @@ lollipop_cluster_freqs_VTandNVT_labelSero_log <- function(year = "year unknown",
 }
 
 # Creating a joint Lollipop plot for VTs and NVTs with relative difference
-lollipop_cluster_freqs_VTandNVT_labelSero_relative <- function(year = "year unknown", plot_title = "Generic Plot Title",data1, model_name_1 ="Model 1", model1, VT_vec, SeroLabel){
+lollipop_cluster_freqs_VTandNVT_labelSero_relative <- function(year = "year unknown", plot_title = "Generic Plot Title",data_name = "data", data1, model_name_1 ="Model 1", model1, VT_vec, SeroLabel){
   lollipop_data_1 <- data.frame(
     x=1:length(data1),
     data_1=as.numeric(data1) + rep(0.001, length(data1)),
