@@ -203,7 +203,7 @@ Navajo_gene_filter <- as.integer(Navajo_gene_freq_preVac<=0.95 & Navajo_gene_fre
 Navajo_ggCaller_byYear_intermed <- vector(mode = "list", length = length(Navajo_time_points_selected))
 
 for (i in 1:length(Navajo_time_points_selected)) {
-  Navajo_ggCaller_year <- data.frame(matrix(0, nrow = sum(Navajo_gene_filter)+1,ncol = length(which(Navajo_meta_dataPP$Year==Navajo_time_points_selected[i]))+1))
+  Navajo_ggCaller_year <- data.frame(matrix(0, nrow = sum(Navajo_gene_filter)+1,ncol = length(which(Navajo_meta_data$Year==Navajo_time_points_selected[i]))+1))
   if(ncol(Navajo_ggCaller_byYear[[i]])>1){
     Navajo_ggCaller_year <-  Navajo_ggCaller_byYear[[i]][c(1,which(Navajo_gene_filter==1)+1),]
   }
@@ -226,6 +226,8 @@ for (i in 1:length(Navajo_time_points_preVac1)) {
   }
 }
 Navajo_ggCaller_intermed_preVac[,1] <-  Navajo_ggCaller_byYear_intermed[[1]][,1]
+
+saveRDS(Navajo_ggCaller_intermed, "Navajo_ggCaller_intermed.rds")
 ```
 
 # create consensus gene presence absence matrices for the clusters

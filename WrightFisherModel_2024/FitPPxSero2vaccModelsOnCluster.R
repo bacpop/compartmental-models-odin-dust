@@ -65,68 +65,7 @@ combined_compare <- function(state, observed, pars = NULL) {
   result
 }
 # data pre-processing in NFDS_COGtriangles_ManualSeqClust.Rmd
-if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
-  seq_clusters <- readRDS("PopPUNK_clusters.rds")
-  sero_no = length(unique(seq_clusters$Serotype))
-  intermed_gene_presence_absence_consensus <- readRDS(file = "ggCPP_intermed_gene_presence_absence_consensus.rds")
-  intermed_gene_presence_absence_consensus_matrix <- sapply(intermed_gene_presence_absence_consensus[-1,-1],as.double)
-  model_start_pop <- readRDS(file = "PPsero_startpop.rds")
-  delta_ranking <- readRDS(file = "ggC_delta_ranking.rds")
-  mass_cluster_freq_1 <- readRDS(file = "PP_mass_cluster_freq_1.rds")
-  mass_cluster_freq_2 <- readRDS(file = "PP_mass_cluster_freq_2.rds")
-  mass_cluster_freq_3 <- readRDS(file = "PP_mass_cluster_freq_3.rds")
-  mass_VT <- readRDS(file = "SeroVT.rds")
-  mass_clusters <- length(unique(seq_clusters$Cluster))
-  avg_cluster_freq <- readRDS(file = "PPsero_mig.rds")
-  dt <- 1/36
-  vacc_time <- 0
-  output_filename <- "PPxSero_ggCaller_PopPUNK"
-} else if(args[1] == "COGtriangles" & args[2] == "PopPUNK"){
-  seq_clusters <- readRDS("PopPUNK_clusters.rds")
-  intermed_gene_presence_absence_consensus <- readRDS(file = "PP_intermed_gene_presence_absence_consensus.rds")
-  intermed_gene_presence_absence_consensus_matrix <- sapply(intermed_gene_presence_absence_consensus[-1,-1],as.double)
-  model_start_pop <- readRDS(file = "PP_model_start_pop.rds")
-  delta_ranking <- readRDS(file = "delta_ranking.rds")
-  mass_cluster_freq_1 <- readRDS(file = "PP_mass_cluster_freq_1.rds")
-  mass_cluster_freq_2 <- readRDS(file = "PP_mass_cluster_freq_2.rds")
-  mass_cluster_freq_3 <- readRDS(file = "PP_mass_cluster_freq_3.rds")
-  mass_VT <- readRDS(file = "PP_mass_VT.rds")
-  mass_clusters <- length(unique(seq_clusters$Cluster))
-  avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
-  dt <- 1/36
-  vacc_time <- 0
-  output_filename <- "4param_COGtriangles_PopPUNK"
-} else if(args[1] == "ggCaller" & args[2] == "manualSeqClusters"){
-  seq_clusters <- readRDS("Mass_Samples_accCodes.rds")
-  intermed_gene_presence_absence_consensus <- readRDS(file = "ggC_intermed_gene_presence_absence_consensus.rds")
-  intermed_gene_presence_absence_consensus_matrix <- sapply(intermed_gene_presence_absence_consensus[-1,-1],as.double)
-  model_start_pop <- readRDS(file = "model_start_pop.rds")
-  delta_ranking <- readRDS(file = "ggC_delta_ranking.rds")
-  mass_cluster_freq_1 <- readRDS(file = "mass_cluster_freq_1.rds")
-  mass_cluster_freq_2 <- readRDS(file = "mass_cluster_freq_2.rds")
-  mass_cluster_freq_3 <- readRDS(file = "mass_cluster_freq_3.rds")
-  mass_VT <- readRDS(file = "mass_VT.rds")
-  mass_clusters <- length(unique(seq_clusters$SequenceCluster))
-  avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
-  dt <- 1/36
-  vacc_time <- 0
-  output_filename <- "4param_ggCaller_manSeqClusters"
-} else if(args[1] == "COGtriangles" & args[2] == "manualSeqClusters"){
-  seq_clusters <- readRDS("Mass_Samples_accCodes.rds")
-  intermed_gene_presence_absence_consensus <- readRDS(file = "intermed_gene_presence_absence_consensus.rds")
-  intermed_gene_presence_absence_consensus_matrix <- sapply(intermed_gene_presence_absence_consensus[-1,-1],as.double)
-  model_start_pop <- readRDS(file = "model_start_pop.rds")
-  delta_ranking <- readRDS(file = "delta_ranking.rds")
-  mass_cluster_freq_1 <- readRDS(file = "mass_cluster_freq_1.rds")
-  mass_cluster_freq_2 <- readRDS(file = "mass_cluster_freq_2.rds")
-  mass_cluster_freq_3 <- readRDS(file = "mass_cluster_freq_3.rds")
-  mass_VT <- readRDS(file = "mass_VT.rds")
-  mass_clusters <- length(unique(seq_clusters$SequenceCluster))
-  avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
-  dt <- 1/36
-  vacc_time <- 0
-  output_filename <- "4param_COGtriangles_manSeqClusters"
-} else if(args[1] == "Navajo" & args[2] == "PopPUNK"){
+if(args[1] == "Navajo" & args[2] == "PopPUNK"){
   seq_clusters <- readRDS("Navajo_PP.rds")
   intermed_gene_presence_absence_consensus <- readRDS(file = "Navajo_ggCaller_intermed_consensus.rds")
   intermed_gene_presence_absence_consensus_matrix <- sapply(intermed_gene_presence_absence_consensus[-1,-1],as.double)
@@ -153,12 +92,24 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   
   model_start_pop <- readRDS(file = "Navajo_PPsero_startpop.rds")
   
-  mass_VT <- readRDS(file = "Navajo_SeroVT.rds")
+  #mass_VT <- readRDS(file = "Navajo_SeroVT.rds")
+  PCV13_VTs <- rep(0,sero_no)
+  names(PCV13_VTs) <- unique(seq_clusters$Serotype)
+  PCV13_VTs[intersect(names(PCV13_VTs), c("1", "3", "4","5","6A","6B", "7F", "9V", "14", "18C", "19A", "19F", "23F"))] <- 1
+  vaccTypes2 <- unname(PCV13_VTs)
+  
+  # add 6A to PCV7 because there is strong cross-immunity btw PVC7 and 6A (4.Croucher, N. J. et al. Population genomics of post-vaccine changes in pneumococcal epidemiology. Nat. Genet. 45, 656–663 (2013).)
+  PCV7_VTs <- rep(0,sero_no)
+  names(PCV7_VTs) <- unique(seq_clusters$Serotype)
+  PCV7_VTs[intersect(PCV7_VTs,c("4", "6A","6B", "9V", "14", "18C", "19F", "23F"))] <- 1
+  vaccTypes1 <- unname(PCV7_VTs)
+  
   mass_clusters <- length(unique(seq_clusters$Cluster))
   avg_cluster_freq <- readRDS(file = "Navajo_PPsero_mig.rds")
   dt <- 1/12
-  vacc_time <- 2
-  output_filename <- "Navajo_PPxSero_ggCaller_PopPUNK"
+  vacc_time1 <- 2
+  vacc_time2 <- 12
+  output_filename <- "Navajo_PPxSero2vacc_ggCaller_PopPUNK"
 } else if(args[1] == "UK" & args[2] == "PopPUNK"){
   seq_clusters <- readRDS("UK_PP.rds")
   intermed_gene_presence_absence_consensus <- readRDS(file = "UK_ggCaller_intermed_consensus.rds")
@@ -172,10 +123,24 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   mass_cluster_freq_5 <- readRDS(file = "UK_cluster_freqs_5.rds")
   mass_cluster_freq_6 <- readRDS(file = "UK_cluster_freqs_6.rds")
   mass_cluster_freq_7 <- readRDS(file = "UK_cluster_freqs_7.rds")
-  mass_VT1 <- readRDS(file = "UK_SeroVT.rds")
+  #mass_VT1 <- readRDS(file = "UK_SeroVT.rds")
   
   avg_cluster_freq <- readRDS(file = "UK_PPsero_mig.rds")
   output_filename <- "UK_PPxSero_ggCaller_PopPUNK"
+  
+  mass_clusters <- length(unique(seq_clusters$Cluster))
+  sero_no = length(unique(seq_clusters$Serotype))
+  
+  PCV13_VTs <- rep(0,sero_no)
+  names(PCV13_VTs) <- unique(seq_clusters$Serotype)
+  PCV13_VTs[intersect(PCV13_VTs,c("1", "3", "4","5","6A","6B", "7F", "9V", "14", "18C", "19A", "19F", "23F"))] <- 1
+  vaccTypes2 <- unname(PCV13_VTs)
+  
+  # add 6A to PCV7 because there is strong cross-immunity btw PVC7 and 6A (4.Croucher, N. J. et al. Population genomics of post-vaccine changes in pneumococcal epidemiology. Nat. Genet. 45, 656–663 (2013).)
+  PCV7_VTs <- rep(0,sero_no)
+  names(PCV7_VTs) <- unique(seq_clusters$Serotype)
+  PCV7_VTs[intersect(PCV7_VTs,c("4","6A", "6B", "9V", "14", "18C", "19F", "23F"))] <- 1
+  vaccTypes1 <- unname(PCV7_VTs)
   
   dt <- 1/12
   peripost_mass_cluster_freq <- data.frame("year" = 1:6, rbind(mass_cluster_freq_2,mass_cluster_freq_3,mass_cluster_freq_4,mass_cluster_freq_5,mass_cluster_freq_6, mass_cluster_freq_7))
@@ -184,7 +149,7 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   vacc_time2 <- 4
   sero_no = length(unique(seq_clusters$Serotype))
   model_start_pop <- readRDS(file = "UK_PPsero_startpop.rds")
-  mass_VT2 <- readRDS(file = "UK_SeroVT_PCV13.rds")
+  #mass_VT2 <- readRDS(file = "UK_SeroVT_PCV13.rds")
   
 }
 
@@ -236,33 +201,9 @@ Genotypes <- intermed_gene_presence_absence_consensus_matrix
 
 capacity <- sum(model_start_pop)
 delta <- delta_ranking
-vaccTypes1 <- mass_VT1
-vaccTypes2 <- mass_VT2
+vaccTypes1 <- vaccTypes1
+vaccTypes2 <- vaccTypes2
 migVec <- data.frame(avg_cluster_freq)
-
-#complex_params <- c(Pop_ini, Pop_eq, Genotypes, capacity, delta, vaccTypes, species_no, gene_no, vacc_time, dt, migVec, pmcmc_sigma_w, sero_no)
-
-### have to re-write the whole make_transform function because of the matrices. 
-#dim(Pop_ini)
-
-#make_transform <- function(p) {
-#  function(theta){
-#    c(list(Pop_ini = matrix(p[1:(nrow(Pop_ini) * ncol(Pop_ini))], nrow = mass_clusters, ncol = sero_no),
-#           Pop_eq = p[((nrow(Pop_ini) * ncol(Pop_ini)) +1) : ((nrow(Pop_ini) * ncol(Pop_ini)) + length(Pop_eq))],
-#           Genotypes = matrix(p[(((nrow(Pop_ini) * ncol(Pop_ini)) + length(Pop_eq))+ 1): (((nrow(Pop_ini) * ncol(Pop_ini)) + length(Pop_eq)) + nrow(Genotypes) * ncol(Genotypes))], nrow = gene_no, ncol = species_no),
-#           capacity = p[(((nrow(Pop_ini) * ncol(Pop_ini)) + length(Pop_eq)) + nrow(Genotypes) * ncol(Genotypes)) + 1],
-#           delta = p[((((nrow(Pop_ini) * ncol(Pop_ini)) + length(Pop_eq)) + nrow(Genotypes) * ncol(Genotypes)) + 2) : ((((nrow(Pop_ini) * ncol(Pop_ini)) + length(Pop_eq)) + nrow(Genotypes) * ncol(Genotypes)) + 2 + gene_no -1)],
-#           vaccTypes = p[((((nrow(Pop_ini) * ncol(Pop_ini)) + length(Pop_eq)) + nrow(Genotypes) * ncol(Genotypes)) + 2 + gene_no) : (((((nrow(Pop_ini) * ncol(Pop_ini)) + length(Pop_eq)) + nrow(Genotypes) * ncol(Genotypes)) + 2 + gene_no) + sero_no -1)],
-#           species_no = p[(((((nrow(Pop_ini) * ncol(Pop_ini)) + length(Pop_eq)) + nrow(Genotypes) * ncol(Genotypes)) + 2 + gene_no) + sero_no )],
-#           gene_no = p[(((((nrow(Pop_ini) * ncol(Pop_ini)) + length(Pop_eq)) + nrow(Genotypes) * ncol(Genotypes)) + 2 + gene_no) + sero_no)+ 1],
-#           vacc_time = p[(((((nrow(Pop_ini) * ncol(Pop_ini)) + length(Pop_eq)) + nrow(Genotypes) * ncol(Genotypes)) + 2 + gene_no) + sero_no) + 2],
-#           dt = p[(((((nrow(Pop_ini) * ncol(Pop_ini)) + length(Pop_eq)) + nrow(Genotypes) * ncol(Genotypes)) + 2 + gene_no) + sero_no) + 3],
-#           migVec = matrix(p[((((((nrow(Pop_ini) * ncol(Pop_ini)) + length(Pop_eq)) + nrow(Genotypes) * ncol(Genotypes)) + 2 + gene_no) + sero_no) + 4):((((((nrow(Pop_ini) * ncol(Pop_ini)) + length(Pop_eq)) + nrow(Genotypes) * ncol(Genotypes)) + 2 + gene_no) + sero_no) + 4 + (nrow(migVec) * ncol(migVec)) -1)], nrow = mass_clusters, ncol = sero_no),
-#           sigma_w = p[((((((nrow(Pop_ini) * ncol(Pop_ini)) + length(Pop_eq)) + nrow(Genotypes) * ncol(Genotypes)) + 2 + gene_no) + sero_no) + 4 + (nrow(migVec) * ncol(migVec)))],
-#           sero_no = p[((((((nrow(Pop_ini) * ncol(Pop_ini)) + length(Pop_eq)) + nrow(Genotypes) * ncol(Genotypes)) + 2 + gene_no) + sero_no) + 4 + (nrow(migVec) * ncol(migVec)) +1)]), as.list(theta))
-#  }
-#}
-
 
 complex_params = list(species_no = species_no, Pop_ini = Pop_ini, Pop_eq = Pop_eq, Genotypes = intermed_gene_presence_absence_consensus[-1,-1], capacity = capacity, delta = delta, vaccTypes1 = vaccTypes1, vaccTypes2 = vaccTypes2, gene_no = gene_no, vacc_time1 = vacc_time1, vacc_time2 = vacc_time2, dt = dt, sigma_w = pmcmc_sigma_w, migVec = (migVec), sero_no = sero_no)
 #complex_params <- c(Pop_ini, Pop_eq, Genotypes, capacity, delta, species_no, gene_no, vacc_time, dt, migVec,vT)

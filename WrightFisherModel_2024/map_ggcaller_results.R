@@ -116,3 +116,79 @@ for (i in 1:length(gene_Navajo_Mass_dict_greedy)) {
     mismatch_example_mass <- mass
   }
 }
+
+# new attempt: maximize the 1-to-1 mapping by taking the maximum of the sum of map_Nav_Mass and map_Mass_Nav
+length(unique(mmseq_results_MassNavajo$V1))
+length(unique(mmseq_results_NavajoMass$V1))
+
+Mass_ggCaller <- read.csv(paste(path_to_data, "Massachusetts_ggcaller/run_withFuncAnn/ggCaller_output/gene_presence_absence.csv", sep = ""), header=FALSE)
+Navajo_ggCaller <- read.csv(paste(path_to_data, "StrepPneumo_NavajoNew/ggCaller_output/gene_presence_absence.csv", sep = ""), header=FALSE)
+
+Mass_to_Ind_dict <- 1:(nrow(Mass_ggCaller)-1)
+names(Mass_to_Ind_dict) <- Mass_ggCaller$V1[-1]
+
+Nav_to_Ind_dict <- 1:(nrow(Navajo_ggCaller)-1)
+names(Nav_to_Ind_dict) <-  Navajo_ggCaller$V1[-1]
+
+
+map_MassNav_mtx <- matrix(NA, nrow = (nrow(Mass_ggCaller)-1), ncol = (nrow(Navajo_ggCaller)-1))
+map_NavMass_mtx_tr <- matrix(NA, nrow = (nrow(Mass_ggCaller)-1), ncol = (nrow(Navajo_ggCaller)-1))
+
+for (i in 1:nrow(mmseq_results_MassNavajo)) {
+  map_MassNav_mtx[Mass_to_Ind_dict[mmseq_results_MassNavajo[i,1]], Nav_to_Ind_dict[mmseq_results_MassNavajo[i,2]]] <- mmseq_results_MassNavajo[i,3]
+}
+
+for(i in 1:nrow(mmseq_results_NavajoMass)){
+  map_NavMass_mtx_tr[Mass_to_Ind_dict[mmseq_results_NavajoMass[i,2]], Nav_to_Ind_dict[mmseq_results_NavajoMass[i,1]]] <- mmseq_results_NavajoMass[i,3]
+}
+
+map_sum <- map_MassNav_mtx + map_NavMass_mtx_tr
+
+whichmax_NA <- function(row){
+  row_whichmax <- which.max(row)
+  if(length(row_whichmax)==0){
+    row_whichmax <- NA
+  }
+  row_whichmax
+}
+
+max_map_dict <- names(Nav_to_Ind_dict)[unlist(apply(map_sum, 1, whichmax_NA))]
+names(max_map_dict) <- Mass_ggCaller$V1[-1]
+
+max_map_dict2 <- names(Mass_to_Ind_dict)[apply(map_sum, 2, whichmax_NA)]
+names(max_map_dict2) <- Navajo_ggCaller$V1[-1]
+
+Mass_intermed_gene_presence_absence <- readRDS("ggC_intermed_gene_presence_absence.rds")
+Mass_intermed_genes <- Mass_intermed_gene_presence_absence$V1[-1]
+
+Navajo_ggCaller_intermed <- readRDS("Navajo_ggCaller_intermed.rds")
+Nav_intermed_genes <- Navajo_ggCaller_intermed$Gene[-1]
+
+length(max_map_dict[Mass_intermed_genes])
+length(unique(max_map_dict[Mass_intermed_genes]))
+
+hit <- 0
+miss <- 0
+miss_type1 <- 0
+mass_val2 <- ""
+for (mass_val in Mass_intermed_gene_presence_absence$V1[-1]) {
+  nav_val <- max_map_dict[mass_val]
+  mass_val2 <- max_map_dict2[nav_val]
+  #print(mass_val)
+  #print(mass_val2)
+  if(!is.na(mass_val2) & mass_val2 == mass_val){
+    hit <- hit + 1
+  }
+  else if(is.na(mass_val2)){
+    miss_type1 <- miss_type1 + 1
+  }
+  else{
+    miss <- miss +1
+  }
+}
+hit
+#[1] 1167
+miss
+#[1] 587
+miss_type1
+#[1] 16
