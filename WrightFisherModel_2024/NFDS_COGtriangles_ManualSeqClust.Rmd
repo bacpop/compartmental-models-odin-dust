@@ -1502,9 +1502,10 @@ for (i in 1:PP_mass_clusters){
 
 par(mfrow=c(1,1))
 op <- par(mar = c(5,7,4,2) + 0.1,mgp=c(3,1,0))
-plot(PP_mass_cluster_freq_1 / sum(PP_mass_cluster_freq_1), PP_mass_cluster_freq_3 / sum(PP_mass_cluster_freq_3), axes = FALSE, ann = FALSE, pch = 19, col = plot_VT_colours, cex = 2.5, ylim = c(0,0.18), xlim = c(0,0.18))
-#abline(a=0, b=1)
-legend("topleft", title = "Clusters", c("VT", "Non-VT"),fill = c("#E69F00", "#56B4E9"), cex = 2.5)
+plot(PP_mass_cluster_freq_1 / sum(PP_mass_cluster_freq_1), PP_mass_cluster_freq_3 / sum(PP_mass_cluster_freq_3), type = "n", axes = FALSE, ann = FALSE, pch = 19, col = plot_VT_colours, cex = 2.5, ylim = c(0,0.18), xlim = c(0,0.18))
+abline(a=0, b=1)
+points(PP_mass_cluster_freq_1 / sum(PP_mass_cluster_freq_1), PP_mass_cluster_freq_3 / sum(PP_mass_cluster_freq_3), col = plot_VT_colours, pch = 19, cex = 2.5, ylim = c(0,0.18), xlim = c(0,0.18))
+legend("topleft", title = "Clusters", c("VT", "Non-VT"),fill = c("#E69F00", "#56B4E9"), cex = 2)
 axis(1,cex.axis = 2.5)
 axis(2, cex.axis = 2.5)
 title(xlab = "Pre-vaccine cluster frequency", cex.lab=2.5)
@@ -1520,11 +1521,17 @@ ggCaller_gene_presence_absence_2001 <- readRDS(file = "ggCaller_gene_presence_ab
 ggCaller_gene_presence_absence_2004 <- readRDS(file = "ggCaller_gene_presence_absence_2004.rds")
 ggCaller_gene_presence_absence_2007 <- readRDS(file = "ggCaller_gene_presence_absence_2007.rds")
 
+sum_as_int <- function(x){
+  sum(as.integer(x))
+}
+
 gene_cluster_counts_2001 <- apply(ggCaller_gene_presence_absence_2001[-1,-1],1,sum_as_int)/(ncol(ggCaller_gene_presence_absence_2001)-1)
 gene_cluster_counts_2007 <- apply(ggCaller_gene_presence_absence_2007[-1,-1],1,sum_as_int)/(ncol(ggCaller_gene_presence_absence_2007)-1)
 
 par(mar=c(5,6,4,1)+.1)
-plot((gene_cluster_counts_2001), gene_cluster_counts_2007, pch = 21, xlab = "Pre-vaccine COG frequency", ylab = "Post-vaccine COG frequency",cex.lab=2.5, cex.axis = 2.5, cex = 1.5)
+plot((gene_cluster_counts_2001), gene_cluster_counts_2007, pch = 21, xlab = "Pre-vaccine COG frequency", ylab = "Post-vaccine COG frequency",cex.lab=2.5, cex.axis = 2.5, cex = 1.5, ylim = c(0,1), xlim = c(0,1),col='#000000')
+# col='#00000090' for 90% opacity
+abline(a=0, b=1)
 
 ```
 
@@ -4943,13 +4950,33 @@ mass_cluster_freq_1 <- readRDS(file = "UK_cluster_freqs_1.rds")
 sum_UK_data <- (mass_cluster_freq_1 + mass_cluster_freq_2 + mass_cluster_freq_3 + mass_cluster_freq_4 + mass_cluster_freq_5 + mass_cluster_freq_6 + mass_cluster_freq_7)
 
 count_cluster_size_UK <- rep(0, (max(sum_UK_data) +1) )
-for (i in 1:(max(sum_UK_data) +1)) {
-  count_cluster_size_UK[i] <- length(which(sum_UK_data == i))
+for (i in 0:(max(sum_UK_data))) {
+  count_cluster_size_UK[i+1] <- length(which(sum_UK_data == i))
 }
-plot(count_cluster_size_UK/sum(count_cluster_size_UK), ylim = c(0,0.6))
-lines((dpois(0:80,8) + dpois(0:80,1))/sum(dpois(0:80,8) + dpois(0:80,1)), col = "red")
+plot(0:max(sum_UK_data),count_cluster_size_UK/sum(count_cluster_size_UK), ylim = c(0,0.6), main = "Southampton counts vs. Poisson distribution", xlab = "Cluster Size", ylab = "relative counts of cluster size")
+lines(0:max(sum_UK_data),(dpois(0:76,8)), col = "red")
+lines(0:max(sum_UK_data),(dpois(0:76,1)), col = "blue")
+legend(60, 0.6, legend=c("Pois(8)", "Pois(1)"),
+       col=c("red", "blue"), lty=1, cex=1.2)
+
+plot(0:max(sum_UK_data),count_cluster_size_UK/sum(count_cluster_size_UK), ylim = c(0,0.6), main = "Southampton counts vs. Poisson distribution", xlab = "Cluster Size", ylab = "relative counts of cluster size")
+lines(0:max(sum_UK_data),(dpois(0:76,8) + dpois(0:76,1))/sum(dpois(0:76,8) + dpois(0:76,1)), col = "red")
 ### might be zero-inflation?!
+# I think it is 1-inflation :D 
 # check in other datasets 
+
+# wait, how about just one year?
+counts_UK_1 <- rep(0, (max(mass_cluster_freq_1) +1) )
+for (i in 0:(max(mass_cluster_freq_1))) {
+  counts_UK_1[i+1] <- length(which(mass_cluster_freq_1 == i))
+}
+
+plot(0:max(mass_cluster_freq_1),counts_UK_1/sum(counts_UK_1), ylim = c(0,0.6), main = "Southampton counts vs. Poisson distribution", xlab = "Cluster Size", ylab = "relative counts of cluster size")
+lines(0:max(mass_cluster_freq_1),(dpois(0:10,8)), col = "red")
+lines(0:max(mass_cluster_freq_1),(dpois(0:10,0)), col = "blue")
+legend(60, 0.6, legend=c("Pois(8)", "Pois(1)"),
+       col=c("red", "blue"), lty=1, cex=1.2)
+
 
 lines(dnbinom(0:80, 1, mu =1, log = FALSE))
 lines(dnbinom(0:80, 10, mu =1, log = FALSE))
@@ -4958,5 +4985,152 @@ plot(dnbinom(0:80, 10, mu =1, log = FALSE), ylim = c(0,1))
 lines(dnbinom(0:80, 1, mu =1, log = FALSE))
 lines(dnbinom(0:80, 2, mu =1, log = FALSE))
 lines(dnbinom(0:80, 20, mu =1, log = FALSE))
+```
+
+```{r}
+## PPxSero_2vacc fits
+# Navajo
+Navajo_PPxSero2vacc <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_08_23/Navajo_PPxSero2vacc/Navajo_PPxSero2vacc_ggCaller_PopPUNK_det_pmcmc_run2.rds")
+Navajo_PPxSero_mcmc <- coda::as.mcmc(cbind(Navajo_PPxSero2vacc$probabilities, Navajo_PPxSero2vacc$pars))
+coda::effectiveSize(Navajo_PPxSero_mcmc)
+summary(coda::as.mcmc(Navajo_PPxSero_mcmc))
+
+# UK
+UK_PPxSero2vacc <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_08_23/UK_PPxSero2vacc/UK_PPxSero_ggCaller_PopPUNK_det_pmcmc_run2.rds")
+UK_PPxSero_mcmc <- coda::as.mcmc(cbind(UK_PPxSero2vacc$probabilities, UK_PPxSero2vacc$pars))
+coda::effectiveSize(UK_PPxSero_mcmc)
+summary(coda::as.mcmc(UK_PPxSero_mcmc))
+```
+
+```{r}
+## Mass PPxSero
+Mass_PPxSero <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_08_14/Mass_PPxSero/PPxSero_ggCaller_PopPUNK_det_pmcmc_run2.rds")
+Mass_PPxSero_mcmc <- coda::as.mcmc(cbind(Mass_PPxSero$probabilities, Mass_PPxSero$pars))
+coda::effectiveSize(Mass_PPxSero_mcmc)
+summary(coda::as.mcmc(Mass_PPxSero_mcmc))
+
+library(bayestestR)
+map_estimate(Mass_PPxSero$pars)
+# -1.10 0.25 -2.28 0.36
+
+sampled_param_id <- sample(1:nrow(Mass_PPxSero_mcmc),1000)
+
+# trying to add confidence intervals to lollipop plot
+WF_PPxSero <- odin.dust::odin_dust("NFDS_Model_PPxSero.R")
+
+seq_clusters <- readRDS("PopPUNK_clusters.rds")
+  sero_no = length(unique(seq_clusters$Serotype))
+  intermed_gene_presence_absence_consensus <- readRDS(file = "ggCPP_intermed_gene_presence_absence_consensus.rds")
+  intermed_gene_presence_absence_consensus_matrix <- sapply(intermed_gene_presence_absence_consensus[-1,-1],as.double)
+  model_start_pop <- readRDS(file = "PPsero_startpop.rds")
+  delta_ranking <- readRDS(file = "ggC_delta_ranking.rds")
+  mass_cluster_freq_1 <- readRDS(file = "PP_mass_cluster_freq_1.rds")
+  mass_cluster_freq_2 <- readRDS(file = "PP_mass_cluster_freq_2.rds")
+  mass_cluster_freq_3 <- readRDS(file = "PP_mass_cluster_freq_3.rds")
+  mass_VT <- readRDS(file = "SeroVT.rds")
+  mass_clusters <- length(unique(seq_clusters$Cluster))
+  avg_cluster_freq <- readRDS(file = "PPsero_mig.rds")
+  dt <- 1/36
+  vacc_time <- 0
+  output_filename <- "PPxSero_ggCaller_PopPUNK"
+  
+  
+  PPxSero_params <- list(dt = 1/36, species_no =mass_clusters,  gene_no = nrow(intermed_gene_presence_absence_consensus)-1, Pop_ini = ( model_start_pop), Pop_eq = Pop_eq <- rowSums(model_start_pop), capacity = sum( model_start_pop), Genotypes = intermed_gene_presence_absence_consensus_matrix, sigma_f = -1.10, prop_f = 0.25, sigma_w =-1000 , delta = delta_ranking, m = -2.28, migVec =  as.matrix(avg_cluster_freq), v = 0.36 , vaccTypes = mass_VT, vacc_time = 0, sero_no = sero_no)
+
+WF_PPxSero_model <- WF_PPxSero$new(pars = PPxSero_params,
+                         time = 0,
+                         n_particles = 10L,
+                         n_threads = 4L,
+                         seed = 1L)
+
+simMeanggCPP1_Mass <- rowMeans(WF_PPxSero_model$run(0)[-1,])[1:mass_clusters]
+simMeanggCPP2_Mass <- rowMeans(WF_PPxSero_model$run(36)[-1,])[1:mass_clusters]
+simMeanggCPP3_Mass <- rowMeans(WF_PPxSero_model$run(72)[-1,])[1:mass_clusters]
+
+simMeanggCPP3_Mass_1 <- WF_PPxSero_model$run(72)[-1,1][1:mass_clusters]
+simMeanggCPP3_Mass_2 <- WF_PPxSero_model$run(72)[-1,2][1:mass_clusters]
+
+PP_serotype_comp <- rep(0,PP_mass_clusters)
+for (i in 1:PP_mass_clusters) {
+  PP_serotype_comp[i] <- paste(unique(PopPUNK_clusters$Serotype[which(PopPUNK_clusters$Cluster==i)]), collapse = ", ")
+}
+
+lollipop_cluster_freqs_VTandNVT_labelSero(year = "2007", plot_title = "PopPUNK and ggCaller", data1 = mass_cluster_freq_1/sum(mass_cluster_freq_1), model_name_1 ="Model", model1 = (simMeanggCPP1_Mass)/sum((simMeanggCPP1_Mass)), VT_vec = PP_mass_VT, SeroLabel = PP_serotype_comp)
+
+lollipop_cluster_freqs_VTandNVT_labelSero(year = "2007", plot_title = "PopPUNK and ggCaller", data1 = mass_cluster_freq_3/sum(mass_cluster_freq_3), model_name_1 ="Model", model1 = (simMeanggCPP3_Mass)/sum((simMeanggCPP3_Mass)), VT_vec = PP_mass_VT, SeroLabel = PP_serotype_comp)
+
+# two simulations with the same params already differ quite a bit
+lollipop_cluster_freqs_VTandNVT_labelSero(year = "2007", plot_title = "PopPUNK and ggCaller", data1 = mass_cluster_freq_3/sum(mass_cluster_freq_3), model_name_1 ="Model", model1 = (simMeanggCPP3_Mass_1)/sum((simMeanggCPP3_Mass_1)), VT_vec = PP_mass_VT, SeroLabel = PP_serotype_comp)
+
+lollipop_cluster_freqs_VTandNVT_labelSero(year = "2007", plot_title = "PopPUNK and ggCaller", data1 = mass_cluster_freq_3/sum(mass_cluster_freq_3), model_name_1 ="Model", model1 = (simMeanggCPP3_Mass_2)/sum((simMeanggCPP3_Mass_2)), VT_vec = PP_mass_VT, SeroLabel = PP_serotype_comp)
+```
+
+```{r}
+# create empty array for storing all of the simulation results
+empty_vec <- rep(0,mass_clusters)
+sim_results_Mass <- array(c(empty_vec, 100), dim = c(mass_clusters, 100))
+
+for (i in 1:100) {
+PPxSero_params <- list(dt = 1/36, species_no =mass_clusters,  gene_no = nrow(intermed_gene_presence_absence_consensus)-1, Pop_ini = ( model_start_pop), Pop_eq = Pop_eq <- rowSums(model_start_pop), capacity = sum( model_start_pop), Genotypes = intermed_gene_presence_absence_consensus_matrix, sigma_f = Mass_PPxSero_mcmc[sampled_param_id[i],4], prop_f = Mass_PPxSero_mcmc[sampled_param_id[i],5], sigma_w =-1000 , delta = delta_ranking, m = Mass_PPxSero_mcmc[sampled_param_id[i],6], migVec =  as.matrix(avg_cluster_freq), v = Mass_PPxSero_mcmc[sampled_param_id[i],7] , vaccTypes = mass_VT, vacc_time = 0, sero_no = sero_no)
+
+WF_PPxSero_model <- WF_PPxSero$new(pars = PPxSero_params,
+                         time = 0,
+                         n_particles = 1L,
+                         n_threads = 4L,
+                         seed = 1L)
+
+simMeanggCPP3_Mass_1 <- WF_PPxSero_model$run(72)[-1,1][1:mass_clusters]
+
+sim_results_Mass[,i] <- simMeanggCPP3_Mass_1
+}
+
+divide_by_sum <- function(x){
+  x <- x / sum(x)
+  x
+}
+
+sim_results_Mass_rel <- apply(sim_results_Mass, 2, divide_by_sum)
+
+#ttest_1 <- t.test(sim_results_Mass_rel[1,])
+
+# collect confidence intervals for all clusters
+conf_intervals_Mass <- array(c(empty_vec,empty_vec),dim = c(mass_clusters, 2))
+
+for (i in 1:mass_clusters) {
+  ttest <- t.test(sim_results_Mass_rel[i,])
+  conf_intervals_Mass[i,] <- c(ttest$conf.int[1], ttest$conf.int[2])
+}
+
+lollipop_cluster_freqs_2x2_VTandNVT_labelSero(year = "2007", plot_title = "PopPUNK and ggCaller", data1 = mass_cluster_freq_3/sum(mass_cluster_freq_3), model_name_1 ="lower_bound", model1 = conf_intervals_Mass[,1], model_name_2 ="upper_bound", model2 = conf_intervals_Mass[,2], VT_vec = PP_mass_VT, SeroLabel = PP_serotype_comp)
+```
+
+```{r}
+PPxSero_params <- list(dt = 1/36, species_no =mass_clusters,  gene_no = nrow(intermed_gene_presence_absence_consensus)-1, Pop_ini = ( model_start_pop), Pop_eq = Pop_eq <- rowSums(model_start_pop), capacity = sum( model_start_pop), Genotypes = intermed_gene_presence_absence_consensus_matrix, sigma_f = Mass_PPxSero_mcmc[sampled_param_id[i],4], prop_f = Mass_PPxSero_mcmc[sampled_param_id[i],5], sigma_w =-1000 , delta = delta_ranking, m = Mass_PPxSero_mcmc[sampled_param_id[i],6], migVec =  as.matrix(avg_cluster_freq), v = Mass_PPxSero_mcmc[sampled_param_id[i],7] , vaccTypes = mass_VT, vacc_time = 0, sero_no = sero_no)
+
+WF_PPxSero_model <- WF_PPxSero$new(pars = PPxSero_params,
+                         time = 0,
+                         n_particles = 100L,
+                         n_threads = 8L,
+                         seed = 1L)
+
+simMeanggCPP3_Mass_1 <- WF_PPxSero_model$run(72)[(2:(mass_clusters+1)),]
+
+
+divide_by_sum <- function(x){
+  x <- x / sum(x)
+  x
+}
+
+sim_results_Mass_rel <- apply(simMeanggCPP3_Mass_1, 2, divide_by_sum)
+
+# collect confidence intervals for all clusters
+conf_intervals_Mass <- array(c(empty_vec,empty_vec),dim = c(mass_clusters, 2))
+
+for (i in 1:mass_clusters) {
+  ttest <- t.test(sim_results_Mass_rel[i,])
+  conf_intervals_Mass[i,] <- c(ttest$conf.int[1], ttest$conf.int[2])
+}
+
+lollipop_cluster_freqs_2x2_VTandNVT_labelSero(year = "2007", plot_title = "PopPUNK and ggCaller", data1 = mass_cluster_freq_3/sum(mass_cluster_freq_3), model_name_1 ="lower_bound", model1 = conf_intervals_Mass[,1], model_name_2 ="upper_bound", model2 = conf_intervals_Mass[,2], VT_vec = PP_mass_VT, SeroLabel = PP_serotype_comp)
 ```
 
