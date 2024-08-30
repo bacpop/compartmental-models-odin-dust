@@ -5134,3 +5134,133 @@ for (i in 1:mass_clusters) {
 lollipop_cluster_freqs_2x2_VTandNVT_labelSero(year = "2007", plot_title = "PopPUNK and ggCaller", data1 = mass_cluster_freq_3/sum(mass_cluster_freq_3), model_name_1 ="lower_bound", model1 = conf_intervals_Mass[,1], model_name_2 ="upper_bound", model2 = conf_intervals_Mass[,2], VT_vec = PP_mass_VT, SeroLabel = PP_serotype_comp)
 ```
 
+```{r}
+plot(1:mass_clusters, mass_cluster_freq_3/sum(mass_cluster_freq_3), type = "p", pch = 19)
+points(sim_results_Mass_rel[,1], col = "red")
+points(sim_results_Mass_rel[,2], col = "red")
+points(sim_results_Mass_rel[,3], col = "red")
+points(sim_results_Mass_rel[,4], col = "red")
+points(sim_results_Mass_rel[,5], col = "red")
+points(sim_results_Mass_rel[,6], col = "red")
+points(sim_results_Mass_rel[,7], col = "red")
+points(sim_results_Mass_rel[,8], col = "red")
+points(sim_results_Mass_rel[,9], col = "red")
+points(sim_results_Mass_rel[,10], col = "red")
+
+rowMax <- function(x){
+  max(x)
+}
+sim_res_rowMax <- apply(sim_results_Mass_rel,1,rowMax)
+rowMin <- function(x){
+  min(x)
+}
+sim_res_rowMin <- apply(sim_results_Mass_rel,1,rowMin)
+
+
+plot(1:mass_clusters, mass_cluster_freq_3/sum(mass_cluster_freq_3), type = "p", pch = 19, ylim = c(0,0.2))
+points(sim_res_rowMax, col = "red")
+points(sim_res_rowMin, col = "red")
+```
+
+```{r}
+# repeat this for standard model
+#corrected
+params_ggCPP <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = -2.0958228, sigma_w = -1000, prop_f = 0.3107495, delta = ggC_delta_ranking, m = -4.1434129, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.1366157, vacc_time = 0)
+
+WF_nG_h_vP <- odin.dust::odin_dust("NFDS_Model.R")
+WFmodel_ggCPP <- WF_nG_h_vP$new(pars = params_ggCPP,
+                                   time = 0,
+                                   n_particles = 100L,
+                                   n_threads = 4L,
+                                   seed = 1L)
+simMeanggCPP2 <- rowMeans(WFmodel_ggCPP$run(36)[-1,])
+simMeanggCPP3 <- rowMeans(WFmodel_ggCPP$run(72)[-1,])
+sim_ggCPP3 <- (WFmodel_ggCPP$run(72)[-1,])
+
+sim_ggCPP3_rel <- apply(sim_ggCPP3,2,divide_by_sum)
+sim_res_rowMax <- apply(sim_ggCPP3_rel,1,rowMax)
+sim_res_rowMin <- apply(sim_ggCPP3_rel,1,rowMin)
+
+plot(1:mass_clusters, mass_cluster_freq_3/sum(mass_cluster_freq_3), type = "p", pch = 19)
+points(sim_res_rowMax, col = "red")
+points(sim_res_rowMin, col = "red")
+```
+
+```{r}
+# this for null model
+WF_null <- odin.dust::odin_dust("null_NFDS_Model.R")
+# params from fit ggCPP 2024_03_08 
+# 0.008118758 0.031313422 
+null_ggCPP_params <- list(dt = 1/36, species_no = PP_mass_clusters, Pop_ini = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, vacc_time = 0, m = 0.008118758, v = 0.031313422)
+
+WFmodelnull_ggCPP <- WF_null$new(pars = null_ggCPP_params,
+                                   time = 0,
+                                   n_particles = 100L,
+                                   n_threads = 4L,
+                                   seed = 1L)
+simMeanggCPP2 <- rowMeans(WFmodelnull_ggCPP$run(36)[-1,])
+simMeanggCPP3 <- rowMeans(WFmodelnull_ggCPP$run(72)[-1,])
+sim_ggCPP3 <- (WFmodel_ggCPP$run(72)[-1,])
+
+sim_ggCPP3_rel <- apply(sim_ggCPP3,2,divide_by_sum)
+sim_res_rowMax <- apply(sim_ggCPP3_rel,1,rowMax)
+sim_res_rowMin <- apply(sim_ggCPP3_rel,1,rowMin)
+
+plot(1:mass_clusters, mass_cluster_freq_3/sum(mass_cluster_freq_3), type = "p", pch = 19)
+points(sim_res_rowMax, col = "red")
+points(sim_res_rowMin, col = "red")
+```
+
+```{r}
+# check mcmc iterations of states instead
+# still corrected likelihood, i.e. standard 4-param model
+# 4 param fit
+Mass_4param_fit <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_07_26/Mass_correctedLikelihood/4param_ggCaller_PopPUNK_det_pmcmc_run2.rds")
+
+plot(1:mass_clusters, mass_cluster_freq_3/sum(mass_cluster_freq_3), type = "p", pch = 19)
+points(Mass_4param_fit$state[-1,10000]/sum(Mass_4param_fit$state[-1,10000]), col = "red")
+points(Mass_4param_fit$state[-1,20000]/sum(Mass_4param_fit$state[-1,20000]), col = "red")
+points(Mass_4param_fit$state[-1,30000]/sum(Mass_4param_fit$state[-1,30000]), col = "red")
+points(Mass_4param_fit$state[-1,40000]/sum(Mass_4param_fit$state[-1,40000]), col = "red")
+points(Mass_4param_fit$state[-1,50000]/sum(Mass_4param_fit$state[-1,50000]), col = "red")
+points(Mass_4param_fit$state[-1,60000]/sum(Mass_4param_fit$state[-1,60000]), col = "red")
+points(Mass_4param_fit$state[-1,70000]/sum(Mass_4param_fit$state[-1,70000]), col = "red")
+points(Mass_4param_fit$state[-1,80000]/sum(Mass_4param_fit$state[-1,80000]), col = "red")
+
+# how much does each of them contribute to the likelihood?
+combined_likelihood <- rep(0, mass_clusters)
+for (i in 1:mass_clusters) {
+  combined_likelihood[i] <- ll_pois(mass_cluster_freq_3[i],Mass_4param_fit$state[i+1,10000]/sum(Mass_4param_fit$state[-1,10000])*sum(mass_cluster_freq_3))
+}
+
+plot(which(PP_mass_VT==1),combined_likelihood[which(PP_mass_VT==1)], pch = 21, ylim = c(-5,0), xlim = c(0,56), xlab = "Massachusetts Clusters", ylab = "likelihood")
+points(which(PP_mass_VT==0),combined_likelihood[which(PP_mass_VT==0)], pch = 19)
+legend(0,0, legend = c("VT","NVT"), pch = c(21,19))
+
+mean(combined_likelihood[which(PP_mass_VT==1)])
+mean(combined_likelihood[which(PP_mass_VT==0)])
+# NVTs, on average, add more to the likelihood, i.e. are more difficult to fit
+```
+
+
+```{r}
+# check for within-cluster overdispersion for Mass
+PP_model_start_pop <- readRDS(file = "PP_model_start_pop.rds")
+PP_model_start_pop_scaled <- PP_model_start_pop/sum(PP_model_start_pop) * sum(mass_cluster_freq_1)
+plot(1:mass_clusters, PP_model_start_pop_scaled/sum(PP_model_start_pop_scaled), pch = 21)
+points(mass_cluster_freq_2/sum(mass_cluster_freq_2), col = "red")
+points(mass_cluster_freq_3/sum(mass_cluster_freq_3), col = "blue")
+
+plot(dpois(1:sum(PP_model_start_pop_scaled),PP_model_start_pop_scaled[1]), col = "blue")
+abline(v = PP_model_start_pop_scaled[1],col = "blue")
+abline(v = mass_cluster_freq_2[1],col = "red")
+points(dpois(1:sum(mass_cluster_freq_2),mass_cluster_freq_2[1]), col = "red")
+abline(v = mass_cluster_freq_3[1],col = "orange")
+
+plot(dpois(1:sum(PP_model_start_pop),PP_model_start_pop[2]), col = "blue")
+abline(v = PP_model_start_pop[2],col = "blue")
+abline(v = mass_cluster_freq_2[2],col = "red")
+points(dpois(1:sum(mass_cluster_freq_2),mass_cluster_freq_2[2]), col = "red")
+abline(v = mass_cluster_freq_3[2],col = "orange")
+```
+
