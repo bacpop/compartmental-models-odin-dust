@@ -5168,6 +5168,54 @@ points(sim_res_rowMin, col = "red")
 params_ggCPP <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = -2.0958228, sigma_w = -1000, prop_f = 0.3107495, delta = ggC_delta_ranking, m = -4.1434129, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.1366157, vacc_time = 0)
 
 WF_nG_h_vP <- odin.dust::odin_dust("NFDS_Model.R")
+
+
+### comparing time trajectories between model and data
+WFmodel_ggCPP <- WF_nG_h_vP$new(pars = params_ggCPP,
+                                   time = 0,
+                                   n_particles = 1L,
+                                   n_threads = 4L,
+                                   seed = 1L)
+empty_vec <- rep(0,mass_clusters)
+sim_ggCPP2 <- array(rep(empty_vec,73),dim = c(mass_clusters, 73))
+
+for (i in 0:72) {
+  sim_ggCPP2[,i+1] <- (WFmodel_ggCPP$run(i)[-1])
+}
+
+library("viridis") 
+plot(1:mass_clusters, mass_cluster_freq_1/sum(mass_cluster_freq_1), pch = 19, col = "#E69F00", ylim = c(0, 0.2))
+for (i in 1:73) {
+  points(sim_ggCPP2[,i]/sum(sim_ggCPP2[,i]), col = viridis(73)[i])
+}
+points((1:mass_clusters)+0.3,sim_ggCPP2[,1]/sum(sim_ggCPP2[,1]), col = viridis(73)[1], pch = 19)
+points((1:mass_clusters)+0.3,sim_ggCPP2[,37]/sum(sim_ggCPP2[,37]), col = viridis(73)[37], pch = 19)
+points((1:mass_clusters)+0.3,sim_ggCPP2[,73]/sum(sim_ggCPP2[,73]), col = viridis(73)[73], pch = 19)
+points(mass_cluster_freq_1/sum(mass_cluster_freq_1), col = "#E69F00", pch = 19)
+points(mass_cluster_freq_2/sum(mass_cluster_freq_2), col = "#D55E00", pch = 19)
+points(mass_cluster_freq_3/sum(mass_cluster_freq_3), col = "#CC79A7", pch = 19)
+legend(40, 0.2, legend = c("Model 0", "Model 36", "Model 72","Data 2001", "Data 2004", "Data 2007"), fill = c(viridis(73)[1], viridis(73)[37], viridis(73)[73], "#E69F00","#D55E00", "#CC79A7"), cex = 2)
+
+# the fit seems usually better for time point 36 (2004) than for 72 (2007)?
+combined_compare(sim_ggCPP2[,37], mass_cluster_freq_2)
+#[1] -128.7101
+combined_compare(sim_ggCPP2[,73], mass_cluster_freq_3)
+#[1] -122.9715
+# hm, there is absolutely no evidence for that...
+
+plot(1:mass_clusters, mass_cluster_freq_1/sum(mass_cluster_freq_1), pch = 19, col = "#E69F00", ylim = c(0, 0.2), cex = 1.5, ylab = "relative Cluster size", xlab = "Cluster Index")
+for (i in 1:73) {
+  points((1:mass_clusters)+ ((i-1)*0.01), sim_ggCPP2[,i]/sum(sim_ggCPP2[,i]), col = viridis(73)[i], cex = 1.5)
+}
+points((1:mass_clusters),sim_ggCPP2[,1]/sum(sim_ggCPP2[,1]), bg = viridis(73)[1], pch = 21, col = "#E69F00", cex = 1.5)
+points((1:mass_clusters)+0.36,sim_ggCPP2[,37]/sum(sim_ggCPP2[,37]), bg = viridis(73)[37], pch = 21, col = "#D55E00", cex = 1.5)
+points((1:mass_clusters)+0.72,sim_ggCPP2[,73]/sum(sim_ggCPP2[,73]), bg = viridis(73)[73], pch = 21, col = "#CC79A7", cex = 1.5)
+points(mass_cluster_freq_1/sum(mass_cluster_freq_1), col = "#E69F00", pch = 19, cex = 1.5)
+points((1:mass_clusters)+0.36,mass_cluster_freq_2/sum(mass_cluster_freq_2), col = "#D55E00", pch = 19, cex = 1.5)
+points((1:mass_clusters)+0.72,mass_cluster_freq_3/sum(mass_cluster_freq_3), col = "#CC79A7", pch = 19, cex = 1.5)
+legend(40, 0.2, legend = c("Model 0", "Model 36", "Model 72","Data 2001", "Data 2004", "Data 2007"), fill = c(viridis(73)[1], viridis(73)[37], viridis(73)[73], "#E69F00","#D55E00", "#CC79A7"), cex = 1.5)
+
+
 WFmodel_ggCPP <- WF_nG_h_vP$new(pars = params_ggCPP,
                                    time = 0,
                                    n_particles = 100L,
