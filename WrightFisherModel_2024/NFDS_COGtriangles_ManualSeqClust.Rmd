@@ -5052,7 +5052,7 @@ simMeanggCPP3_Mass_2 <- WF_PPxSero_model$run(72)[-1,2][1:mass_clusters]
 
 PP_serotype_comp <- rep(0,PP_mass_clusters)
 for (i in 1:PP_mass_clusters) {
-  PP_serotype_comp[i] <- paste(unique(PopPUNK_clusters$Serotype[which(PopPUNK_clusters$Cluster==i)]), collapse = ", ")
+  PP_serotype_comp[i] <- paste(unique(PopPUNK_clusters$Serotype[which(PopPUNK_clusters$Cluster==unique(PopPUNK_clusters$Cluster)[i])]), collapse = ", ")
 }
 
 lollipop_cluster_freqs_VTandNVT_labelSero(year = "2007", plot_title = "PopPUNK and ggCaller", data1 = mass_cluster_freq_1/sum(mass_cluster_freq_1), model_name_1 ="Model", model1 = (simMeanggCPP1_Mass)/sum((simMeanggCPP1_Mass)), VT_vec = PP_mass_VT, SeroLabel = PP_serotype_comp)
@@ -5068,9 +5068,9 @@ lollipop_cluster_freqs_VTandNVT_labelSero(year = "2007", plot_title = "PopPUNK a
 ```{r}
 # create empty array for storing all of the simulation results
 empty_vec <- rep(0,mass_clusters)
-sim_results_Mass <- array(c(empty_vec, 100), dim = c(mass_clusters, 100))
+sim_results_Mass <- array(c(empty_vec, 1000), dim = c(mass_clusters, 1000))
 
-for (i in 1:100) {
+for (i in 1:1000) {
 PPxSero_params <- list(dt = 1/36, species_no =mass_clusters,  gene_no = nrow(intermed_gene_presence_absence_consensus)-1, Pop_ini = ( model_start_pop), Pop_eq = Pop_eq <- rowSums(model_start_pop), capacity = sum( model_start_pop), Genotypes = intermed_gene_presence_absence_consensus_matrix, sigma_f = Mass_PPxSero_mcmc[sampled_param_id[i],4], prop_f = Mass_PPxSero_mcmc[sampled_param_id[i],5], sigma_w =-1000 , delta = delta_ranking, m = Mass_PPxSero_mcmc[sampled_param_id[i],6], migVec =  as.matrix(avg_cluster_freq), v = Mass_PPxSero_mcmc[sampled_param_id[i],7] , vaccTypes = mass_VT, vacc_time = 0, sero_no = sero_no)
 
 WF_PPxSero_model <- WF_PPxSero$new(pars = PPxSero_params,
@@ -5102,6 +5102,13 @@ for (i in 1:mass_clusters) {
 }
 
 lollipop_cluster_freqs_2x2_VTandNVT_labelSero(year = "2007", plot_title = "PopPUNK and ggCaller", data1 = mass_cluster_freq_3/sum(mass_cluster_freq_3), model_name_1 ="lower_bound", model1 = conf_intervals_Mass[,1], model_name_2 ="upper_bound", model2 = conf_intervals_Mass[,2], VT_vec = PP_mass_VT, SeroLabel = PP_serotype_comp)
+
+
+# try min and max instead
+min_Mass <- apply(sim_results_Mass_rel, 1, min)
+max_Mass <- apply(sim_results_Mass_rel, 1, max)
+
+lollipop_cluster_freqs_2x2_VTandNVT_labelSero(year = "2007", plot_title = "PopPUNK and ggCaller", data1 = mass_cluster_freq_3/sum(mass_cluster_freq_3), model_name_1 ="minimum", model1 = min_Mass, model_name_2 ="maximum", model2 = max_Mass, VT_vec = PP_mass_VT, SeroLabel = PP_serotype_comp)
 ```
 
 ```{r}
@@ -5205,14 +5212,15 @@ combined_compare(sim_ggCPP2[,73], mass_cluster_freq_3)
 
 plot(1:mass_clusters, mass_cluster_freq_1/sum(mass_cluster_freq_1), pch = 19, col = "#E69F00", ylim = c(0, 0.2), cex = 1.5, ylab = "relative Cluster size", xlab = "Cluster Index")
 for (i in 1:73) {
-  points((1:mass_clusters)+ ((i-1)*0.01), sim_ggCPP2[,i]/sum(sim_ggCPP2[,i]), col = viridis(73)[i], cex = 1.5)
+  points((1:mass_clusters)+ ((i-1)*0.005), sim_ggCPP2[,i]/sum(sim_ggCPP2[,i]), col = viridis(73)[i], cex = 1.5)
 }
 points((1:mass_clusters),sim_ggCPP2[,1]/sum(sim_ggCPP2[,1]), bg = viridis(73)[1], pch = 21, col = "#E69F00", cex = 1.5)
-points((1:mass_clusters)+0.36,sim_ggCPP2[,37]/sum(sim_ggCPP2[,37]), bg = viridis(73)[37], pch = 21, col = "#D55E00", cex = 1.5)
-points((1:mass_clusters)+0.72,sim_ggCPP2[,73]/sum(sim_ggCPP2[,73]), bg = viridis(73)[73], pch = 21, col = "#CC79A7", cex = 1.5)
+points((1:mass_clusters)+0.18,sim_ggCPP2[,37]/sum(sim_ggCPP2[,37]), bg = viridis(73)[37], pch = 21, col = "#D55E00", cex = 1.5)
+points((1:mass_clusters)+0.36,sim_ggCPP2[,73]/sum(sim_ggCPP2[,73]), bg = viridis(73)[73], pch = 21, col = "#CC79A7", cex = 1.5)
 points(mass_cluster_freq_1/sum(mass_cluster_freq_1), col = "#E69F00", pch = 19, cex = 1.5)
-points((1:mass_clusters)+0.36,mass_cluster_freq_2/sum(mass_cluster_freq_2), col = "#D55E00", pch = 19, cex = 1.5)
-points((1:mass_clusters)+0.72,mass_cluster_freq_3/sum(mass_cluster_freq_3), col = "#CC79A7", pch = 19, cex = 1.5)
+points((1:mass_clusters)+0.18,mass_cluster_freq_2/sum(mass_cluster_freq_2), col = "#D55E00", pch = 19, cex = 1.5)
+points((1:mass_clusters)+0.36,mass_cluster_freq_3/sum(mass_cluster_freq_3), col = "#CC79A7", pch = 19, cex = 1.5)
+abline(v= (1:mass_clusters) + 0.7 )
 legend(40, 0.2, legend = c("Model 0", "Model 36", "Model 72","Data 2001", "Data 2004", "Data 2007"), fill = c(viridis(73)[1], viridis(73)[37], viridis(73)[73], "#E69F00","#D55E00", "#CC79A7"), cex = 1.5)
 
 
@@ -5248,13 +5256,13 @@ WFmodelnull_ggCPP <- WF_null$new(pars = null_ggCPP_params,
                                    seed = 1L)
 simMeanggCPP2 <- rowMeans(WFmodelnull_ggCPP$run(36)[-1,])
 simMeanggCPP3 <- rowMeans(WFmodelnull_ggCPP$run(72)[-1,])
-sim_ggCPP3 <- (WFmodel_ggCPP$run(72)[-1,])
+sim_ggCPP3 <- (WFmodelnull_ggCPP$run(72)[-1,])
 
 sim_ggCPP3_rel <- apply(sim_ggCPP3,2,divide_by_sum)
 sim_res_rowMax <- apply(sim_ggCPP3_rel,1,rowMax)
 sim_res_rowMin <- apply(sim_ggCPP3_rel,1,rowMin)
 
-plot(1:mass_clusters, mass_cluster_freq_3/sum(mass_cluster_freq_3), type = "p", pch = 19)
+plot(1:mass_clusters, mass_cluster_freq_3/sum(mass_cluster_freq_3), type = "p", pch = 19, ylim = c(0, max(sim_res_rowMax)))
 points(sim_res_rowMax, col = "red")
 points(sim_res_rowMin, col = "red")
 ```
