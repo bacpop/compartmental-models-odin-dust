@@ -3570,6 +3570,49 @@ saveRDS(PPsero_startpop2, "PPsero_startpop.rds")
 # this is very close to the original PP_model_start_pop
 # maybe I am giving out too much information because the serotype distribution is exactly the real one?
 
+# I discovered a new issue. While the cluster distribution is quite close to the real 2001 data, the serotype distribution is not. I think it is favorable to have low levels of strain-serotype combinations in the start population that actually only occur later in the data, it is also important to have a start population that represents the serotype distribution in the dataset.
+# Serotype distribution data vs model
+PP_mass_cluster_freq_1_sero <- readRDS("PP_mass_cluster_freq_1_sero.rds")
+
+plot(colSums(PP_mass_cluster_freq_1_sero)/sum(colSums(PP_mass_cluster_freq_1_sero)))
+points(colSums(PPsero_startpop2)/sum(colSums(PPsero_startpop2)), col = "red")
+# Strain distribution data vs model
+plot(rowSums(PP_mass_cluster_freq_1_sero)/sum((PP_mass_cluster_freq_1_sero)))
+points(rowSums(PPsero_startpop2)/sum(rowSums(PPsero_startpop2)), col = "red")
+
+PPsero_startpop3 <-  matrix(0, nrow = length(unique(PopPUNK_clusters$Cluster)), ncol = length(unique(PopPUNK_clusters$Serotype)))
+PPsero_startpop3_cl <-  matrix(0, nrow = length(unique(PopPUNK_clusters$Cluster)), ncol = length(unique(PopPUNK_clusters$Serotype)))
+PPsero_startpop3_sero <-  matrix(0, nrow = length(unique(PopPUNK_clusters$Cluster)), ncol = length(unique(PopPUNK_clusters$Serotype)))
+#PPsero_startpop3 <- PPxSero_matrix
+
+for (i in 1:length(unique(PopPUNK_clusters$Cluster))) {
+  PPsero_startpop3_cl[i,] <- round((PPxSero_matrix[i,] * rowSums(PP_mass_cluster_freq_1_sero)[i])/sum(PPxSero_matrix[i,]))
+}
+for (i in 1:length(unique(PopPUNK_clusters$Serotype))) {
+  PPsero_startpop3_sero[,i] <- round((PPxSero_matrix[,i] * colSums(PP_mass_cluster_freq_1_sero)[i])/sum(PPxSero_matrix[,i]))
+}
+PPsero_startpop3 <- (PPsero_startpop3_cl + PPsero_startpop3_sero)/2
+
+# new try
+PPsero_startpop4 <-  matrix(0, nrow = length(unique(PopPUNK_clusters$Cluster)), ncol = length(unique(PopPUNK_clusters$Serotype)))
+
+PPsero_startpop4 <- (PPxSero_matrix * matrix(data = rexp(n = (length(unique(PopPUNK_clusters$Serotype)) * length(unique(PopPUNK_clusters$Cluster))), rate = exp_noise), nrow = length(unique(PopPUNK_clusters$Cluster)), ncol = length(unique(PopPUNK_clusters$Serotype))) + PP_mass_cluster_freq_1_sero) * PP_expand_factor
+
+# test
+plot(colSums(PP_mass_cluster_freq_1_sero)/sum(colSums(PP_mass_cluster_freq_1_sero)))
+points(colSums(PPsero_startpop3_sero)/sum(colSums(PPsero_startpop3_sero)), col = "red")
+points(colSums(PPsero_startpop3)/sum(colSums(PPsero_startpop3)), col = "blue")
+points(colSums(PPsero_startpop4)/sum(colSums(PPsero_startpop4)), col = "green")
+# Strain distribution data vs model
+plot(rowSums(PP_mass_cluster_freq_1_sero)/sum((PP_mass_cluster_freq_1_sero)))
+points(rowSums(PPsero_startpop3_cl)/sum(rowSums(PPsero_startpop3_cl)), col = "red")
+points(rowSums(PPsero_startpop3)/sum(rowSums(PPsero_startpop3)), col = "blue")
+points(rowSums(PPsero_startpop4)/sum(rowSums(PPsero_startpop4)), col = "green")
+
+# okay, version 4 looks much better (take all possible strain-serotype combinations and multiply some noise to it, then add the real start population (from the data), and then multiply everything with the expansion factor)
+saveRDS(PPsero_startpop4, "PPsero_startpop4.rds")
+
+
 # serotype VT vector
 SeroVT <- rep(0, length(unique(PopPUNK_clusters$Serotype)))
 for (i in 1:nrow(PopPUNK_clusters)) {
@@ -4903,6 +4946,21 @@ lollipop_cluster_freqs_VTandNVT_labelSero(year = "Winter 2011/12", plot_title = 
 
 lollipop_cluster_freqs_VTandNVT_labelSero(year = "Winter 2009/10", plot_title = "PopPUNK and ggCaller", data1 = mass_cluster_freq_4/sum(mass_cluster_freq_4), model_name_1 ="Model", model1 = simMeanggCPP4_UK/sum(simMeanggCPP4_UK), VT_vec = rep(0,59), SeroLabel = UK_PP_serotype_comp)
 
+
+
+# colSums(simMeanggCPP7_UK_matrix[,-1])
+# gives us the serotype numbers (summed over all clusters)
+
+UK_cluster_freq_sero_7 <- readRDS(file = "UK_cluster_freqs_sero_7.rds")
+UK_cluster_freq_sero_7_seroCounts <- colSums(UK_cluster_freq_sero_7)
+
+UK_cluster_freq_sero_6 <- readRDS(file = "UK_cluster_freqs_sero_6.rds")
+
+lollipop_cluster_freqs_VTandNVT_labelSero(year = "Winter 2012/13", plot_title = "PopPUNK and ggCaller", data1 = UK_cluster_freq_sero_7_seroCounts/sum(UK_cluster_freq_sero_7_seroCounts), model_name_1 ="Model", model1 = colSums(simMeanggCPP7_UK_matrix[,-1])/sum(simMeanggCPP7_UK_matrix[,-1]), VT_vec = rep(0,sero_no), SeroLabel = 1:sero_no)
+
+lollipop_cluster_freqs_VTandNVT_labelSero(year = "Winter 2011/12", plot_title = "PopPUNK and ggCaller", data1 = colSums(UK_cluster_freq_sero_6)/sum(UK_cluster_freq_sero_6), model_name_1 ="Model", model1 = colSums(simMeanggCPP7_UK_matrix[,-1])/sum(simMeanggCPP7_UK_matrix[,-1]),  VT_vec = rep(0,sero_no), SeroLabel = unique(seq_clusters$Serotype))
+
+lollipop_cluster_freqs_VTandNVT_labelSero(year = "Winter 2011/12", plot_title = "PopPUNK and ggCaller", data1 = rowSums(UK_cluster_freq_sero_6)/sum(UK_cluster_freq_sero_6), model_name_1 ="Model", model1 = rowSums(simMeanggCPP7_UK_matrix[,-1])/sum(simMeanggCPP7_UK_matrix[,-1]),  VT_vec = rep(0,59), SeroLabel = UK_PP_serotype_comp)
 ```
 
 ```{r}
@@ -5044,11 +5102,18 @@ WF_PPxSero_model <- WF_PPxSero$new(pars = PPxSero_params,
                          seed = 1L)
 
 simMeanggCPP1_Mass <- rowMeans(WF_PPxSero_model$run(0)[-1,])[1:mass_clusters]
+simMeanggCPP1_Mass_all <- rowMeans(WF_PPxSero_model$run(0)[-1,])
+simMeanggCPP1_Mass_matrix <- matrix(simMeanggCPP1_Mass_all, ncol = (sero_no+1), nrow = mass_clusters, byrow = FALSE)
+
 simMeanggCPP2_Mass <- rowMeans(WF_PPxSero_model$run(36)[-1,])[1:mass_clusters]
 simMeanggCPP3_Mass <- rowMeans(WF_PPxSero_model$run(72)[-1,])[1:mass_clusters]
 
 simMeanggCPP3_Mass_1 <- WF_PPxSero_model$run(72)[-1,1][1:mass_clusters]
 simMeanggCPP3_Mass_2 <- WF_PPxSero_model$run(72)[-1,2][1:mass_clusters]
+
+simMeanggCPP3_Mass_all <- rowMeans(WF_PPxSero_model$run(72)[-1,])
+simMeanggCPP3_Mass_matrix <- matrix(simMeanggCPP7_Mass_all, ncol = (sero_no+1), nrow = mass_clusters, byrow = FALSE)
+
 
 PP_serotype_comp <- rep(0,PP_mass_clusters)
 for (i in 1:PP_mass_clusters) {
@@ -5063,6 +5128,22 @@ lollipop_cluster_freqs_VTandNVT_labelSero(year = "2007", plot_title = "PopPUNK a
 lollipop_cluster_freqs_VTandNVT_labelSero(year = "2007", plot_title = "PopPUNK and ggCaller", data1 = mass_cluster_freq_3/sum(mass_cluster_freq_3), model_name_1 ="Model", model1 = (simMeanggCPP3_Mass_1)/sum((simMeanggCPP3_Mass_1)), VT_vec = PP_mass_VT, SeroLabel = PP_serotype_comp)
 
 lollipop_cluster_freqs_VTandNVT_labelSero(year = "2007", plot_title = "PopPUNK and ggCaller", data1 = mass_cluster_freq_3/sum(mass_cluster_freq_3), model_name_1 ="Model", model1 = (simMeanggCPP3_Mass_2)/sum((simMeanggCPP3_Mass_2)), VT_vec = PP_mass_VT, SeroLabel = PP_serotype_comp)
+
+# make lollipop plot for serotypes instead
+PP_mass_cluster_freq_3_sero <- readRDS(file = "PP_mass_cluster_freq_3_sero.rds")
+PP_mass_cluster_freq_1_sero <- readRDS(file = "PP_mass_cluster_freq_1_sero.rds")
+
+lollipop_cluster_freqs_VTandNVT_labelSero(year = "2007", plot_title = "PopPUNK and ggCaller", data1 = colSums(PP_mass_cluster_freq_3_sero)/sum(PP_mass_cluster_freq_3_sero), model_name_1 ="Model", model1 = colSums(simMeanggCPP3_Mass_matrix[,-1])/sum(simMeanggCPP3_Mass_matrix[,-1]), VT_vec = rep(0,sero_no), SeroLabel = 1:sero_no)
+
+lollipop_cluster_freqs_VTandNVT_labelSero(year = "2007", plot_title = "PopPUNK and ggCaller", data1 = rowSums(PP_mass_cluster_freq_3_sero)/sum(PP_mass_cluster_freq_3_sero), model_name_1 ="Model", model1 = rowSums(simMeanggCPP3_Mass_matrix[,-1])/sum(simMeanggCPP3_Mass_matrix[,-1]),  VT_vec = PP_mass_VT, SeroLabel = PP_serotype_comp)
+
+
+lollipop_cluster_freqs_VTandNVT_labelSero(year = "2001", plot_title = "PopPUNK and ggCaller", data1 = colSums(PP_mass_cluster_freq_1_sero)/sum(PP_mass_cluster_freq_1_sero), model_name_1 ="Model", model1 = colSums(simMeanggCPP1_Mass_matrix[,-1])/sum(simMeanggCPP1_Mass_matrix[,-1]), VT_vec = rep(0,sero_no), SeroLabel = 1:sero_no)
+
+plot(1:sero_no, colSums(PP_mass_cluster_freq_1_sero)/sum(PP_mass_cluster_freq_1_sero))
+points(colSums(simMeanggCPP1_Mass_matrix[,-1])/sum(simMeanggCPP1_Mass_matrix[,-1]), col = "red")
+
+lollipop_cluster_freqs_VTandNVT_labelSero(year = "2001", plot_title = "PopPUNK and ggCaller", data1 = rowSums(PP_mass_cluster_freq_1_sero)/sum(PP_mass_cluster_freq_1_sero), model_name_1 ="Model", model1 = rowSums(simMeanggCPP1_Mass_matrix[,-1])/sum(simMeanggCPP1_Mass_matrix[,-1]), VT_vec = PP_mass_VT, SeroLabel = PP_serotype_comp)
 ```
 
 ```{r}

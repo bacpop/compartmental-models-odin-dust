@@ -355,6 +355,31 @@ for (i in 1:length(UK_time_points)) {
   file_name <- paste("UK_cluster_freqs_", as.character(i),".rds", sep = "")
   saveRDS(UK_cluster_freqs[[i]], file_name)
 }
+
+
+# do the same for Strain x Serotype model
+UK_cluster_freqs_sero <- vector(mode = "list", length = length(UK_time_points))
+
+for(j in 1:length(UK_time_points)){
+  UK_cluster_freqs_sero[[j]] <- matrix(NA, ncol =  length(unique(UK_PP$Serotype)), nrow = no_UK_PP)
+  for (i in unique(UK_PP$Cluster)){
+    for (k in unique(UK_PP$Serotype)) {
+      UK_cluster_freqs_sero[[j]][which(unique(UK_PP$Cluster) == i),which(unique(UK_PP$Serotype) == k)] <- length(which(UK_metadata[UK_meta_IDtoInd[UK_PP[UK_PP$Cluster == i,"Taxon"]],][UK_metadata[UK_meta_IDtoInd[UK_PP[UK_PP$Cluster == i,"Taxon"]],]$Serotype==k,]$Year==UK_time_points[j]))
+    }
+  }
+}
+for(j in 1:length(UK_time_points)){
+  if(sum(UK_cluster_freqs_sero[[j]])==0){
+    UK_cluster_freqs_sero[[j]] <- matrix(NA, ncol =  length(unique(UK_PP$Serotype)), nrow = no_UK_PP)
+  }
+}
+
+for (i in 1:length(UK_time_points)) {
+  file_name <- paste("UK_cluster_freqs_sero_", as.character(i),".rds", sep = "")
+  saveRDS(UK_cluster_freqs_sero[[i]], file_name)
+}
+
+
 ```
 
 #create initial population

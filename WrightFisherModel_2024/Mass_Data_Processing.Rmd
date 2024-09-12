@@ -549,6 +549,28 @@ points(PP_model_start_pop/sum(PP_model_start_pop), col = "red")
 saveRDS(PP_model_start_pop, file = "PP_model_start_pop.rds")
 ```
 
+```{r}
+# Create PP clusters, split by serotype
+#calculate the frequency of the gene clusters and year and serotype
+PP_mass_cluster_freq_1_sero <- matrix(0,nrow = no_PopPUNK_clusters, ncol = length(unique(Mass_Samples_accCodes$Serotype)))
+PP_mass_cluster_freq_2_sero <- matrix(0,nrow = no_PopPUNK_clusters, ncol = length(unique(Mass_Samples_accCodes$Serotype)))
+PP_mass_cluster_freq_3_sero <- matrix(0,nrow = no_PopPUNK_clusters, ncol = length(unique(Mass_Samples_accCodes$Serotype)))
+for (i in 1:no_PopPUNK_clusters){
+  for (k in unique(Mass_Samples_accCodes$Serotype)){
+  PP_mass_cluster_freq_1_sero[i,which(unique(Mass_Samples_accCodes$Serotype)==k)] <- length(which(PopPUNK_clusters[which(PopPUNK_clusters$Cluster==unique(PopPUNK_clusters$Cluster)[i]),][PopPUNK_clusters[which(PopPUNK_clusters$Cluster==unique(PopPUNK_clusters$Cluster)[i]),]$Serotype ==k, ]$"SeqYear"==2001))
+  PP_mass_cluster_freq_2_sero[i,which(unique(Mass_Samples_accCodes$Serotype)==k)] <- length(which(PopPUNK_clusters[which(PopPUNK_clusters$Cluster==unique(PopPUNK_clusters$Cluster)[i]),][PopPUNK_clusters[which(PopPUNK_clusters$Cluster==unique(PopPUNK_clusters$Cluster)[i]),]$Serotype ==k, ]$"SeqYear"==2004))
+  PP_mass_cluster_freq_3_sero[i,which(unique(Mass_Samples_accCodes$Serotype)==k)] <- length(which(PopPUNK_clusters[which(PopPUNK_clusters$Cluster==unique(PopPUNK_clusters$Cluster)[i]),][PopPUNK_clusters[which(PopPUNK_clusters$Cluster==unique(PopPUNK_clusters$Cluster)[i]),]$Serotype ==k, ]$"SeqYear"==2007))
+  }
+}
+
+#save sequence cluster frequencies
+saveRDS(PP_mass_cluster_freq_1_sero, file = "PP_mass_cluster_freq_1_sero.rds")
+saveRDS(PP_mass_cluster_freq_2_sero, file = "PP_mass_cluster_freq_2_sero.rds")
+saveRDS(PP_mass_cluster_freq_3_sero, file = "PP_mass_cluster_freq_3_sero.rds")
+```
+
+
+
 
 ### ggCaller
 

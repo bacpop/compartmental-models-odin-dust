@@ -372,6 +372,31 @@ for (i in 1:length(Navajo_time_points_selected)) {
   saveRDS(Navajo_NVT_cluster_freqs[[i]], file_name)
 }
 
+
+
+# do the same for Strain x Serotype model
+Navajo_cluster_freqs_sero <- vector(mode = "list", length = length(Navajo_time_points_selected))
+
+for(j in 1:length(Navajo_time_points_selected)){
+  Navajo_cluster_freqs_sero[[j]] <- matrix(NA, ncol =  length(unique(Navajo_PP$Serotype)), nrow = no_Navajo_PP)
+  for (i in unique(Navajo_PP$Cluster)){
+    for (k in unique(Navajo_PP$Serotype)) {
+      Navajo_cluster_freqs_sero[[j]][which(unique(Navajo_PP$Cluster) == i),which(unique(Navajo_PP$Serotype) == k)] <- length(which(Navajo_meta_data[Navajo_meta_IDtoInd[Navajo_PP[Navajo_PP$Cluster == i,"Taxon"]],][Navajo_meta_data[Navajo_meta_IDtoInd[Navajo_PP[Navajo_PP$Cluster == i,"Taxon"]],]$Sero==k,]$Year==Navajo_time_points[j]))
+    }
+  }
+}
+for(j in 1:length(Navajo_time_points_selected)){
+  if(sum(Navajo_cluster_freqs_sero[[j]])==0){
+    Navajo_cluster_freqs_sero[[j]] <- matrix(NA, ncol =  length(unique(Navajo_PP$Serotype)), nrow = no_Navajo_PP)
+  }
+}
+
+for (i in 1:length(Navajo_time_points_selected)) {
+  file_name <- paste("Navajo_cluster_freqs_sero_", as.character(i),".rds", sep = "")
+  saveRDS(Navajo_cluster_freqs_sero[[i]], file_name)
+}
+
+
 ```
 
 #create initial population

@@ -70,6 +70,9 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   sero_no = length(unique(seq_clusters$Serotype))
   intermed_gene_presence_absence_consensus <- readRDS(file = "ggCPP_intermed_gene_presence_absence_consensus.rds")
   intermed_gene_presence_absence_consensus_matrix <- sapply(intermed_gene_presence_absence_consensus[-1,-1],as.double)
+  #model_start_pop <- readRDS("PP_mass_cluster_freq_1_sero.rds")
+  #model_start_pop <- model_start_pop / 133 * 15708
+  model_start_pop <- readRDS(file = "PPsero_startpop4.rds")
   model_start_pop <- readRDS(file = "PPsero_startpop.rds")
   delta_ranking <- readRDS(file = "ggC_delta_ranking.rds")
   mass_cluster_freq_1 <- readRDS(file = "PP_mass_cluster_freq_1.rds")
