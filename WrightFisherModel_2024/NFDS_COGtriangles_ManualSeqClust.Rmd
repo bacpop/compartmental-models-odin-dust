@@ -5401,3 +5401,105 @@ points(dpois(1:sum(mass_cluster_freq_2),mass_cluster_freq_2[2]), col = "red")
 abline(v = mass_cluster_freq_3[2],col = "orange")
 ```
 
+```{r}
+PopPUNK_clusters <- readRDS("PopPUNK_clusters.rds")
+ggCPP_intermed_gene_presence_absence_consensus <- readRDS(file = "ggCPP_intermed_gene_presence_absence_consensus.rds")
+ggCPP_intermed_gene_presence_absence_consensus_matrix <- sapply(ggCPP_intermed_gene_presence_absence_consensus[-1,-1],as.double)
+PP_model_start_pop <- readRDS(file = "PP_model_start_pop.rds")
+ggC_delta_ranking <- readRDS(file = "ggC_delta_ranking.rds")
+PP_mass_cluster_freq_1 <- readRDS(file = "PP_mass_cluster_freq_1.rds")
+PP_mass_cluster_freq_2 <- readRDS(file = "PP_mass_cluster_freq_2.rds")
+PP_mass_cluster_freq_3 <- readRDS(file = "PP_mass_cluster_freq_3.rds")
+PP_mass_VT <- readRDS(file = "PP_mass_VT.rds")
+PP_mass_clusters <- length(unique(PopPUNK_clusters$Cluster))
+PP_avg_cluster_freq <- rep(1/PP_mass_clusters, PP_mass_clusters)
+
+# with corrected likelihood (26.07.24): -2.0958228  0.3107495 -4.4689789  0.1366157 
+# map estimate of this run: map_estimate(Mass_4param_fit$pars[, 1:4])
+# -2.11 0.25 -4.41 0.11
+#corrected
+params_ggCPP <- list(dt = 1/36, species_no = PP_mass_clusters,  gene_no = nrow(ggCPP_intermed_gene_presence_absence_consensus)-1, Pop_ini = as.double(PP_model_start_pop), Pop_eq = as.double(PP_model_start_pop), capacity = sum(PP_model_start_pop), Genotypes = ggCPP_intermed_gene_presence_absence_consensus_matrix, sigma_f = -2.0958228, sigma_w = -1000, prop_f = 0.3107495, delta = ggC_delta_ranking, m = -4.1434129, migVec = PP_avg_cluster_freq, vaccTypes = PP_mass_VT, v = 0.1366157, vacc_time = 0)
+WF_nG_h_vP <- odin.dust::odin_dust("NFDS_Model.R")
+WFmodel_ggCPP <- WF_nG_h_vP$new(pars = params_ggCPP,
+                                   time = 0,
+                                   n_particles = 1L,
+                                   n_threads = 4L,
+                                   seed = 1L)
+#simMeanggCPP2 <- rowMeans(WFmodel_ggCPP$run(36)[-1,])
+#simMeanggCPP3 <- rowMeans(WFmodel_ggCPP$run(72)[-1,])
+#ggCPP_trajectory <- WFmodel_ggCPP$run(72)
+n_particles <- 1L
+n_times <- 144
+ggCPP_trajectory <- array(NA, dim = c(WFmodel_ggCPP$info()$len, n_particles, n_times+1))
+for (t in 0:(n_times)) {
+  ggCPP_trajectory[ , , t+1] <- WFmodel_ggCPP$run(t)
+}
+time <- ggCPP_trajectory[1, 1, ]
+ggCPP_trajectory <- ggCPP_trajectory[-1, , ]
+
+all_colors = grDevices::colors()[grep('gr(a|e)y', grDevices::colors(), invert = T)]
+rnd_colors <- sample(all_colors,nrow(ggCPP_trajectory))
+
+plot(time, ggCPP_trajectory[1,]/colSums(ggCPP_trajectory), ylim = c(0,0.3), type = "l", col = rnd_colors[1])
+points(0,PP_mass_cluster_freq_1[1]/sum(PP_mass_cluster_freq_1), pch = 19, col = rnd_colors[1])
+points(1,PP_mass_cluster_freq_2[1]/sum(PP_mass_cluster_freq_2), pch = 19, col = rnd_colors[1])
+points(2,PP_mass_cluster_freq_3[1]/sum(PP_mass_cluster_freq_3), pch = 19, col = rnd_colors[1])
+for (i in 2:nrow(ggCPP_trajectory)) {
+  lines(time,ggCPP_trajectory[i,]/colSums(ggCPP_trajectory), col = rnd_colors[i])
+  points(0,PP_mass_cluster_freq_1[i]/sum(PP_mass_cluster_freq_1), pch = 19, col = rnd_colors[i])
+  points(1,PP_mass_cluster_freq_2[i]/sum(PP_mass_cluster_freq_2), pch = 19, col = rnd_colors[i])
+  points(2,PP_mass_cluster_freq_3[i]/sum(PP_mass_cluster_freq_3), pch = 19, col = rnd_colors[i])
+}
+
+# do the same for all clusters that occur at least three times in the dataset (across all time points)
+first_plot_point <- which((PP_mass_cluster_freq_1 + PP_mass_cluster_freq_2 + PP_mass_cluster_freq_3)>=3)[1]
+plot(time, ggCPP_trajectory[first_plot_point,]/colSums(ggCPP_trajectory), ylim = c(0,0.3), type = "l", col = rnd_colors[first_plot_point])
+points(0,PP_mass_cluster_freq_1[first_plot_point]/sum(PP_mass_cluster_freq_1), pch = 19, col = rnd_colors[first_plot_point])
+points(1,PP_mass_cluster_freq_2[first_plot_point]/sum(PP_mass_cluster_freq_2), pch = 19, col = rnd_colors[first_plot_point])
+points(2,PP_mass_cluster_freq_3[first_plot_point]/sum(PP_mass_cluster_freq_3), pch = 19, col = rnd_colors[first_plot_point])
+for (i in which((PP_mass_cluster_freq_1 + PP_mass_cluster_freq_2 + PP_mass_cluster_freq_3)>=3)[-1]) {
+  lines(time,ggCPP_trajectory[i,]/colSums(ggCPP_trajectory), col = rnd_colors[i])
+  points(0,PP_mass_cluster_freq_1[i]/sum(PP_mass_cluster_freq_1), pch = 19, col = rnd_colors[i])
+  points(1,PP_mass_cluster_freq_2[i]/sum(PP_mass_cluster_freq_2), pch = 19, col = rnd_colors[i])
+  points(2,PP_mass_cluster_freq_3[i]/sum(PP_mass_cluster_freq_3), pch = 19, col = rnd_colors[i])
+}
+
+# do this for all cluster that occur with at least 2.5% frequency in at least one time point (is what Corander et al. did)
+frequent_clusters <- unique(c(which(PP_mass_cluster_freq_1/sum(PP_mass_cluster_freq_1) >= 0.025),which(PP_mass_cluster_freq_2/sum(PP_mass_cluster_freq_2) >= 0.025),which(PP_mass_cluster_freq_3/sum(PP_mass_cluster_freq_3) >= 0.025)))
+frequent_clusters <- sort(frequent_clusters)
+first_plot_point <- frequent_clusters[1]
+plot(time, ggCPP_trajectory[first_plot_point,]/colSums(ggCPP_trajectory), ylim = c(0,0.2), type = "l", col = rnd_colors[first_plot_point])
+points(0,PP_mass_cluster_freq_1[first_plot_point]/sum(PP_mass_cluster_freq_1), pch = 19, col = rnd_colors[first_plot_point])
+points(1,PP_mass_cluster_freq_2[first_plot_point]/sum(PP_mass_cluster_freq_2), pch = 19, col = rnd_colors[first_plot_point])
+points(2,PP_mass_cluster_freq_3[first_plot_point]/sum(PP_mass_cluster_freq_3), pch = 19, col = rnd_colors[first_plot_point])
+for (i in frequent_clusters[-1]) {
+  lines(time,ggCPP_trajectory[i,]/colSums(ggCPP_trajectory), col = rnd_colors[i])
+  points(0,PP_mass_cluster_freq_1[i]/sum(PP_mass_cluster_freq_1), pch = 19, col = rnd_colors[i])
+  points(1,PP_mass_cluster_freq_2[i]/sum(PP_mass_cluster_freq_2), pch = 19, col = rnd_colors[i])
+  points(2,PP_mass_cluster_freq_3[i]/sum(PP_mass_cluster_freq_3), pch = 19, col = rnd_colors[i])
+}
+
+# make bar plots instead
+ggCPP1 <- ggCPP_trajectory[,1]
+ggCPP2 <- ggCPP_trajectory[,37]
+ggCPP3 <- ggCPP_trajectory[,73]
+
+barplot_df <- data.frame(time = sort(rep(c("2001","2004","2007"),length(frequent_clusters))), cluster = (rep(1:length(frequent_clusters),3)), model = c((ggCPP1/sum(ggCPP1))[frequent_clusters], (ggCPP2/sum(ggCPP2))[frequent_clusters], (ggCPP3/sum(ggCPP3))[frequent_clusters]), data = c((PP_mass_cluster_freq_1/sum(PP_mass_cluster_freq_1))[frequent_clusters],(PP_mass_cluster_freq_2/sum(PP_mass_cluster_freq_2))[frequent_clusters],(PP_mass_cluster_freq_3/sum(PP_mass_cluster_freq_3))[frequent_clusters]))
+
+p_model <- ggplot(data=barplot_df, aes(x=cluster, y=model, fill=time)) +
+geom_bar(stat="identity", position=position_dodge()) + scale_fill_manual(values=c("#E69F00","#D55E00", "#CC79A7")) +
+  scale_x_continuous("Strains", breaks = (1:length(frequent_clusters)),labels = as.character(frequent_clusters)) + 
+  scale_y_continuous(name="Frequency in model", limits=c(0, 0.175)) +
+  geom_vline(xintercept = seq(from=.5, to=length(frequent_clusters)+.5, by = 1), col = "grey") +
+  theme(text = element_text(size = 20))
+
+p_data <- ggplot(data=barplot_df, aes(x=cluster, y=data, fill=time)) +
+geom_bar(stat="identity", position=position_dodge()) + scale_fill_manual(values=c("#E69F00","#D55E00", "#CC79A7")) +
+  scale_x_continuous("Strains", breaks = (1:length(frequent_clusters)),labels = as.character(frequent_clusters))  + 
+  scale_y_continuous(name="Frequency in data", limits=c(0, 0.175)) +
+  geom_vline(xintercept = seq(from=.5, to=length(frequent_clusters)+.5, by = 1), col = "grey") +
+  theme(text = element_text(size = 20))
+
+library(gridExtra)
+grid.arrange(p_data,p_model, ncol=1)
+```

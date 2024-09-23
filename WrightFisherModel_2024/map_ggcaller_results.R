@@ -192,3 +192,68 @@ miss
 #[1] 587
 miss_type1
 #[1] 16
+
+
+### try mapping annotation instead
+mass_gene_presence_absence <- read.csv("~/Documents/PhD_Project/Data/Massachusetts_ggcaller/run_withFuncAnn/ggCaller_output/gene_presence_absence.csv")
+navajo_gene_presence_absence <- read.csv("~/Documents/PhD_Project/Data/StrepPneumo_NavajoNew/ggCaller_output/gene_presence_absence.csv")
+
+mass_gene_anno_dict <- mass_gene_presence_absence$Gene
+names(mass_gene_anno_dict) <- mass_gene_presence_absence$Annotation
+
+navajo_anno_gene_dict <- navajo_gene_presence_absence$Annotation
+names(navajo_anno_gene_dict) <- navajo_gene_presence_absence$Gene
+
+mass_gene_anno_dict <- c()
+for (i in 1:nrow(mass_gene_presence_absence)) {
+  anno <- strsplit(mass_gene_presence_absence[i,3],"SPARC1\\_")[[1]][length(strsplit(mass_gene_presence_absence[i,3],"SPARC1\\_")[[1]])]
+  if(! is.na(anno)){
+    mass_gene_anno_dict[anno] <- mass_gene_presence_absence[i,1]
+  }
+}
+# nrow(mass_gene_presence_absence) 5256
+# length(mass_gene_anno_dict) 3549
+
+mass_anno_gene_dict <- c()
+for (i in 1:nrow(mass_gene_presence_absence)) {
+  anno <- strsplit(mass_gene_presence_absence[i,3],"SPARC1\\_")[[1]][length(strsplit(mass_gene_presence_absence[i,3],"SPARC1\\_")[[1]])]
+  if(! is.na(anno)){
+    mass_anno_gene_dict[mass_gene_presence_absence[i,1]] <- anno 
+  }
+}
+# nrow(mass_gene_presence_absence) 5256
+# length(mass_anno_gene_dict) 4938
+# 0.9394977 have annotation
+# there are 3549 unique annotations
+
+navajo_anno_gene_dict <- c()
+for(i in 1:nrow(navajo_gene_presence_absence)){
+  anno <- strsplit(navajo_gene_presence_absence[i,3],"SPARC1\\_")[[1]][length(strsplit(navajo_gene_presence_absence[i,3],"SPARC1\\_")[[1]])]
+  if(! is.na(anno)){
+    navajo_anno_gene_dict[mass_gene_presence_absence[i,1]] <- anno
+  }
+}
+# nrow(navajo_gene_presence_absence) 5712
+# length(navajo_anno_gene_dict) 5024
+# 0.8795518 have annotation
+# there are 3511 unique annotations
+
+Navajo_matching_Mass <- data.frame(matrix(NA, nrow = length(navajo_anno_gene_dict), ncol = 2))
+colnames(Navajo_matching_Mass) <- c("Navajo", "MatchingMass")
+Navajo_matching_Mass$Navajo <- unname(navajo_anno_gene_dict)
+missing_match_count <- 0
+for (i in 1:nrow(Navajo_matching_Mass)) {
+  matching_mass <- mass_gene_anno_dict[navajo_anno_gene_dict[i]]
+  Navajo_matching_Mass$MatchingMass[i] <- matching_mass
+  if(is.na(matching_mass)){
+    missing_match_count <- missing_match_count +1
+  }
+}
+# did not find a match for 222 sequences.
+# 4802/5712 = 0.8406863 have mapped annotation to Mass
+
+# plan:
+# create dict with names=genes and values=anno for each dataset
+# translate ggCaller presence-absence matrix into anno-space
+# take translated matrix and translate it into other dataset
+# problem: annotations that only exist in one dataset. Please think about this.

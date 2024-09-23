@@ -11,7 +11,7 @@ path_to_data <- "~/Documents/PhD_Project/Data/"
 
 # read in meta data (esp. serotype, sequencing year)
 ```{r}
-Nepal_meta_data <- read.csv(paste(path_to_data, "StrepPneumo_Nepal/monocle-metadata-from-sample-download.csv",sep = ""))
+Nepal_meta_data <- read.csv(paste(path_to_data, "StrepPneumo_Nepal/GPS_data/gps1+gps2_metadata_results_leonie.csv",sep = ""))
 Nepal_time_points <- sort(unique(Nepal_meta_data$Year))
 
 Nepal_SeqYear_dict <- Nepal_meta_data$Year
@@ -28,24 +28,34 @@ names(seq_no_per_year) <- Nepal_time_points
 for (i in 1:length(Nepal_time_points)) {
   seq_no_per_year[i] <- length(which(Nepal_meta_data$Year==Nepal_time_points[i]))
 }
-barplot(seq_no_per_year, xlab = "Sequencing Years", ylim = c(0, 250), ylab = "Sequence Counts")
+barplot(seq_no_per_year, xlab = "Sequencing Years", ylim = c(0, 1200), ylab = "Sequence Counts")
 # PCV10 was introduced in 2015
-# number of sequences fluctuates a lot from year to year. take just 2009, 2012, 2014, 2017, 2018?
+# number of sequences fluctuates a lot from year to year. take just 2009, 2012, 2014, 2017, 2018, 2019?
 # or summaries the years somehow?
 #Nepal_time_points_selected <- Nepal_time_points[c(5,7,9,12,13)]
 # No, I want all the years
-Nepal_time_points_selected <- Nepal_time_points
-Nepal_time_points_preVac <- Nepal_time_points[1:10]
-Nepal_time_points_selected <- 2005:2018
-Nepal_time_points_preVac <- Nepal_time_points[1:11]
+#Nepal_time_points_selected <- Nepal_time_points
+#Nepal_time_points_preVac <- Nepal_time_points[1:10]
+Nepal_time_points_selected <- min(Nepal_time_points):max(Nepal_time_points)
+Nepal_time_points_preVac <- Nepal_time_points_selected[1:11]
 ```
 
 
 # read in PopPUNK results
 ```{r}
-PP_all <- read.csv(paste(path_to_data, "StrepPneumo_Nepal/PopPUNKwithStandardDB/poppunk_clusters_clusters.csv",sep = ""))
+PP_all <- read.csv(paste(path_to_data, "StrepPneumo_Nepal/GPS_PopPUNK/poppunk_clusters/poppunk_clusters_clusters.csv",sep = ""))
 # since Nepal was in the database, I had to run PopPUNK with --write-references
 # so now I need to filter this dataset to only have the real Nepal sequences
+
+# remove appendix "_contigs_velvet"
+remove_contigs_velvet <- function(str_with_app){
+  str_without_app <- strsplit(str_with_app, "_contigs_velvet", fixed = TRUE)[[1]][1]
+  str_without_app
+}
+
+PP_all$Taxon <- sapply(PP_all$Taxon, remove_contigs_velvet)
+PP_all <- PP_all[!duplicated(PP_all$Taxon),]
+
 PP_taxon_ind_dict <- 1:nrow(PP_all)
 names(PP_taxon_ind_dict) <- PP_all$Taxon
 
@@ -55,9 +65,10 @@ names(PP_is_Nepal_dict) <- PP_all$Taxon
 for (i in 1:length(Nepal_meta_data$Lane_id)) {
   PP_is_Nepal_dict[Nepal_meta_data$Lane_id[i]] <- TRUE
 }
-Nepal_PP <- PP_all[PP_is_Nepal_dict,]
+
+Nepal_PP <- PP_all[which(PP_is_Nepal_dict[PP_all$Taxon]),]
 no_Nepal_PP <- length(unique(Nepal_PP$Cluster)) 
-# 212 clusters! --> now only 161
+# 202 clusters
 
 Nepal_seq_clusters_dict <- Nepal_PP$Cluster
 names(Nepal_seq_clusters_dict) <- Nepal_PP$Taxon
@@ -82,8 +93,18 @@ names(Nepal_meta_IDtoIndPP) <- Nepal_meta_dataPP$Lane_id
 ```
 
 ```{r}
+### continue working here
+# serotyping seems to be a bit difficult in this dataset
+unique(Nepal_meta_dataPP$In_silico_serotype)
+#> length(which(Nepal_meta_dataPP$In_silico_serotype == "UNTYPABLE"))
+#[1] 160
+#> length(which(Nepal_meta_dataPP$In_silico_serotype == "COVERAGE TOO LOW"))
+#[1] 29
+# and some NTs
+# think about what you want to do with these before proceeding.
+
 # Add Serotype Information
-Nepal_Serotype_dict <- Nepal_meta_dataPP$Phenotypic_serotype
+Nepal_Serotype_dict <- Nepal_meta_dataPP$In_silico_serotype
 names(Nepal_Serotype_dict) <- Nepal_meta_dataPP$Lane_id
 
 Nepal_PP$Serotype <- Nepal_Serotype_dict[Nepal_PP$Taxon]
