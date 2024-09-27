@@ -21,7 +21,6 @@ Nepal_meta_IDtoInd <- 1:nrow(Nepal_meta_data)
 names(Nepal_meta_IDtoInd) <- Nepal_meta_data$Lane_id
 ```
 
-
 ```{r}
 seq_no_per_year <- rep(0, length(Nepal_time_points))
 names(seq_no_per_year) <- Nepal_time_points
@@ -39,6 +38,49 @@ barplot(seq_no_per_year, xlab = "Sequencing Years", ylim = c(0, 1200), ylab = "S
 Nepal_time_points_selected <- min(Nepal_time_points):max(Nepal_time_points)
 Nepal_time_points_preVac <- Nepal_time_points_selected[1:11]
 ```
+
+```{r}
+# serotyping seems to be a bit difficult in this dataset
+unique(Nepal_meta_dataPP$In_silico_serotype)
+#> length(which(Nepal_meta_data$In_silico_serotype == "UNTYPABLE"))
+#[1] 163
+#> length(which(Nepal_meta_data$In_silico_serotype == "COVERAGE TOO LOW"))
+#[1] 29
+#length(which(Nepal_meta_data$In_silico_serotype == "SWISS_NT"))
+#[1] 26
+# > length(which(Nepal_meta_data$In_silico_serotype == "ALTERNATIVE_ALIB_NT"))
+#[1] 7
+# think about what you want to do with these before proceeding.
+# I will not include them in the analysis
+
+# make dictionary to know which ones to include for Nepal_PP and Nepal_meta_dataPP
+#Nepal_has_serotype <- rep(TRUE, nrow(Nepal_meta_data))
+#names(Nepal_has_serotype) <- Nepal_meta_data$Lane_id
+#Nepal_has_serotype[Nepal_meta_data$Lane_id[which(Nepal_meta_data$In_silico_serotype == "UNTYPABLE")]] <- FALSE
+#Nepal_has_serotype[Nepal_meta_data$Lane_id[which(Nepal_meta_data$In_silico_serotype == "COVERAGE TOO LOW")]] <- FALSE
+#Nepal_has_serotype[Nepal_meta_data$Lane_id[which(Nepal_meta_data$In_silico_serotype == "SWISS_NT")]] <- FALSE
+
+# wait, I also have the phenotypic seroytype. I will use this one. 
+# and if it does not exist, use in silico and then see how many cases remain
+Nepal_has_serotype <- rep(FALSE, nrow(Nepal_meta_data))
+names(Nepal_has_serotype) <- Nepal_meta_data$Lane_id
+
+
+Nepal_has_serotype[Nepal_meta_data$Lane_id[which(Nepal_meta_data$Phenotypic_serotype != "_" & Nepal_meta_data$Phenotypic_serotype != "NT")]] <- TRUE
+Nepal_has_serotype[Nepal_meta_data$Lane_id[which(Nepal_meta_data$In_silico_serotype != "UNTYPABLE" & Nepal_meta_data$In_silico_serotype != "COVERAGE TOO LOW" & Nepal_meta_data$In_silico_serotype != "SWISS_NT" & Nepal_meta_data$In_silico_serotype != "ALTERNATIVE_ALIB_NT")]] <- TRUE
+
+# this has 195 without serotype, before (only taking in silico) had 225 missing values
+
+# store values for those serotypes
+Nepal_Serotype_dict <- rep(NA, nrow(Nepal_meta_data))
+names(Nepal_Serotype_dict) <- Nepal_meta_data$Lane_id
+
+
+Nepal_Serotype_dict[Nepal_meta_data$Lane_id[which(Nepal_meta_data$In_silico_serotype != "UNTYPABLE" & Nepal_meta_data$In_silico_serotype != "COVERAGE TOO LOW" & Nepal_meta_data$In_silico_serotype != "SWISS_NT"  & Nepal_meta_data$In_silico_serotype != "ALTERNATIVE_ALIB_NT")]] <- Nepal_meta_data$In_silico_serotype[which(Nepal_meta_data$In_silico_serotype != "UNTYPABLE" & Nepal_meta_data$In_silico_serotype != "COVERAGE TOO LOW" & Nepal_meta_data$In_silico_serotype != "SWISS_NT" & Nepal_meta_data$In_silico_serotype != "ALTERNATIVE_ALIB_NT")]
+
+Nepal_Serotype_dict[Nepal_meta_data$Lane_id[which(Nepal_meta_data$Phenotypic_serotype != "_" & Nepal_meta_data$Phenotypic_serotype != "NT")]] <- Nepal_meta_data$Phenotypic_serotype[which(Nepal_meta_data$Phenotypic_serotype != "_" & Nepal_meta_data$Phenotypic_serotype != "NT")]
+```
+
 
 
 # read in PopPUNK results
@@ -63,12 +105,14 @@ PP_is_Nepal_dict <- rep(FALSE,nrow(PP_all))
 names(PP_is_Nepal_dict) <- PP_all$Taxon
 
 for (i in 1:length(Nepal_meta_data$Lane_id)) {
-  PP_is_Nepal_dict[Nepal_meta_data$Lane_id[i]] <- TRUE
+  if(Nepal_has_serotype[i]){ # checks if we have serotype for this sequence and only includes it in PP dataset if yes
+    PP_is_Nepal_dict[Nepal_meta_data$Lane_id[i]] <- TRUE
+  }
 }
 
 Nepal_PP <- PP_all[which(PP_is_Nepal_dict[PP_all$Taxon]),]
 no_Nepal_PP <- length(unique(Nepal_PP$Cluster)) 
-# 202 clusters
+# 181 clusters
 
 Nepal_seq_clusters_dict <- Nepal_PP$Cluster
 names(Nepal_seq_clusters_dict) <- Nepal_PP$Taxon
@@ -76,12 +120,13 @@ names(Nepal_seq_clusters_dict) <- Nepal_PP$Taxon
 
 # filter meta data by PopPUNK sequences (PopPUNK qc removed some of the sequences)
 ```{r}
-Nepal_meta_dataPP <- Nepal_meta_data[sort(Nepal_meta_IDtoInd[Nepal_PP$Taxon]),]
-for (i in 2:nrow(Nepal_meta_dataPP)) {
-  if (Nepal_meta_dataPP$Phenotypic_serotype[i] == "") {
-    Nepal_meta_dataPP$Phenotypic_serotype[i] <- "NT"
-  }
-}
+Nepal_meta_dataPP <- Nepal_meta_data[sort(Nepal_meta_IDtoInd[Nepal_PP$Taxon]),c("Lane_id", "Year")]
+Nepal_meta_dataPP$Serotype <- Nepal_Serotype_dict[Nepal_meta_dataPP$Lane_id]
+
+# length(which(Nepal_meta_dataPP$Serotype == "SEROGROUP 24"))
+#[1] 19
+# I think I will leave them in for now
+
 rownames(Nepal_meta_dataPP) <- 1:nrow(Nepal_meta_dataPP)
 
 Nepal_meta_IDtoIndPP <- 1:nrow(Nepal_meta_dataPP)
@@ -93,19 +138,10 @@ names(Nepal_meta_IDtoIndPP) <- Nepal_meta_dataPP$Lane_id
 ```
 
 ```{r}
-### continue working here
-# serotyping seems to be a bit difficult in this dataset
-unique(Nepal_meta_dataPP$In_silico_serotype)
-#> length(which(Nepal_meta_dataPP$In_silico_serotype == "UNTYPABLE"))
-#[1] 160
-#> length(which(Nepal_meta_dataPP$In_silico_serotype == "COVERAGE TOO LOW"))
-#[1] 29
-# and some NTs
-# think about what you want to do with these before proceeding.
-
-# Add Serotype Information
-Nepal_Serotype_dict <- Nepal_meta_dataPP$In_silico_serotype
-names(Nepal_Serotype_dict) <- Nepal_meta_dataPP$Lane_id
+# Add Serotype Information to PP
+#Nepal_Serotype_dict <- Nepal_meta_dataPP$In_silico_serotype
+#names(Nepal_Serotype_dict) <- Nepal_meta_dataPP$Lane_id
+# I created a new version of this above, that takes phenotypic serotype when possible
 
 Nepal_PP$Serotype <- Nepal_Serotype_dict[Nepal_PP$Taxon]
 
@@ -115,7 +151,7 @@ Nepal_PP$Serotype <- Nepal_Serotype_dict[Nepal_PP$Taxon]
 
 # read in ggCaller results
 ```{r}
-Nepal_ggCaller <- read.csv(paste(path_to_data, "StrepPneumo_Nepal/ggCaller_output/gene_presence_absence.csv", sep = ""), header=FALSE)
+Nepal_ggCaller <- read.csv(paste(path_to_data, "StrepPneumo_Nepal/GPS_ggCaller/gene_presence_absence.csv", sep = ""), header=FALSE)
 ```
 
 ```{r}
@@ -145,6 +181,7 @@ saveRDS(Nepal_ggCallerPP_bool, "Nepal_ggCaller_bool.rds")
 
 # split ggCaller gene presence absence matrix into different time points
 ```{r}
+### continue working here
 Nepal_ggCaller_byYear <- vector(mode = "list", length = length(Nepal_time_points_selected))
 
 for (i in 1:length(Nepal_time_points_selected)) {
