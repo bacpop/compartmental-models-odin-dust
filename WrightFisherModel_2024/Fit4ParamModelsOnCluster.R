@@ -186,6 +186,8 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   mass_cluster_freq_12 <- readRDS(file = "Nepal_cluster_freqs_12.rds")
   mass_cluster_freq_13 <- readRDS(file = "Nepal_cluster_freqs_13.rds")
   mass_cluster_freq_14 <- readRDS(file = "Nepal_cluster_freqs_14.rds")
+  mass_cluster_freq_15 <- readRDS(file = "Nepal_cluster_freqs_15.rds")
+  mass_cluster_freq_16 <- readRDS(file = "Nepal_cluster_freqs_16.rds")
   mass_VT <- readRDS(file = "Nepal_VT.rds")
   mass_clusters <- length(unique(seq_clusters$Cluster))
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
@@ -194,7 +196,7 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   dt <- 1/12
   #peripost_mass_cluster_freq <- data.frame("year" = 1:13, rbind(mass_cluster_freq_2, mass_cluster_freq_3, mass_cluster_freq_4, mass_cluster_freq_5, mass_cluster_freq_6, mass_cluster_freq_7, mass_cluster_freq_8, mass_cluster_freq_9,mass_cluster_freq_10, mass_cluster_freq_11, mass_cluster_freq_12, mass_cluster_freq_13,mass_cluster_freq_14))
   # now using 2009 as the start population (Nepal_cluster_freqs_5.rds)
-  peripost_mass_cluster_freq <- data.frame("year" = 1:9, rbind(mass_cluster_freq_6, mass_cluster_freq_7, mass_cluster_freq_8, mass_cluster_freq_9,mass_cluster_freq_10, mass_cluster_freq_11, mass_cluster_freq_12, mass_cluster_freq_13,mass_cluster_freq_14))
+  peripost_mass_cluster_freq <- data.frame("year" = 1:11, rbind(mass_cluster_freq_6, mass_cluster_freq_7, mass_cluster_freq_8, mass_cluster_freq_9,mass_cluster_freq_10, mass_cluster_freq_11, mass_cluster_freq_12, mass_cluster_freq_13,mass_cluster_freq_14, mass_cluster_freq_15, mass_cluster_freq_16))
   
   names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
   
@@ -373,7 +375,7 @@ proposal_matrix <- diag(0.1,4) # the proposal matrix defines the covariance-vari
 
 #mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.1432, min = 0, max = 1), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 01), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), proposal_matrix, make_transform(complex_params))
 mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", -0.597837, min = -1000, max = 0), mcstate::pmcmc_parameter("prop_f", 0.125, min = 0, max = 1), mcstate::pmcmc_parameter("m", -4, min = -1000, max = 0), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), proposal_matrix, make_transform(complex_params))
-mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", -0.597837, min = -1000, max = 0), mcstate::pmcmc_parameter("prop_f", 0.125, min = 0, max = 1), mcstate::pmcmc_parameter("m", -4, min = -1000, max = 0), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), proposal_matrix, transform(complex_params))
+#mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", -0.597837, min = -1000, max = 0), mcstate::pmcmc_parameter("prop_f", 0.125, min = 0, max = 1), mcstate::pmcmc_parameter("m", -4, min = -1000, max = 0), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), proposal_matrix, transform(complex_params))
 
 mcmc_pars$initial()
 
