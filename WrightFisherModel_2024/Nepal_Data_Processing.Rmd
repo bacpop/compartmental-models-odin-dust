@@ -1,0 +1,381 @@
+---
+title: "Nepal Data Processing"
+output: html_notebook
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+path_to_data <- "~/Documents/PhD_Project/Data/"
+```
+
+# read in meta data (esp. serotype, sequencing year)
+```{r}
+Nepal_meta_data <- read.csv(paste(path_to_data, "StrepPneumo_Nepal/GPS_data/gps1+gps2_metadata_results_leonie.csv",sep = ""))
+Nepal_time_points <- sort(unique(Nepal_meta_data$Year))
+
+Nepal_SeqYear_dict <- Nepal_meta_data$Year
+names(Nepal_SeqYear_dict) <- Nepal_meta_data$Lane_id
+
+Nepal_meta_IDtoInd <- 1:nrow(Nepal_meta_data)
+names(Nepal_meta_IDtoInd) <- Nepal_meta_data$Lane_id
+```
+
+```{r}
+seq_no_per_year <- rep(0, length(Nepal_time_points))
+names(seq_no_per_year) <- Nepal_time_points
+for (i in 1:length(Nepal_time_points)) {
+  seq_no_per_year[i] <- length(which(Nepal_meta_data$Year==Nepal_time_points[i]))
+}
+barplot(seq_no_per_year, xlab = "Sequencing Years", ylim = c(0, 1200), ylab = "Sequence Counts")
+# PCV10 was introduced in 2015
+# number of sequences fluctuates a lot from year to year. take just 2009, 2012, 2014, 2017, 2018, 2019?
+# or summaries the years somehow?
+#Nepal_time_points_selected <- Nepal_time_points[c(5,7,9,12,13)]
+# No, I want all the years
+#Nepal_time_points_selected <- Nepal_time_points
+#Nepal_time_points_preVac <- Nepal_time_points[1:10]
+Nepal_time_points_selected <- min(Nepal_time_points):max(Nepal_time_points)
+Nepal_time_points_preVac <- Nepal_time_points_selected[1:11]
+```
+
+```{r}
+# serotyping seems to be a bit difficult in this dataset
+unique(Nepal_meta_dataPP$In_silico_serotype)
+#> length(which(Nepal_meta_data$In_silico_serotype == "UNTYPABLE"))
+#[1] 163
+#> length(which(Nepal_meta_data$In_silico_serotype == "COVERAGE TOO LOW"))
+#[1] 29
+#length(which(Nepal_meta_data$In_silico_serotype == "SWISS_NT"))
+#[1] 26
+# > length(which(Nepal_meta_data$In_silico_serotype == "ALTERNATIVE_ALIB_NT"))
+#[1] 7
+# think about what you want to do with these before proceeding.
+# I will not include them in the analysis
+
+# make dictionary to know which ones to include for Nepal_PP and Nepal_meta_dataPP
+#Nepal_has_serotype <- rep(TRUE, nrow(Nepal_meta_data))
+#names(Nepal_has_serotype) <- Nepal_meta_data$Lane_id
+#Nepal_has_serotype[Nepal_meta_data$Lane_id[which(Nepal_meta_data$In_silico_serotype == "UNTYPABLE")]] <- FALSE
+#Nepal_has_serotype[Nepal_meta_data$Lane_id[which(Nepal_meta_data$In_silico_serotype == "COVERAGE TOO LOW")]] <- FALSE
+#Nepal_has_serotype[Nepal_meta_data$Lane_id[which(Nepal_meta_data$In_silico_serotype == "SWISS_NT")]] <- FALSE
+
+# wait, I also have the phenotypic seroytype. I will use this one. 
+# and if it does not exist, use in silico and then see how many cases remain
+Nepal_has_serotype <- rep(FALSE, nrow(Nepal_meta_data))
+names(Nepal_has_serotype) <- Nepal_meta_data$Lane_id
+
+
+Nepal_has_serotype[Nepal_meta_data$Lane_id[which(Nepal_meta_data$Phenotypic_serotype != "_" & Nepal_meta_data$Phenotypic_serotype != "NT")]] <- TRUE
+Nepal_has_serotype[Nepal_meta_data$Lane_id[which(Nepal_meta_data$In_silico_serotype != "UNTYPABLE" & Nepal_meta_data$In_silico_serotype != "COVERAGE TOO LOW" & Nepal_meta_data$In_silico_serotype != "SWISS_NT" & Nepal_meta_data$In_silico_serotype != "ALTERNATIVE_ALIB_NT")]] <- TRUE
+
+# this has 195 without serotype, before (only taking in silico) had 225 missing values
+
+# store values for those serotypes
+Nepal_Serotype_dict <- rep(NA, nrow(Nepal_meta_data))
+names(Nepal_Serotype_dict) <- Nepal_meta_data$Lane_id
+
+
+Nepal_Serotype_dict[Nepal_meta_data$Lane_id[which(Nepal_meta_data$In_silico_serotype != "UNTYPABLE" & Nepal_meta_data$In_silico_serotype != "COVERAGE TOO LOW" & Nepal_meta_data$In_silico_serotype != "SWISS_NT"  & Nepal_meta_data$In_silico_serotype != "ALTERNATIVE_ALIB_NT")]] <- Nepal_meta_data$In_silico_serotype[which(Nepal_meta_data$In_silico_serotype != "UNTYPABLE" & Nepal_meta_data$In_silico_serotype != "COVERAGE TOO LOW" & Nepal_meta_data$In_silico_serotype != "SWISS_NT" & Nepal_meta_data$In_silico_serotype != "ALTERNATIVE_ALIB_NT")]
+
+Nepal_Serotype_dict[Nepal_meta_data$Lane_id[which(Nepal_meta_data$Phenotypic_serotype != "_" & Nepal_meta_data$Phenotypic_serotype != "NT")]] <- Nepal_meta_data$Phenotypic_serotype[which(Nepal_meta_data$Phenotypic_serotype != "_" & Nepal_meta_data$Phenotypic_serotype != "NT")]
+```
+
+
+
+# read in PopPUNK results
+```{r}
+PP_all <- read.csv(paste(path_to_data, "StrepPneumo_Nepal/GPS_PopPUNK/poppunk_clusters/poppunk_clusters_clusters.csv",sep = ""))
+# since Nepal was in the database, I had to run PopPUNK with --write-references
+# so now I need to filter this dataset to only have the real Nepal sequences
+
+# remove appendix "_contigs_velvet"
+remove_contigs_velvet <- function(str_with_app){
+  str_without_app <- strsplit(str_with_app, "_contigs_velvet", fixed = TRUE)[[1]][1]
+  str_without_app
+}
+
+PP_all$Taxon <- sapply(PP_all$Taxon, remove_contigs_velvet)
+PP_all <- PP_all[!duplicated(PP_all$Taxon),]
+
+PP_taxon_ind_dict <- 1:nrow(PP_all)
+names(PP_taxon_ind_dict) <- PP_all$Taxon
+
+PP_is_Nepal_dict <- rep(FALSE,nrow(PP_all))
+names(PP_is_Nepal_dict) <- PP_all$Taxon
+
+for (i in 1:length(Nepal_meta_data$Lane_id)) {
+  if(Nepal_has_serotype[i]){ # checks if we have serotype for this sequence and only includes it in PP dataset if yes
+    PP_is_Nepal_dict[Nepal_meta_data$Lane_id[i]] <- TRUE
+  }
+}
+
+Nepal_PP <- PP_all[which(PP_is_Nepal_dict[PP_all$Taxon]),]
+no_Nepal_PP <- length(unique(Nepal_PP$Cluster)) 
+# 181 clusters
+
+Nepal_seq_clusters_dict <- Nepal_PP$Cluster
+names(Nepal_seq_clusters_dict) <- Nepal_PP$Taxon
+```
+
+# filter meta data by PopPUNK sequences (PopPUNK qc removed some of the sequences)
+```{r}
+Nepal_meta_dataPP <- Nepal_meta_data[sort(Nepal_meta_IDtoInd[Nepal_PP$Taxon]),c("Lane_id", "Year")]
+Nepal_meta_dataPP$Serotype <- Nepal_Serotype_dict[Nepal_meta_dataPP$Lane_id]
+
+# length(which(Nepal_meta_dataPP$Serotype == "SEROGROUP 24"))
+#[1] 19
+# I think I will leave them in for now
+
+rownames(Nepal_meta_dataPP) <- 1:nrow(Nepal_meta_dataPP)
+
+Nepal_meta_IDtoIndPP <- 1:nrow(Nepal_meta_dataPP)
+names(Nepal_meta_IDtoIndPP) <- Nepal_meta_dataPP$Lane_id
+```
+
+```{r}
+#saveRDS(Nepal_meta_dataPP, "Nepal_meta_dataPP.rds")
+```
+
+```{r}
+# Add Serotype Information to PP
+#Nepal_Serotype_dict <- Nepal_meta_dataPP$In_silico_serotype
+#names(Nepal_Serotype_dict) <- Nepal_meta_dataPP$Lane_id
+# I created a new version of this above, that takes phenotypic serotype when possible
+
+Nepal_PP$Serotype <- Nepal_Serotype_dict[Nepal_PP$Taxon]
+
+#saveRDS(Nepal_PP,"Nepal_PP.rds")
+```
+
+
+# read in ggCaller results
+```{r}
+Nepal_ggCaller <- read.csv(paste(path_to_data, "StrepPneumo_Nepal/GPS_ggCaller/gene_presence_absence.csv", sep = ""), header=FALSE)
+```
+
+```{r}
+# converting the gene presence absence matrix into a boolean df (0 = gene not present, 1 = gene present)
+convert_to_bool <- function(x){
+  if (x=="") 0 else 1
+}
+
+Nepal_ggCaller_bool <- Nepal_ggCaller[,c(-2,-3)]
+Nepal_ggCaller_bool[-1,-1] <- apply(Nepal_ggCaller_bool[-1,-1],c(1,2), convert_to_bool)
+#Nepal_ggCaller_bool[1,-1] <- unlist(strsplit(Nepal_ggCaller_bool[1,-1],".contigs_velvet"))
+
+Nepal_ggCaller_bool[1,-1] <- sapply(Nepal_ggCaller_bool[1,-1], strsplit, split = ".contigs_velvet") # remove contigs appendix
+colnames(Nepal_ggCaller_bool) <- Nepal_ggCaller_bool[1,]
+
+# filter ggCaller results by the ones 
+Nepal_ggCallerPP_bool <- data.frame(matrix(0, nrow = nrow(Nepal_ggCaller_bool), ncol = length(Nepal_PP$Taxon)+1))
+Nepal_ggCallerPP_bool[-1,-1] <- Nepal_ggCaller_bool[-1,c(Nepal_PP$Taxon)]
+colnames(Nepal_ggCallerPP_bool) <- c("Gene",Nepal_PP$Taxon)
+Nepal_ggCallerPP_bool[1,] <- c("Gene",Nepal_PP$Taxon)
+Nepal_ggCallerPP_bool[,1] <- Nepal_ggCaller_bool[,1]
+```
+
+```{r}
+saveRDS(Nepal_ggCallerPP_bool, "Nepal_ggCaller_bool.rds")
+```
+
+# split ggCaller gene presence absence matrix into different time points
+```{r}
+### continue working here
+Nepal_ggCaller_byYear <- vector(mode = "list", length = length(Nepal_time_points_selected))
+
+for (i in 1:length(Nepal_time_points_selected)) {
+  Nepal_ggCaller_year <- data.frame(matrix(0, nrow = nrow(Nepal_ggCallerPP_bool), ncol = length(which(Nepal_meta_dataPP$Year==Nepal_time_points_selected[i]))+1)) # initialize data frame
+  Nepal_ggCaller_year[1,-1] <- Nepal_ggCallerPP_bool[1,c(FALSE,Nepal_SeqYear_dict[unlist(Nepal_ggCallerPP_bool[1,-1])]==Nepal_time_points_selected[i])] # fill in first row (seq names)
+  Nepal_ggCaller_year[-1,1] <- Nepal_ggCallerPP_bool[-1,1] # fill in first column (gene cluster names)
+  Nepal_ggCaller_year[-1,-1] <- Nepal_ggCallerPP_bool[-1,c(FALSE,Nepal_SeqYear_dict[unlist(Nepal_ggCallerPP_bool[1,-1])]==Nepal_time_points_selected[i])] # fill in presence absence information
+  Nepal_ggCaller_byYear[[i]] <- Nepal_ggCaller_year
+}
+```
+
+# find intermediate frequency genes
+# I will combine all pre-vaccine data points for this
+```{r}
+sum_as_int <- function(x){
+  sum(as.integer(x))
+}
+
+Nepal_gene_freq_preVac <- rep(0, nrow(Nepal_ggCaller_byYear[[1]])-1)
+preVac_datapoints <- 0
+for (i in 1:length(Nepal_time_points_preVac)) {
+  Nepal_gene_freq_preVac <- Nepal_gene_freq_preVac + apply(Nepal_ggCaller_byYear[[i]][-1,-1],1, sum_as_int)
+  preVac_datapoints <- preVac_datapoints + length(Nepal_ggCaller_byYear[[i]][1,-1])
+}
+Nepal_gene_freq_preVac <- Nepal_gene_freq_preVac / preVac_datapoints
+
+Nepal_gene_filter <- as.integer(Nepal_gene_freq_preVac<=0.95 & Nepal_gene_freq_preVac>=0.05)
+# 2120 intermediate-frequency genes (of 6533)
+```
+
+# create intermediate frequency dataframes
+```{r}
+Nepal_ggCaller_byYear_intermed <- vector(mode = "list", length = length(Nepal_time_points_selected))
+
+for (i in 1:length(Nepal_time_points_selected)) {
+  Nepal_ggCaller_year <- data.frame(matrix(0, nrow = sum(Nepal_gene_filter)+1,ncol = length(which(Nepal_meta_dataPP$Year==Nepal_time_points_selected[i]))+1))
+  if(ncol(Nepal_ggCaller_byYear[[i]])>1){
+    Nepal_ggCaller_year <-  Nepal_ggCaller_byYear[[i]][c(1,which(Nepal_gene_filter==1)+1),]
+  }
+  else{
+    Nepal_ggCaller_year <-  data.frame(matrix(Nepal_ggCaller_byYear[[6]][c(1,which(Nepal_gene_filter==1)+1),1], nrow = sum(Nepal_gene_filter)+1,ncol = 1))
+  }
+  Nepal_ggCaller_byYear_intermed[[i]] <- Nepal_ggCaller_year 
+}
+
+Nepal_ggCaller_intermed <- data.frame(matrix(0, nrow = sum(Nepal_gene_filter)+1,ncol = ncol(Nepal_ggCallerPP_bool)))
+Nepal_ggCaller_intermed <-  Nepal_ggCallerPP_bool[c(1,which(Nepal_gene_filter==1)+1),]
+
+# create pre_Vac intermed frequency data frame
+#Nepal_ggCaller_intermed_preVac <- data.frame(matrix(0, nrow = sum(Nepal_gene_filter)+1,ncol = (sum(unlist(lapply(Nepal_ggCaller_byYear_intermed,ncol))[1:length(Nepal_time_points_preVac)]) - length(Nepal_time_points_preVac) + 1)))
+#col_count <- 2
+#for (i in 1:length(Nepal_time_points_preVac)) {
+#  if(ncol(Nepal_ggCaller_byYear_intermed[[i]])>1){
+#    Nepal_ggCaller_intermed_preVac[,(col_count:(col_count + ncol(Nepal_ggCaller_byYear_intermed[[i]])-1))] <- Nepal_ggCaller_byYear_intermed[[i]][,-1]
+#    col_count <- col_count + ncol(Nepal_ggCaller_byYear_intermed[[i]])
+#  }
+#}
+#Nepal_ggCaller_intermed_preVac[,1] <-  Nepal_ggCaller_byYear_intermed[[1]][,1]
+
+# use 2009 as preVac reference
+Nepal_ggCaller_intermed_preVac <- Nepal_ggCaller_byYear_intermed[[5]]
+```
+
+# create consensus gene presence absence matrices for the clusters
+```{r}
+cons_genomes <- function(x){
+  as.double(ceiling(median(as.integer(x))))
+}
+
+# overall
+Nepal_ggCaller_intermed_consensus <- data.frame(matrix(0, nrow = sum(Nepal_gene_filter)+1, ncol = no_Nepal_PP+1))
+Nepal_ggCaller_intermed_consensus[1,-1] <- paste("SeqCl_",unique(Nepal_PP$Cluster),sep = "")
+
+for (i in unique(Nepal_PP$Cluster)) {
+  Nepal_ggCaller_intermed_consensus[-1,(which(unique(Nepal_PP$Cluster) == i))+1] <- apply(as.matrix(Nepal_ggCaller_intermed[-1,c(FALSE,Nepal_seq_clusters_dict[unlist(Nepal_ggCaller_intermed[1,-1])]==i)]), 1, cons_genomes)
+
+}
+Nepal_ggCaller_intermed_consensus[,1] <- Nepal_ggCaller_intermed[,1]
+
+#by year
+Nepal_ggCaller_byYear_intermed_consensus <- vector(mode = "list", length = length(Nepal_time_points_selected))
+
+for (i in 1:length(Nepal_time_points_selected)) {
+  Nepal_ggCaller_year <- data.frame(matrix(0, nrow = sum(Nepal_gene_filter)+1,ncol = no_Nepal_PP+1))
+  Nepal_ggCaller_year[1,-1] <- paste("SeqCl_",unique(Nepal_PP$Cluster),sep = "")
+  for (j in unique(Nepal_PP$Cluster)) {
+    Nepal_ggCaller_year[-1,(which(unique(Nepal_PP$Cluster) == j))+1] <- apply(as.matrix(Nepal_ggCaller_byYear_intermed[[i]][-1,c(FALSE,Nepal_seq_clusters_dict[unlist(Nepal_ggCaller_byYear_intermed[[i]][1,-1])]==j)]), 1, cons_genomes)
+  }
+  Nepal_ggCaller_year[,1] <- Nepal_ggCaller_byYear_intermed[[i]][,1]
+  Nepal_ggCaller_byYear_intermed_consensus[[i]] <- Nepal_ggCaller_year
+}
+
+saveRDS(Nepal_ggCaller_intermed_consensus,"Nepal_ggCaller_intermed_consensus.rds")
+```
+
+# Calculate VT/NVT for clusters
+```{r}
+# create dictionary for VTs of the PCV10
+# 1, 4, 5, 6b, 7f, 9V, 14, 18c, 19f and 23f serotypes (source: NCBI)
+PCV10_VTs <- rep(0,length(unique(Nepal_meta_dataPP$Serotype)))
+names(PCV10_VTs) <- unique(Nepal_meta_dataPP$Serotype)
+PCV10_VTs[c("1","4","5","6B", "7F", "9V", "14", "18C", "19F", "23F")] <- 1
+
+Nepal_SeqToSero_dict <- Nepal_meta_dataPP$Serotype
+names(Nepal_SeqToSero_dict) <- Nepal_meta_dataPP$Lane_id
+
+# calculate Vaccine Type consensus for clusters
+Nepal_VT <- rep(0, no_Nepal_PP)
+
+for (i in unique(Nepal_PP$Cluster)){
+  Nepal_VT[(which(unique(Nepal_PP$Cluster) == i))] <- ceiling(median(as.integer(PCV10_VTs[Nepal_SeqToSero_dict[Nepal_PP[Nepal_PP$Cluster == i,"Taxon"]]])))
+}
+# 1 means VT
+# 0 means NVT
+# if cluster is 50/50 it will count as VT
+```
+
+```{r}
+#save VTs
+saveRDS(Nepal_VT, file = "Nepal_VT.rds")
+```
+
+# calculate cluster frequencies for different years
+```{r}
+Nepal_cluster_freqs <- vector(mode = "list", length = length(Nepal_time_points_selected))
+
+for(j in 1:length(Nepal_time_points_selected)){
+  Nepal_cluster_freqs[[j]] <- rep(0, no_Nepal_PP)
+  for (i in unique(Nepal_PP$Cluster)){
+    Nepal_cluster_freqs[[j]][which(unique(Nepal_PP$Cluster) == i)] <- length(which(Nepal_meta_dataPP[Nepal_meta_IDtoIndPP[Nepal_PP[Nepal_PP$Cluster == i,"Taxon"]],]$Year==Nepal_time_points_selected[j]))
+  }
+}
+
+Nepal_cluster_freqs[[6]] <- rep(NA, no_Nepal_PP)
+# 901 data points in total
+#Nepal_cluster_freqs_preVac <- rep(0, no_Nepal_PP)
+#for (i in 1:length(Nepal_time_points_preVac)) {
+#  Nepal_cluster_freqs_preVac <- Nepal_cluster_freqs_preVac + replace(Nepal_cluster_freqs[[i]],which(is.na(Nepal_cluster_freqs[[i]])),0)
+#}
+
+# I will use 2009 as start population I think
+Nepal_cluster_freqs_preVac <- Nepal_cluster_freqs[[5]]
+
+for (i in 1:length(Nepal_time_points_selected)) {
+  file_name <- paste("Nepal_cluster_freqs_", as.character(i),".rds", sep = "")
+  saveRDS(Nepal_cluster_freqs[[i]], file_name)
+}
+```
+
+#create initial population
+```{r}
+### create initial population that is based on the first time point data set
+# sample from it with an Poisson process
+expand_factor <- 15000 / sum(Nepal_cluster_freqs_preVac)
+exp_noise <- 10
+Nepal_model_start_pop <- (sapply((Nepal_cluster_freqs_preVac + rexp(n = length(Nepal_cluster_freqs_preVac), rate = exp_noise)) * expand_factor, rpois, n=1))
+
+# visual check for the "sampling"
+plot(Nepal_cluster_freqs_preVac/sum(Nepal_cluster_freqs_preVac))
+points(Nepal_model_start_pop/sum(Nepal_model_start_pop), col = "red")
+
+# aha, I compared the data but 90% of the data are actually coming from 2009 (of the preVac era)
+# so it would be much better to only use that time point I think
+
+Nepal_model_start_pop <- (sapply((Nepal_cluster_freqs[[5]] + rexp(n = length(Nepal_cluster_freqs[[5]]), rate = exp_noise)) * expand_factor, rpois, n=1))
+
+# visual check for the "sampling"
+plot(Nepal_cluster_freqs[[5]]/sum(Nepal_cluster_freqs[[5]]))
+points(Nepal_model_start_pop/sum(Nepal_model_start_pop), col = "red")
+
+saveRDS(Nepal_model_start_pop, "Nepal_model_start_pop.rds")
+```
+
+
+# calculate delta ranking
+# I will do 2019 - 2009
+```{r}
+# For strong and weak selection in the model, I need to calculate the beta statistics.
+
+# calculate gene frequencies first, separate for three time points
+#Nepal_gene_freq_preVac <- apply(Nepal_ggCaller_intermed_preVac[-1,-1], 1, sum_as_int)
+#Nepal_gene_freq_postVac <- apply(Nepal_ggCaller_byYear_intermed[[length(Nepal_ggCaller_byYear_intermed)]][-1,-1], 1, sum_as_int)
+Nepal_gene_freq_preVac <- apply(Nepal_ggCaller_intermed_preVac[-1,-1], 1, sum_as_int)
+Nepal_gene_freq_postVac <- apply(Nepal_ggCaller_byYear_intermed[[15]][-1,-1], 1, sum_as_int)
+
+
+# first, calculate pre/peri and post vacc frequencies of genes:
+Nepal_gene_freq_preVac_rel <- Nepal_gene_freq_preVac/sum(Nepal_gene_freq_preVac)
+Nepal_gene_freq_postVac_rel <- Nepal_gene_freq_postVac/sum(Nepal_gene_freq_postVac)
+
+# calculate delta statistic (refer to Corander et al. for more info)
+Nepal_delta_data <- (Nepal_gene_freq_postVac_rel - Nepal_gene_freq_preVac_rel) ^ 2 / (1 - Nepal_gene_freq_preVac_rel * (1 - Nepal_gene_freq_preVac_rel))
+Nepal_delta_ranking <- rank(Nepal_delta_data)
+
+saveRDS(Nepal_delta_ranking,"Nepal_delta_ranking.rds")
+```
+
