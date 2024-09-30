@@ -107,6 +107,8 @@ if(args[1] == "Navajo" & args[2] == "PopPUNK"){
   mass_clusters <- length(unique(seq_clusters$Cluster))
   avg_cluster_freq <- readRDS(file = "Navajo_PPsero_mig.rds")
   dt <- 1/12
+  peripost_mass_cluster_freq <- data.frame("year" = 1:12, rbind(mass_cluster_freq_4,mass_cluster_freq_5,mass_cluster_freq_6, mass_cluster_freq_7,mass_cluster_freq_8,mass_cluster_freq_9, mass_cluster_freq_10, mass_cluster_freq_11,mass_cluster_freq_12, mass_cluster_freq_13, mass_cluster_freq_14,mass_cluster_freq_15))
+  names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
   vacc_time1 <- 2
   vacc_time2 <- 12
   output_filename <- "Navajo_PPxSero2vacc_ggCaller_PopPUNK"
@@ -172,8 +174,8 @@ if(length(args)>=5 & args[5]=="stoch"){
 #dt <- 1/36 # we assume that the generation time of Strep. pneumo is 1 month
 # we have data from 2001, 2004, 2007, so we want 3 (years) * 12 (months) = 36 updates in-between
 
-peripost_mass_cluster_freq <- data.frame("year" = c(1, 2), rbind(mass_cluster_freq_2, mass_cluster_freq_3))
-names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
+#peripost_mass_cluster_freq <- data.frame("year" = c(1, 2), rbind(mass_cluster_freq_2, mass_cluster_freq_3))
+#names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
 
 fitting_mass_data <- mcstate::particle_filter_data(data = peripost_mass_cluster_freq,
                                                    time = "year",

@@ -72,8 +72,9 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   intermed_gene_presence_absence_consensus_matrix <- sapply(intermed_gene_presence_absence_consensus[-1,-1],as.double)
   #model_start_pop <- readRDS("PP_mass_cluster_freq_1_sero.rds")
   #model_start_pop <- model_start_pop / 133 * 15708
+  model_start_pop <- readRDS("PP_mass_cluster_freq_1_sero.rds") # try using data directly
   model_start_pop <- readRDS(file = "PPsero_startpop4.rds")
-  model_start_pop <- readRDS(file = "PPsero_startpop.rds")
+  #model_start_pop <- readRDS(file = "PPsero_startpop.rds")
   delta_ranking <- readRDS(file = "ggC_delta_ranking.rds")
   mass_cluster_freq_1 <- readRDS(file = "PP_mass_cluster_freq_1.rds")
   mass_cluster_freq_2 <- readRDS(file = "PP_mass_cluster_freq_2.rds")
@@ -82,6 +83,8 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   mass_clusters <- length(unique(seq_clusters$Cluster))
   avg_cluster_freq <- readRDS(file = "PPsero_mig.rds")
   dt <- 1/36
+  peripost_mass_cluster_freq <- data.frame("year" = c(1, 2), rbind(mass_cluster_freq_2, mass_cluster_freq_3))
+  names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
   vacc_time <- 0
   output_filename <- "PPxSero_ggCaller_PopPUNK"
 } else if(args[1] == "COGtriangles" & args[2] == "PopPUNK"){
@@ -97,6 +100,8 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   mass_clusters <- length(unique(seq_clusters$Cluster))
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
   dt <- 1/36
+  peripost_mass_cluster_freq <- data.frame("year" = c(1, 2), rbind(mass_cluster_freq_2, mass_cluster_freq_3))
+  names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
   vacc_time <- 0
   output_filename <- "4param_COGtriangles_PopPUNK"
 } else if(args[1] == "ggCaller" & args[2] == "manualSeqClusters"){
@@ -112,6 +117,8 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   mass_clusters <- length(unique(seq_clusters$SequenceCluster))
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
   dt <- 1/36
+  peripost_mass_cluster_freq <- data.frame("year" = c(1, 2), rbind(mass_cluster_freq_2, mass_cluster_freq_3))
+  names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
   vacc_time <- 0
   output_filename <- "4param_ggCaller_manSeqClusters"
 } else if(args[1] == "COGtriangles" & args[2] == "manualSeqClusters"){
@@ -127,6 +134,8 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   mass_clusters <- length(unique(seq_clusters$SequenceCluster))
   avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
   dt <- 1/36
+  peripost_mass_cluster_freq <- data.frame("year" = c(1, 2), rbind(mass_cluster_freq_2, mass_cluster_freq_3))
+  names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
   vacc_time <- 0
   output_filename <- "4param_COGtriangles_manSeqClusters"
 } else if(args[1] == "Navajo" & args[2] == "PopPUNK"){
@@ -160,6 +169,8 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   mass_clusters <- length(unique(seq_clusters$Cluster))
   avg_cluster_freq <- readRDS(file = "Navajo_PPsero_mig.rds")
   dt <- 1/12
+  peripost_mass_cluster_freq <- data.frame("year" = 1:12, rbind(mass_cluster_freq_4,mass_cluster_freq_5,mass_cluster_freq_6, mass_cluster_freq_7,mass_cluster_freq_8,mass_cluster_freq_9, mass_cluster_freq_10, mass_cluster_freq_11,mass_cluster_freq_12, mass_cluster_freq_13, mass_cluster_freq_14,mass_cluster_freq_15))
+  names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
   vacc_time <- 2
   output_filename <- "Navajo_PPxSero_ggCaller_PopPUNK"
 } else if(args[1] == "UK" & args[2] == "PopPUNK"){
@@ -186,6 +197,42 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   vacc_time <- 0
   sero_no = length(unique(seq_clusters$Serotype))
   model_start_pop <- readRDS(file = "UK_PPsero_startpop.rds")
+}  else if(args[1] == "Nepal" & args[2] == "PopPUNK"){
+  seq_clusters <- readRDS("Nepal_PP.rds")
+  intermed_gene_presence_absence_consensus <- readRDS(file = "Nepal_ggCaller_intermed_consensus.rds")
+  intermed_gene_presence_absence_consensus_matrix <- sapply(intermed_gene_presence_absence_consensus[-1,-1],as.double)
+  
+  delta_ranking <- readRDS(file = "Nepal_delta_ranking.rds")
+  #mass_cluster_freq_1 <- readRDS(file = "Nepal_cluster_freqs_1.rds")
+  #mass_cluster_freq_2 <- readRDS(file = "Nepal_cluster_freqs_2.rds")
+  #mass_cluster_freq_3 <- readRDS(file = "Nepal_cluster_freqs_3.rds")
+  #mass_cluster_freq_4 <- readRDS(file = "Nepal_cluster_freqs_4.rds")
+  #mass_cluster_freq_5 <- readRDS(file = "Nepal_cluster_freqs_5.rds")
+  mass_cluster_freq_6 <- readRDS(file = "Nepal_cluster_freqs_6.rds")
+  mass_cluster_freq_7 <- readRDS(file = "Nepal_cluster_freqs_7.rds")
+  mass_cluster_freq_8 <- readRDS(file = "Nepal_cluster_freqs_8.rds")
+  mass_cluster_freq_9 <- readRDS(file = "Nepal_cluster_freqs_9.rds")
+  mass_cluster_freq_10 <- readRDS(file = "Nepal_cluster_freqs_10.rds")
+  mass_cluster_freq_11 <- readRDS(file = "Nepal_cluster_freqs_11.rds")
+  mass_cluster_freq_12 <- readRDS(file = "Nepal_cluster_freqs_12.rds")
+  mass_cluster_freq_13 <- readRDS(file = "Nepal_cluster_freqs_13.rds")
+  mass_cluster_freq_14 <- readRDS(file = "Nepal_cluster_freqs_14.rds")
+  mass_cluster_freq_15 <- readRDS(file = "Nepal_cluster_freqs_15.rds")
+  mass_cluster_freq_16 <- readRDS(file = "Nepal_cluster_freqs_16.rds")
+  
+  mass_clusters <- length(unique(seq_clusters$Cluster))
+  sero_no = length(unique(seq_clusters$Serotype))
+  
+  model_start_pop <- readRDS(file = "Nepal_PPsero_startpop.rds")
+  
+  mass_VT <- readRDS(file = "Nepal_SeroVT.rds")
+  mass_clusters <- length(unique(seq_clusters$Cluster))
+  avg_cluster_freq <- readRDS(file = "Nepal_PPsero_mig.rds")
+  dt <- 1/12
+  peripost_mass_cluster_freq <- data.frame("year" = 1:9, rbind(mass_cluster_freq_8,mass_cluster_freq_9, mass_cluster_freq_10, mass_cluster_freq_11,mass_cluster_freq_12, mass_cluster_freq_13, mass_cluster_freq_14,mass_cluster_freq_15,mass_cluster_freq_16))
+  names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
+  vacc_time <- 6
+  output_filename <- "Nepal_PPxSero_ggCaller_PopPUNK"
 }
 
 threads_total <- 1
@@ -207,8 +254,8 @@ if(length(args)>=5 & args[5]=="stoch"){
 #dt <- 1/36 # we assume that the generation time of Strep. pneumo is 1 month
 # we have data from 2001, 2004, 2007, so we want 3 (years) * 12 (months) = 36 updates in-between
 
-peripost_mass_cluster_freq <- data.frame("year" = c(1, 2), rbind(mass_cluster_freq_2, mass_cluster_freq_3))
-names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
+#peripost_mass_cluster_freq <- data.frame("year" = c(1, 2), rbind(mass_cluster_freq_2, mass_cluster_freq_3))
+#names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
 
 fitting_mass_data <- mcstate::particle_filter_data(data = peripost_mass_cluster_freq,
                                                    time = "year",
