@@ -506,3 +506,34 @@ for (i in 1:nrow(PopPUNK_clusters)) {
 }
 saveRDS(SeroVT_PCV13, "UK_SeroVT_PCV13.rds")
 ```
+
+```{r}
+# Create PP clusters, split by serotype
+#calculate the frequency of the gene clusters and year and serotype
+UK_mass_cluster_freq_1_sero <- matrix(0,nrow = mass_clusters, ncol = length(unique(PopPUNK_clusters$Serotype)))
+
+for (i in 1:mass_clusters){
+  for (k in unique(PopPUNK_clusters$Serotype)){
+  UK_mass_cluster_freq_1_sero[i,which(unique(PopPUNK_clusters$Serotype)==k)] <- length(which(PopPUNK_clusters[which(PopPUNK_clusters$Cluster==unique(PopPUNK_clusters$Cluster)[i]),][PopPUNK_clusters[which(PopPUNK_clusters$Cluster==unique(PopPUNK_clusters$Cluster)[i]),]$Serotype ==k, ]$"Time"==sort(unique(PopPUNK_clusters$Time))[1]))
+  }
+}
+
+#save sequence cluster frequencies
+saveRDS(UK_mass_cluster_freq_1_sero, file = "UK_mass_cluster_freq_1_sero.rds")
+
+PPxSero_matrix_prob2 <- readRDS("UK_PPsero_mig.rds")
+
+UK_PPsero_startpop3 <- matrix(0,nrow = mass_clusters, ncol = length(unique(PopPUNK_clusters$Serotype)))
+PP_expand_factor <- 15000 / sum(UK_mass_cluster_freq_1_sero)
+exp_noise <- 1000
+for (i in 1:nrow(UK_PPsero_startpop3)) {
+    UK_PPsero_startpop3[i,] <- (sapply((UK_mass_cluster_freq_1_sero[i,] + rexp(n = length(UK_mass_cluster_freq_1_sero[i,]), rate = exp_noise)) * PP_expand_factor, rpois, n=1)) + ceiling(PPxSero_matrix_prob2[i,])
+}
+plot(colSums(UK_mass_cluster_freq_1_sero)/sum(colSums(UK_mass_cluster_freq_1_sero)))
+points(colSums(UK_PPsero_startpop3)/sum(colSums(UK_PPsero_startpop3)), col = "red")
+
+plot(rowSums(UK_mass_cluster_freq_1_sero)/sum((UK_mass_cluster_freq_1_sero)))
+points(rowSums(UK_PPsero_startpop3)/sum(rowSums(UK_PPsero_startpop3)), col = "red")
+
+saveRDS(UK_PPsero_startpop3, file = "UK_PPsero_startpop3.rds")
+```

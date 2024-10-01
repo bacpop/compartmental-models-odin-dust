@@ -3612,6 +3612,23 @@ points(rowSums(PPsero_startpop4)/sum(rowSums(PPsero_startpop4)), col = "green")
 # okay, version 4 looks much better (take all possible strain-serotype combinations and multiply some noise to it, then add the real start population (from the data), and then multiply everything with the expansion factor)
 saveRDS(PPsero_startpop4, "PPsero_startpop4.rds")
 
+# or take real start distribution + migration matrix
+PPsero_startpop5 <- matrix(0, nrow = length(unique(PopPUNK_clusters$Cluster)), ncol = length(unique(PopPUNK_clusters$Serotype)))
+PP_expand_factor <- 15000 / sum(PP_mass_cluster_freq_1_sero)
+exp_noise <- 100
+
+for (i in 1:nrow(PPsero_startpop5)) {
+    PPsero_startpop5[i,] <- (sapply((PP_mass_cluster_freq_1_sero[i,] + rexp(n = length(PP_mass_cluster_freq_1_sero[i,]), rate = exp_noise)) * PP_expand_factor, rpois, n=1)) + ceiling(PPxSero_matrix_prob[i,])
+  #PPsero_startpop5[i,] <- PP_mass_cluster_freq_1_sero[i,] + ceiling(PPxSero_matrix_prob[i,])
+  
+}
+plot(colSums(PP_mass_cluster_freq_1_sero)/sum(colSums(PP_mass_cluster_freq_1_sero)))
+points(colSums(PPsero_startpop5)/sum(colSums(PPsero_startpop5)), col = "red")
+
+plot(rowSums(PP_mass_cluster_freq_1_sero)/sum((PP_mass_cluster_freq_1_sero)))
+points(rowSums(PPsero_startpop5)/sum(rowSums(PPsero_startpop5)), col = "red")
+
+saveRDS(PPsero_startpop5, "PPsero_startpop5.rds")
 
 # serotype VT vector
 SeroVT <- rep(0, length(unique(PopPUNK_clusters$Serotype)))
@@ -3633,6 +3650,9 @@ WFmodel_ppxSero <- WF_PPxSero$new(pars = PPxSero_params,
                          n_threads = 4L,
                          seed = 1L)
 WFmodel_ppxSero$run(1)
+
+# test index function for PPxSero model
+# index(WFmodel_ppxSero$info())$run
 ```
 
 ```{r}

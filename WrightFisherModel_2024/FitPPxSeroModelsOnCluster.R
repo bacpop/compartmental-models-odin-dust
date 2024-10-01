@@ -72,7 +72,8 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   intermed_gene_presence_absence_consensus_matrix <- sapply(intermed_gene_presence_absence_consensus[-1,-1],as.double)
   #model_start_pop <- readRDS("PP_mass_cluster_freq_1_sero.rds")
   #model_start_pop <- model_start_pop / 133 * 15708
-  model_start_pop <- readRDS("PP_mass_cluster_freq_1_sero.rds") # try using data directly
+  model_start_pop <- readRDS("PPsero_startpop5.rds") 
+  #model_start_pop <- readRDS("PP_mass_cluster_freq_1_sero.rds") # try using data directly
   model_start_pop <- readRDS(file = "PPsero_startpop4.rds")
   #model_start_pop <- readRDS(file = "PPsero_startpop.rds")
   delta_ranking <- readRDS(file = "ggC_delta_ranking.rds")
@@ -162,8 +163,8 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
 
   mass_clusters <- length(unique(seq_clusters$Cluster))
   sero_no = length(unique(seq_clusters$Serotype))
-
-  model_start_pop <- readRDS(file = "Navajo_PPsero_startpop.rds")
+  model_start_pop <- readRDS(file = "Navajo_PPsero_startpop3.rds")
+  #model_start_pop <- readRDS(file = "Navajo_PPsero_startpop.rds")
   
   mass_VT <- readRDS(file = "Navajo_SeroVT.rds")
   mass_clusters <- length(unique(seq_clusters$Cluster))
@@ -196,7 +197,8 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
   vacc_time <- 0
   sero_no = length(unique(seq_clusters$Serotype))
-  model_start_pop <- readRDS(file = "UK_PPsero_startpop.rds")
+  #model_start_pop <- readRDS(file = "UK_PPsero_startpop.rds")
+  model_start_pop <- readRDS(file = "UK_PPsero_startpop3.rds")
 }  else if(args[1] == "Nepal" & args[2] == "PopPUNK"){
   seq_clusters <- readRDS("Nepal_PP.rds")
   intermed_gene_presence_absence_consensus <- readRDS(file = "Nepal_ggCaller_intermed_consensus.rds")

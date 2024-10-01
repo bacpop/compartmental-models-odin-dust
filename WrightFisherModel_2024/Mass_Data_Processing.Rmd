@@ -569,7 +569,27 @@ saveRDS(PP_mass_cluster_freq_2_sero, file = "PP_mass_cluster_freq_2_sero.rds")
 saveRDS(PP_mass_cluster_freq_3_sero, file = "PP_mass_cluster_freq_3_sero.rds")
 ```
 
+```{r}
+# create equivalent of PP_mass_cluster_freq for serotypes
+PopPUNK_clusters <- readRDS(file = "PopPUNK_clusters.rds")
+sero_no <- length(unique(PopPUNK_clusters$Serotype))
+#calculate the frequency of the gene clusters and year
+PP_mass_sero_freq_1 <- rep(0,sero_no)
+PP_mass_sero_freq_2 <- rep(0,sero_no)
+PP_mass_sero_freq_3 <- rep(0,sero_no)
+for (i in 1:sero_no){
+  PP_mass_sero_freq_1[i] <- length(which(PopPUNK_clusters[which(PopPUNK_clusters$Serotype==unique(PopPUNK_clusters$Serotype)[i]),]$"SeqYear"==2001))
+  PP_mass_sero_freq_2[i] <- length(which(PopPUNK_clusters[which(PopPUNK_clusters$Serotype==unique(PopPUNK_clusters$Serotype)[i]),]$"SeqYear"==2004))
+  PP_mass_sero_freq_3[i] <- length(which(PopPUNK_clusters[which(PopPUNK_clusters$Serotype==unique(PopPUNK_clusters$Serotype)[i]),]$"SeqYear"==2007))
+}
+```
 
+```{r}
+#save sero frequencies
+saveRDS(PP_mass_sero_freq_1, file = "PP_mass_sero_freq_1.rds")
+saveRDS(PP_mass_sero_freq_2, file = "PP_mass_sero_freq_2.rds")
+saveRDS(PP_mass_sero_freq_3, file = "PP_mass_sero_freq_3.rds")
+```
 
 
 ### ggCaller
