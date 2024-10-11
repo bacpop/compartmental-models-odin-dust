@@ -33,18 +33,18 @@ if(length(args)==0){
 WF <- odin.dust::odin_dust("NFDS_Model.R", options=odin_options(verbose = TRUE))
 
 # likelihood for fitting:
-ll_pois <<- function(obs, model) {
-  exp_noise <- 1e6
-  
-  if (is.na(obs)) {
-    # Creates vector of zeros in ll with same length, if no data
-    ll_obs <- numeric(length(model))
-  } else {
-    lambda <- model + rexp(n = length(model), rate = exp_noise)
-    ll_obs <- dpois(x = obs, lambda = lambda, log = TRUE)
-  }
-  ll_obs
-}
+#ll_pois <<- function(obs, model) {
+#  exp_noise <- 1e6
+#  
+#  if (is.na(obs)) {
+#    # Creates vector of zeros in ll with same length, if no data
+#    ll_obs <- numeric(length(model))
+#  } else {
+#    lambda <- model + rexp(n = length(model), rate = exp_noise)
+#    ll_obs <- dpois(x = obs, lambda = lambda, log = TRUE)
+#  }
+#  ll_obs
+#}
 
 combined_compare <- function(state, observed, pars = NULL) {
   result <- 0
@@ -361,6 +361,9 @@ proposal_matrix <- diag(0.1,4) # the proposal matrix defines the covariance-vari
 
 #mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.1432, min = 0, max = 1), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 01), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), proposal_matrix, make_transform(complex_params))
 mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", -0.597837, min = -1000, max = 0), mcstate::pmcmc_parameter("prop_f", 0.125, min = 0, max = 1), mcstate::pmcmc_parameter("m", -4, min = -1000, max = 0), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), proposal_matrix, make_transform(complex_params))
+proposal_matrix <- diag(c(exp(0.1), 0.1, exp(0.1), 0.1))
+mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", runif(n=1, min=-10, max=0), min = -1000, max = 0), mcstate::pmcmc_parameter("prop_f", runif(n=1, min=0, max=1), min = 0, max = 1), mcstate::pmcmc_parameter("m", runif(n=1, min=-10, max=0), min = -1000, max = 0), mcstate::pmcmc_parameter("v", runif(n=1, min=0, max=1), min = 0, max = 1)), proposal_matrix, make_transform(complex_params))
+
 mcmc_pars$initial()
 
 #WF$public_methods$has_openmp()

@@ -442,13 +442,13 @@ PPxSero_matrix <- matrix(0, nrow = length(unique(PopPUNK_clusters$Cluster)), nco
 #[29] "7F"    "9N"    "9V"    "NT"
 
 SerotypeToIndex_dict <- 1:length(unique(PopPUNK_clusters$Serotype))
-names(SerotypeToIndex_dict) <- sort(unique(PopPUNK_clusters$Serotype))
+names(SerotypeToIndex_dict) <- (unique(PopPUNK_clusters$Serotype))
 
 IndexToSerotype_dict <- sort(unique(PopPUNK_clusters$Serotype))
 names(IndexToSerotype_dict) <- 1:length(unique(PopPUNK_clusters$Serotype))
 
 PPclustToIndex_dict <- 1:length(unique(PopPUNK_clusters$Cluster))
-names(PPclustToIndex_dict) <- sort(unique(PopPUNK_clusters$Cluster))
+names(PPclustToIndex_dict) <- (unique(PopPUNK_clusters$Cluster))
 
 for (i in 1:nrow(PopPUNK_clusters)) {
   PPxSero_matrix[PPclustToIndex_dict[as.character(PopPUNK_clusters$Cluster[i])],SerotypeToIndex_dict[PopPUNK_clusters$Serotype[i]]] <- 1
@@ -491,6 +491,31 @@ for (i in 1:length(unique(PopPUNK_clusters$Cluster))) {
 saveRDS(PPsero_startpop2, "UK_PPsero_startpop.rds")
 # this is very close to the original PP_model_start_pop
 # maybe I am giving out too much information because the serotype distribution is exactly the real one?
+
+plot(rowSums(UK_cluster_freqs_sero[[1]])/sum(rowSums(UK_cluster_freqs_sero[[1]])))
+points(rowSums(PPsero_startpop2)/sum(rowSums(PPsero_startpop2)), col = "red")
+
+plot(colSums(UK_cluster_freqs_sero[[1]])/sum(colSums(UK_cluster_freqs_sero[[1]])))
+points(colSums(PPsero_startpop2)/sum(colSums(PPsero_startpop2)), col = "red")
+# the serotype distribution is quite far off
+
+# same PPsero_startpop6 for Mass
+PPsero_startpop3 <- matrix(0, nrow = length(unique(PopPUNK_clusters$Cluster)), ncol = length(unique(PopPUNK_clusters$Serotype)))
+PP_expand_factor <- 15000 / sum(UK_cluster_freqs_sero[[1]])
+exp_noise <- 1000
+for (i in 1:nrow(PPsero_startpop3)) {
+    PPsero_startpop3[i,] <- (sapply((UK_cluster_freqs_sero[[1]][i,] + rexp(n = length(UK_cluster_freqs_sero[[1]][i,]), rate = exp_noise)) * PP_expand_factor, rpois, n=1)) + ceiling(PPxSero_matrix_prob2[i,])
+  #PPsero_startpop5[i,] <- PP_mass_cluster_freq_1_sero[i,] + ceiling(PPxSero_matrix_prob[i,])
+}
+saveRDS(PPsero_startpop3, "UK_PPsero_startpop.rds")
+# see next bit, I had already implemented that
+
+plot(rowSums(UK_cluster_freqs_sero[[1]])/sum(rowSums(UK_cluster_freqs_sero[[1]])))
+points(rowSums(PPsero_startpop3)/sum(rowSums(PPsero_startpop3)), col = "red")
+
+plot(colSums(UK_cluster_freqs_sero[[1]])/sum(colSums(UK_cluster_freqs_sero[[1]])))
+points(colSums(PPsero_startpop3)/sum(colSums(PPsero_startpop3)), col = "red")
+# the serotype distribution is much closter now
 
 # serotype VT vector
 SeroVT <- rep(0, length(unique(PopPUNK_clusters$Serotype)))

@@ -552,11 +552,12 @@ saveRDS(PP_model_start_pop, file = "PP_model_start_pop.rds")
 ```{r}
 # Create PP clusters, split by serotype
 #calculate the frequency of the gene clusters and year and serotype
-PP_mass_cluster_freq_1_sero <- matrix(0,nrow = no_PopPUNK_clusters, ncol = length(unique(Mass_Samples_accCodes$Serotype)))
-PP_mass_cluster_freq_2_sero <- matrix(0,nrow = no_PopPUNK_clusters, ncol = length(unique(Mass_Samples_accCodes$Serotype)))
-PP_mass_cluster_freq_3_sero <- matrix(0,nrow = no_PopPUNK_clusters, ncol = length(unique(Mass_Samples_accCodes$Serotype)))
+PP_mass_cluster_freq_1_sero <- matrix(0,nrow = no_PopPUNK_clusters, ncol = length(unique(PopPUNK_clusters$Serotype)))
+PP_mass_cluster_freq_2_sero <- matrix(0,nrow = no_PopPUNK_clusters, ncol = length(unique(PopPUNK_clusters$Serotype)))
+PP_mass_cluster_freq_3_sero <- matrix(0,nrow = no_PopPUNK_clusters, ncol = length(unique(PopPUNK_clusters$Serotype)))
+PP_mass_cluster_freq_sero_names <- unique(PopPUNK_clusters$Serotype)
 for (i in 1:no_PopPUNK_clusters){
-  for (k in unique(Mass_Samples_accCodes$Serotype)){
+  for (k in unique(PopPUNK_clusters$Serotype)){
   PP_mass_cluster_freq_1_sero[i,which(unique(Mass_Samples_accCodes$Serotype)==k)] <- length(which(PopPUNK_clusters[which(PopPUNK_clusters$Cluster==unique(PopPUNK_clusters$Cluster)[i]),][PopPUNK_clusters[which(PopPUNK_clusters$Cluster==unique(PopPUNK_clusters$Cluster)[i]),]$Serotype ==k, ]$"SeqYear"==2001))
   PP_mass_cluster_freq_2_sero[i,which(unique(Mass_Samples_accCodes$Serotype)==k)] <- length(which(PopPUNK_clusters[which(PopPUNK_clusters$Cluster==unique(PopPUNK_clusters$Cluster)[i]),][PopPUNK_clusters[which(PopPUNK_clusters$Cluster==unique(PopPUNK_clusters$Cluster)[i]),]$Serotype ==k, ]$"SeqYear"==2004))
   PP_mass_cluster_freq_3_sero[i,which(unique(Mass_Samples_accCodes$Serotype)==k)] <- length(which(PopPUNK_clusters[which(PopPUNK_clusters$Cluster==unique(PopPUNK_clusters$Cluster)[i]),][PopPUNK_clusters[which(PopPUNK_clusters$Cluster==unique(PopPUNK_clusters$Cluster)[i]),]$Serotype ==k, ]$"SeqYear"==2007))
@@ -564,9 +565,9 @@ for (i in 1:no_PopPUNK_clusters){
 }
 
 #save sequence cluster frequencies
-saveRDS(PP_mass_cluster_freq_1_sero, file = "PP_mass_cluster_freq_1_sero.rds")
-saveRDS(PP_mass_cluster_freq_2_sero, file = "PP_mass_cluster_freq_2_sero.rds")
-saveRDS(PP_mass_cluster_freq_3_sero, file = "PP_mass_cluster_freq_3_sero.rds")
+saveRDS(PP_mass_cluster_freq_1_sero, file = "PP_mass_cluster_freq_1_seroMod.rds")
+saveRDS(PP_mass_cluster_freq_2_sero, file = "PP_mass_cluster_freq_2_seroMod.rds")
+saveRDS(PP_mass_cluster_freq_3_sero, file = "PP_mass_cluster_freq_3_seroMod.rds")
 ```
 
 ```{r}
@@ -590,6 +591,181 @@ saveRDS(PP_mass_sero_freq_1, file = "PP_mass_sero_freq_1.rds")
 saveRDS(PP_mass_sero_freq_2, file = "PP_mass_sero_freq_2.rds")
 saveRDS(PP_mass_sero_freq_3, file = "PP_mass_sero_freq_3.rds")
 ```
+
+# create matrix with PP clusters and serotypes
+```{r}
+PPxSero_matrix <- matrix(0, nrow = length(unique(PopPUNK_clusters$Cluster)), ncol = length(unique(PopPUNK_clusters$Serotype)))
+# sort(unique(PopPUNK_clusters$Serotype))
+# [1] "10A"   "11A"   "14"    "15A"   "15B/C" "15F"   "16F"   "17F"   "18C"   "19A"   "19F"   "21"    "22F"   "23A"
+#[15] "23B"   "23F"   "3"     "31"    "33F"   "34"    "35B"   "35F"   "37"    "38"    "6A"    "6B"    "6C"    "7C" 
+#[29] "7F"    "9N"    "9V"    "NT"
+
+SerotypeToIndex_dict <- 1:length(unique(PopPUNK_clusters$Serotype))
+names(SerotypeToIndex_dict) <- (unique(PopPUNK_clusters$Serotype))
+
+#IndexToSerotype_dict <- (unique(PopPUNK_clusters$Serotype))
+#names(IndexToSerotype_dict) <- 1:length(unique(PopPUNK_clusters$Serotype))
+
+PPclustToIndex_dict <- 1:length(unique(PopPUNK_clusters$Cluster))
+names(PPclustToIndex_dict) <- (unique(PopPUNK_clusters$Cluster))
+
+for (i in 1:nrow(PopPUNK_clusters)) {
+  PPxSero_matrix[PPclustToIndex_dict[as.character(PopPUNK_clusters$Cluster[i])],SerotypeToIndex_dict[PopPUNK_clusters$Serotype[i]]] <- 1
+}
+# matrix shows information whether PP and serotype co-occur in the dataset (1=TRUE)
+# this can be used as the migration matrix:
+PPxSero_matrix_prob <- PPxSero_matrix / sum(PPxSero_matrix)
+PPxSero_matrix_prob <- matrix(sapply(PPxSero_matrix_prob,as.double), nrow = nrow(PPxSero_matrix), ncol = ncol(PPxSero_matrix))
+saveRDS(PPxSero_matrix_prob, "PPsero_mig.rds")
+saveRDS(PPxSero_matrix_prob, "PPsero_mig2.rds")
+
+# do one version that is sorted according to unique(Mass_Samples_accCodes$Serotype)
+#SerotypeToIndex_dict2 <- 1:length(unique(Mass_Samples_accCodes$Serotype))
+#names(SerotypeToIndex_dict2) <- unique(Mass_Samples_accCodes$Serotype)
+#PPxSero_matrix2 <- matrix(0, nrow = length(unique(PopPUNK_clusters$Cluster)), ncol = length(unique(PopPUNK_clusters$Serotype)))
+#for (i in 1:nrow(PopPUNK_clusters)) {
+#  PPxSero_matrix2[PPclustToIndex_dict[as.character(PopPUNK_clusters$Cluster[i])],SerotypeToIndex_dict2[PopPUNK_clusters$Serotype[i]]] <- 1
+#}
+#PPxSero_matrix_prob2 <- PPxSero_matrix2 / sum(PPxSero_matrix2)
+#PPxSero_matrix_prob2 <- matrix(sapply(PPxSero_matrix_prob2,as.double), nrow = nrow(PPxSero_matrix2), ncol = ncol(PPxSero_matrix2))
+#saveRDS(PPxSero_matrix_prob2, "PPsero_mig2.rds")
+
+#PPxSero_matrix_prob2 <-  matrix(0, nrow = length(unique(PopPUNK_clusters$Cluster)), ncol = length(unique(PopPUNK_clusters$Serotype)))
+#for (i in 1:length(unique(PopPUNK_clusters$Cluster))) {
+#  PPxSero_matrix_prob2[i,] <- ((PPxSero_matrix[i,] * PP_avg_cluster_freq[i])/sum(PPxSero_matrix[i,]))
+#}
+#saveRDS(PPxSero_matrix_prob2, "PPsero_mig.rds")
+# new migration matrix that is closer to original one
+
+# do this, sorted correctly
+#PPxSero_matrix_prob3 <-  matrix(0, nrow = length(unique(PopPUNK_clusters$Cluster)), ncol = length(unique(PopPUNK_clusters$Serotype)))
+#for (i in 1:length(unique(PopPUNK_clusters$Cluster))) {
+#  PPxSero_matrix_prob3[i,] <- ((PPxSero_matrix2[i,] * PP_avg_cluster_freq[i])/sum(PPxSero_matrix2[i,]))
+#}
+#saveRDS(PPxSero_matrix_prob3, "PPsero_mig3.rds")
+
+# start population:
+#PPsero_startpop <- matrix(0, nrow = length(unique(PopPUNK_clusters$Cluster)), ncol = length(unique(PopPUNK_clusters$Serotype)))
+
+#for (i in which(PopPUNK_clusters$SeqYear=="2001")) {
+#  PPsero_startpop[PPclustToIndex_dict[PopPUNK_clusters$Cluster[i]],SerotypeToIndex_dict[PopPUNK_clusters$Serotype[i]]] <- PPsero_startpop[PPclustToIndex_dict[PopPUNK_clusters$Cluster[i]],SerotypeToIndex_dict[PopPUNK_clusters$Serotype[i]]] + 1
+#}
+#PPsero_startpop <- PPsero_startpop * 15000 / sum(PPsero_startpop)
+
+
+#PP_expand_factor <- 15000 / sum(PPsero_startpop)
+#exp_noise <- 10
+#PPsero_startpop_corr <- matrix(sapply((PPsero_startpop + matrix(rexp(n = ncol(PPsero_startpop) * nrow(PPsero_startpop), rate = exp_noise), nrow= nrow(PPsero_startpop), ncol = ncol(PPsero_startpop))) * PP_expand_factor, rpois, n=1), nrow= nrow(PPsero_startpop), ncol = ncol(PPsero_startpop))
+#PPsero_startpop_corr <- matrix(sapply(PPsero_startpop_corr,as.double), nrow= nrow(PPsero_startpop), ncol = ncol(PPsero_startpop))
+#saveRDS(PPsero_startpop_corr, "PPsero_startpop.rds")
+
+# this lead to a start population that is way too evenly distributed across the different clusters
+# instead, I could maybe use the existing PP_model_start_pop and distribute it to the different serotypes?
+#PPsero_startpop2 <-  matrix(0, nrow = length(unique(PopPUNK_clusters$Cluster)), ncol = length(unique(PopPUNK_clusters$Serotype)))
+#for (i in 1:length(unique(PopPUNK_clusters$Cluster))) {
+#  PPsero_startpop2[i,] <- round((PPxSero_matrix[i,] * PP_model_start_pop[i])/sum(PPxSero_matrix[i,]))
+#}
+#saveRDS(PPsero_startpop2, "PPsero_startpop.rds")
+# this is very close to the original PP_model_start_pop
+# maybe I am giving out too much information because the serotype distribution is exactly the real one?
+
+# I discovered a new issue. While the cluster distribution is quite close to the real 2001 data, the serotype distribution is not. I think it is favorable to have low levels of strain-serotype combinations in the start population that actually only occur later in the data, it is also important to have a start population that represents the serotype distribution in the dataset.
+# Serotype distribution data vs model
+#PP_mass_cluster_freq_1_sero <- readRDS("PP_mass_cluster_freq_1_sero.rds")
+
+#plot(colSums(PP_mass_cluster_freq_1_sero)/sum(colSums(PP_mass_cluster_freq_1_sero)))
+#points(colSums(PPsero_startpop2)/sum(colSums(PPsero_startpop2)), col = "red")
+# Strain distribution data vs model
+#plot(rowSums(PP_mass_cluster_freq_1_sero)/sum((PP_mass_cluster_freq_1_sero)))
+#points(rowSums(PPsero_startpop2)/sum(rowSums(PPsero_startpop2)), col = "red")
+
+#PPsero_startpop3 <-  matrix(0, nrow = length(unique(PopPUNK_clusters$Cluster)), ncol = length(unique(PopPUNK_clusters$Serotype)))
+#PPsero_startpop3_cl <-  matrix(0, nrow = length(unique(PopPUNK_clusters$Cluster)), ncol = length(unique(PopPUNK_clusters$Serotype)))
+#PPsero_startpop3_sero <-  matrix(0, nrow = length(unique(PopPUNK_clusters$Cluster)), ncol = length(unique(PopPUNK_clusters$Serotype)))
+#PPsero_startpop3 <- PPxSero_matrix
+
+#for (i in 1:length(unique(PopPUNK_clusters$Cluster))) {
+#  PPsero_startpop3_cl[i,] <- round((PPxSero_matrix[i,] * rowSums(PP_mass_cluster_freq_1_sero)[i])/sum(PPxSero_matrix[i,]))
+#}
+#for (i in 1:length(unique(PopPUNK_clusters$Serotype))) {
+#  PPsero_startpop3_sero[,i] <- round((PPxSero_matrix[,i] * colSums(PP_mass_cluster_freq_1_sero)[i])/sum(PPxSero_matrix[,i]))
+#}
+#PPsero_startpop3 <- (PPsero_startpop3_cl + PPsero_startpop3_sero)/2
+
+# new try
+#PPsero_startpop4 <-  matrix(0, nrow = length(unique(PopPUNK_clusters$Cluster)), ncol = length(unique(PopPUNK_clusters$Serotype)))
+
+#PPsero_startpop4 <- (PPxSero_matrix * matrix(data = rexp(n = (length(unique(PopPUNK_clusters$Serotype)) * length(unique(PopPUNK_clusters$Cluster))), rate = exp_noise), nrow = length(unique(PopPUNK_clusters$Cluster)), ncol = length(unique(PopPUNK_clusters$Serotype))) + PP_mass_cluster_freq_1_sero) * PP_expand_factor
+
+# test
+#plot(colSums(PP_mass_cluster_freq_1_sero)/sum(colSums(PP_mass_cluster_freq_1_sero)))
+#points(colSums(PPsero_startpop3_sero)/sum(colSums(PPsero_startpop3_sero)), col = "red")
+#points(colSums(PPsero_startpop3)/sum(colSums(PPsero_startpop3)), col = "blue")
+#points(colSums(PPsero_startpop4)/sum(colSums(PPsero_startpop4)), col = "green")
+# Strain distribution data vs model
+#plot(rowSums(PP_mass_cluster_freq_1_sero)/sum((PP_mass_cluster_freq_1_sero)))
+#points(rowSums(PPsero_startpop3_cl)/sum(rowSums(PPsero_startpop3_cl)), col = "red")
+#points(rowSums(PPsero_startpop3)/sum(rowSums(PPsero_startpop3)), col = "blue")
+#points(rowSums(PPsero_startpop4)/sum(rowSums(PPsero_startpop4)), col = "green")
+
+# okay, version 4 looks much better (take all possible strain-serotype combinations and multiply some noise to it, then add the real start population (from the data), and then multiply everything with the expansion factor)
+#saveRDS(PPsero_startpop4, "PPsero_startpop4.rds")
+
+# or take real start distribution + migration matrix
+#PPsero_startpop5 <- matrix(0, nrow = length(unique(PopPUNK_clusters$Cluster)), ncol = length(unique(PopPUNK_clusters$Serotype)))
+#PP_expand_factor <- 15000 / sum(PP_mass_cluster_freq_1_sero)
+#exp_noise <- 100
+
+#for (i in 1:nrow(PPsero_startpop5)) {
+#    PPsero_startpop5[i,] <- (sapply((PP_mass_cluster_freq_1_sero[i,] + rexp(n = length(PP_mass_cluster_freq_1_sero[i,]), rate = exp_noise)) * PP_expand_factor, rpois, n=1)) + ceiling(PPxSero_matrix_prob[i,])
+  #PPsero_startpop5[i,] <- PP_mass_cluster_freq_1_sero[i,] + ceiling(PPxSero_matrix_prob[i,])
+#}
+#plot(colSums(PP_mass_cluster_freq_1_sero)/sum(colSums(PP_mass_cluster_freq_1_sero)))
+#points(colSums(PPsero_startpop5)/sum(colSums(PPsero_startpop5)), col = "red")
+
+#plot(rowSums(PP_mass_cluster_freq_1_sero)/sum((PP_mass_cluster_freq_1_sero)))
+#points(rowSums(PPsero_startpop5)/sum(rowSums(PPsero_startpop5)), col = "red")
+
+#saveRDS(PPsero_startpop5, "PPsero_startpop5.rds")
+
+# same with new sorting 
+PPsero_startpop6 <- matrix(0, nrow = length(unique(PopPUNK_clusters$Cluster)), ncol = length(unique(PopPUNK_clusters$Serotype)))
+PP_expand_factor <- 15000 / sum(PP_mass_cluster_freq_1_sero)
+exp_noise <- 1000
+for (i in 1:nrow(PPsero_startpop6)) {
+    PPsero_startpop6[i,] <- (sapply((PP_mass_cluster_freq_1_sero[i,] + rexp(n = length(PP_mass_cluster_freq_1_sero[i,]), rate = exp_noise)) * PP_expand_factor, rpois, n=1)) + ceiling(PPxSero_matrix_prob[i,])
+  #PPsero_startpop5[i,] <- PP_mass_cluster_freq_1_sero[i,] + ceiling(PPxSero_matrix_prob[i,])
+}
+saveRDS(PPsero_startpop6, "PPsero_startpop6.rds")
+
+plot(colSums(PP_mass_cluster_freq_1_sero)/sum(colSums(PP_mass_cluster_freq_1_sero)))
+points(colSums(PPsero_startpop6)/sum(colSums(PPsero_startpop6)), col = "red")
+
+plot(rowSums(PP_mass_cluster_freq_1_sero)/sum((PP_mass_cluster_freq_1_sero)))
+points(rowSums(PPsero_startpop6)/sum(rowSums(PPsero_startpop6)), col = "red")
+#much better
+
+#saveRDS(colSums(PP_mass_cluster_freq_1_sero), file = "PP_mass_sero_freq_1.rds")
+#saveRDS(colSums(PP_mass_cluster_freq_2_sero), file = "PP_mass_sero_freq_2.rds")
+#saveRDS(colSums(PP_mass_cluster_freq_3_sero), file = "PP_mass_sero_freq_3.rds")
+
+# serotype VT vector
+SeroVT <- rep(0, length(unique(PopPUNK_clusters$Serotype)))
+for (i in 1:nrow(PopPUNK_clusters)) {
+  SeroVT[SerotypeToIndex_dict[PopPUNK_clusters$Serotype[i]]] <- as.integer(PopPUNK_clusters$VT[i]=="VT")
+}
+saveRDS(SeroVT, "SeroVT.rds")
+saveRDS(SeroVT, "SeroVT2.rds")
+
+# try new VT_vec approach, because I think the order was mixed up
+#unique(Mass_Samples_accCodes$Serotype)
+#SeroVT2 <- rep(0, length(unique(PopPUNK_clusters$Serotype)))
+#for (i in 1:nrow(PopPUNK_clusters)) {
+#  SeroVT2[SerotypeToIndex_dict2[PopPUNK_clusters$Serotype[i]]] <- as.integer(PopPUNK_clusters$VT[i]=="VT")
+#}
+#saveRDS(SeroVT2, "SeroVT2.rds")
+```
+
 
 
 ### ggCaller
@@ -989,10 +1165,12 @@ for (i in 1:length(unique(Mass_Samples_accCodes$Serotype))){
 Sero_freq_1 <- rep(0,length(unique(Mass_Samples_accCodes$Serotype)))
 Sero_freq_2 <- rep(0,length(unique(Mass_Samples_accCodes$Serotype)))
 Sero_freq_3 <- rep(0,length(unique(Mass_Samples_accCodes$Serotype)))
+Sero_freq_names <- rep(NA,length(unique(Mass_Samples_accCodes$Serotype)))
 for (i in 1:length(unique(Mass_Samples_accCodes$Serotype))){
   Sero_freq_1[i] <- length(which(Mass_Samples_accCodes[which(Mass_Samples_accCodes$Serotype==unique(Mass_Samples_accCodes$Serotype)[i]),]$"Year of Isolation"==2001))
   Sero_freq_2[i] <- length(which(Mass_Samples_accCodes[which(Mass_Samples_accCodes$Serotype==unique(Mass_Samples_accCodes$Serotype)[i]),]$"Year of Isolation"==2004))
   Sero_freq_3[i] <- length(which(Mass_Samples_accCodes[which(Mass_Samples_accCodes$Serotype==unique(Mass_Samples_accCodes$Serotype)[i]),]$"Year of Isolation"==2007))
+  Sero_freq_names[i] <- unique(Mass_Samples_accCodes$Serotype)[i]
 }
 ```
 
@@ -1001,6 +1179,7 @@ for (i in 1:length(unique(Mass_Samples_accCodes$Serotype))){
 #saveRDS(Sero_freq_1, file = "Sero_freq_1.rds")
 #saveRDS(Sero_freq_2, file = "Sero_freq_2.rds")
 #saveRDS(Sero_freq_3, file = "Sero_freq_3.rds")
+#saveRDS(Sero_freq_names, file = "Sero_freq_names.rds")
 ```
 
 ```{r}

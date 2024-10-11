@@ -43,25 +43,68 @@ ll_pois <<- function(obs, model) {
   ll_obs
 }
 
+#combined_compare <- function(state, observed, pars = NULL) {
+#  result <- 0
+  #data_size <- sum(unlist(observed))
+#  data_size <- sum(unlist(observed[as.character(1:(length(unlist(observed))-4))]))
+#  model_size = sum(unlist(state[-1, , drop = TRUE]))
+#  exp_noise <- 1e6
+  
+#  for (i in 1:(length(unlist(observed))-4)){ 
+#    state_name <- paste("sum_clust", i, sep = "")
+#    if (is.na(observed[[as.character(i)]])) {
+#      #Creates vector of zeros in ll with same length, if no data
+#      ll_obs <- numeric(length( state[state_name, , drop = TRUE]))
+#    } else {
+#      lambda <-  state[state_name, , drop = TRUE]/model_size * data_size + rexp(n = length( state[state_name, , drop = TRUE]/model_size * data_size), rate = exp_noise)
+#      ll_obs <- dpois(x = observed[[as.character(i)]], lambda = lambda, log = TRUE)
+#    }
+    
+#    result <- result + ll_obs
+#  }
+#  result
+#}
+
 combined_compare <- function(state, observed, pars = NULL) {
   result <- 0
   #data_size <- sum(unlist(observed))
   data_size <- sum(unlist(observed[as.character(1:(length(unlist(observed))-4))]))
   model_size = sum(unlist(state[-1, , drop = TRUE]))
   exp_noise <- 1e6
-  
+  data_vals <- unlist(observed[as.character(1:(length(unlist(observed))-4))])
+  #model_vals <- state[-1, , drop = TRUE]
+  model_vals <- rep(0, length(unlist(observed))-4)
+  data_missing <- FALSE
   for (i in 1:(length(unlist(observed))-4)){ 
     state_name <- paste("sum_clust", i, sep = "")
+    model_vals[i] <- state[state_name, , drop = TRUE]
     if (is.na(observed[[as.character(i)]])) {
       #Creates vector of zeros in ll with same length, if no data
-      ll_obs <- numeric(length( state[state_name, , drop = TRUE]))
-    } else {
-      lambda <-  state[state_name, , drop = TRUE]/model_size * data_size + rexp(n = length( state[state_name, , drop = TRUE]/model_size * data_size), rate = exp_noise)
-      ll_obs <- dpois(x = observed[[as.character(i)]], lambda = lambda, log = TRUE)
-    }
-    
-    result <- result + ll_obs
+      #ll_obs <- numeric(length( state[state_name, , drop = TRUE]))
+      data_missing <- TRUE
+    } 
   }
+  models_vals_err <- model_vals + rexp(n = length(model_vals), rate = exp_noise)
+  if(data_missing){
+    ll_obs <- 0
+  }
+  else{
+    ll_obs <- dmultinom(x = (data_vals), prob = models_vals_err/model_size, log = TRUE)   
+  }
+  result <- ll_obs
+  #for (i in 1:(length(unlist(observed))-4)){ 
+  #  state_name <- paste("sum_clust", i, sep = "")
+  #  if (is.na(observed[[as.character(i)]])) {
+  #    #Creates vector of zeros in ll with same length, if no data
+  #    ll_obs <- numeric(length( state[state_name, , drop = TRUE]))
+  #  } else {
+  #lambda <-  state[state_name, , drop = TRUE]/model_size * data_size + rexp(n = length( state[state_name, , drop = TRUE]/model_size * data_size), rate = exp_noise)
+  #ll_obs <- dpois(x = observed[[as.character(i)]], lambda = lambda, log = TRUE)
+  #    ll_obs <- dmultinom(x = (data_vals), prob = model_vals/model_size, log = TRUE)
+  #  }
+  
+  #  result <- result + ll_obs
+  #}
   result
 }
 # data pre-processing in NFDS_COGtriangles_ManualSeqClust.Rmd
@@ -72,14 +115,15 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   intermed_gene_presence_absence_consensus_matrix <- sapply(intermed_gene_presence_absence_consensus[-1,-1],as.double)
   #model_start_pop <- readRDS("PP_mass_cluster_freq_1_sero.rds")
   #model_start_pop <- model_start_pop / 133 * 15708
-  model_start_pop <- readRDS("PPsero_startpop5.rds") 
+  model_start_pop <- readRDS("PPsero_startpop6.rds") 
   #model_start_pop <- readRDS("PP_mass_cluster_freq_1_sero.rds") # try using data directly
-  model_start_pop <- readRDS(file = "PPsero_startpop4.rds")
+  #model_start_pop <- readRDS(file = "PPsero_startpop4.rds")
   #model_start_pop <- readRDS(file = "PPsero_startpop.rds")
   delta_ranking <- readRDS(file = "ggC_delta_ranking.rds")
   mass_cluster_freq_1 <- readRDS(file = "PP_mass_cluster_freq_1.rds")
   mass_cluster_freq_2 <- readRDS(file = "PP_mass_cluster_freq_2.rds")
   mass_cluster_freq_3 <- readRDS(file = "PP_mass_cluster_freq_3.rds")
+  #mass_VT <- readRDS(file = "SeroVT.rds")
   mass_VT <- readRDS(file = "SeroVT.rds")
   mass_clusters <- length(unique(seq_clusters$Cluster))
   avg_cluster_freq <- readRDS(file = "PPsero_mig.rds")
@@ -356,6 +400,9 @@ index <- function(info) {
 #mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", 0.1432, min = 0, max = 1), mcstate::pmcmc_parameter("prop_f", 0.25, min = 0, max = 1), mcstate::pmcmc_parameter("m", 0.03, min = 0, max = 01), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), proposal_matrix, make_transform(complex_params))
 #mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", -0.597837, min = -1000, max = 0), mcstate::pmcmc_parameter("prop_f", 0.125, min = 0, max = 1), mcstate::pmcmc_parameter("m", -4, min = -1000, max = -2), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), proposal_matrix, make_transform(complex_params))
 mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", -0.597837, min = -1000, max = 0), mcstate::pmcmc_parameter("prop_f", 0.125, min = 0, max = 1), mcstate::pmcmc_parameter("m", -4, min = -1000, max = 0), mcstate::pmcmc_parameter("v", 0.05, min = 0, max = 1)), proposal_matrix, make_transform(complex_params))
+proposal_matrix <- diag(c(exp(1), 0.1, exp(1), 0.1))
+mcmc_pars <- mcstate::pmcmc_parameters$new(list(mcstate::pmcmc_parameter("sigma_f", runif(n=1, min=-10, max=0), min = -1000, max = 0), mcstate::pmcmc_parameter("prop_f", runif(n=1, min=0, max=1), min = 0, max = 1), mcstate::pmcmc_parameter("m", runif(n=1, min=-10, max=0), min = -1000, max = 0), mcstate::pmcmc_parameter("v", runif(n=1, min=0, max=1), min = 0, max = 1)), proposal_matrix, make_transform(complex_params))
+
 mcmc_pars$initial()
 #mcmc_pars$model(mcmc_pars$initial())
 
