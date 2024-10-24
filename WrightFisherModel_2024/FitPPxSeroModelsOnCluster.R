@@ -204,19 +204,33 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   mass_cluster_freq_13 <- readRDS(file = "Navajo_cluster_freqs_13.rds")
   mass_cluster_freq_14 <- readRDS(file = "Navajo_cluster_freqs_14.rds")
   mass_cluster_freq_15 <- readRDS(file = "Navajo_cluster_freqs_15.rds")
-
+  
   mass_clusters <- length(unique(seq_clusters$Cluster))
   sero_no = length(unique(seq_clusters$Serotype))
-  model_start_pop <- readRDS(file = "Navajo_PPsero_startpop3.rds")
-  #model_start_pop <- readRDS(file = "Navajo_PPsero_startpop.rds")
   
-  mass_VT <- readRDS(file = "Navajo_SeroVT.rds")
+  #model_start_pop <- readRDS(file = "Navajo_PPsero_startpop.rds")
+  model_start_pop <- readRDS(file = "Navajo_PPsero_startpop.rds")
+  #mass_VT <- readRDS(file = "Navajo_SeroVT.rds")
+  #PCV13_VTs <- rep(0,sero_no)
+  #names(PCV13_VTs) <- unique(seq_clusters$Serotype)
+  #PCV13_VTs[intersect(names(PCV13_VTs), c("1", "3", "4","5","6A","6B", "7F", "9V", "14", "18C", "19A", "19F", "23F"))] <- 1
+  #vaccTypes2 <- unname(PCV13_VTs)
+  
+  # add 6A to PCV7 because there is strong cross-immunity btw PVC7 and 6A (4.Croucher, N. J. et al. Population genomics of post-vaccine changes in pneumococcal epidemiology. Nat. Genet. 45, 656–663 (2013).)
+  #PCV7_VTs <- rep(0,sero_no)
+  #names(PCV7_VTs) <- unique(seq_clusters$Serotype)
+  #PCV7_VTs[intersect(PCV7_VTs,c("4", "6A","6B", "9V", "14", "18C", "19F", "23F"))] <- 1
+  #vaccTypes1 <- unname(PCV7_VTs)
+  #vaccTypes1 <- readRDS("Navajo_SeroVT.rds")
+  #vaccTypes2 <- readRDS("Navajo_SeroVT_PCV13.rds")
+  vaccTypes <- readRDS("Navajo_SeroVT.rds")
   mass_clusters <- length(unique(seq_clusters$Cluster))
   avg_cluster_freq <- readRDS(file = "Navajo_PPsero_mig.rds")
   dt <- 1/12
-  peripost_mass_cluster_freq <- data.frame("year" = 1:12, rbind(mass_cluster_freq_4,mass_cluster_freq_5,mass_cluster_freq_6, mass_cluster_freq_7,mass_cluster_freq_8,mass_cluster_freq_9, mass_cluster_freq_10, mass_cluster_freq_11,mass_cluster_freq_12, mass_cluster_freq_13, mass_cluster_freq_14,mass_cluster_freq_15))
+  peripost_mass_cluster_freq <- data.frame("year" = 1:14, rbind(mass_cluster_freq_2,mass_cluster_freq_3,mass_cluster_freq_4,mass_cluster_freq_5,mass_cluster_freq_6, mass_cluster_freq_7,mass_cluster_freq_8,mass_cluster_freq_9, mass_cluster_freq_10, mass_cluster_freq_11,mass_cluster_freq_12, mass_cluster_freq_13, mass_cluster_freq_14,mass_cluster_freq_15))
   names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
   vacc_time <- 2
+  #vacc_time2 <- 12
   output_filename <- "Navajo_PPxSero_ggCaller_PopPUNK"
 } else if(args[1] == "UK" & args[2] == "PopPUNK"){
   seq_clusters <- readRDS("UK_PP.rds")

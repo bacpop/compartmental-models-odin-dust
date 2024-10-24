@@ -381,7 +381,7 @@ for(j in 1:length(Navajo_time_points_selected)){
   Navajo_cluster_freqs_sero[[j]] <- matrix(NA, ncol =  length(unique(Navajo_PP$Serotype)), nrow = no_Navajo_PP)
   for (i in unique(Navajo_PP$Cluster)){
     for (k in unique(Navajo_PP$Serotype)) {
-      Navajo_cluster_freqs_sero[[j]][which(unique(Navajo_PP$Cluster) == i),which(unique(Navajo_PP$Serotype) == k)] <- length(which(Navajo_meta_data[Navajo_meta_IDtoInd[Navajo_PP[Navajo_PP$Cluster == i,"Taxon"]],][Navajo_meta_data[Navajo_meta_IDtoInd[Navajo_PP[Navajo_PP$Cluster == i,"Taxon"]],]$Sero==k,]$Year==Navajo_time_points[j]))
+      Navajo_cluster_freqs_sero[[j]][which(unique(Navajo_PP$Cluster) == i),which(unique(Navajo_PP$Serotype) == k)] <- length(which(Navajo_meta_data[Navajo_meta_IDtoInd[Navajo_PP[Navajo_PP$Cluster == i,"Taxon"]],][Navajo_meta_data[Navajo_meta_IDtoInd[Navajo_PP[Navajo_PP$Cluster == i,"Taxon"]],]$Sero==k,]$Year==Navajo_time_points_selected[j]))
     }
   }
 }
@@ -463,7 +463,7 @@ PPxSero_matrix <- matrix(0, nrow = length(unique(PopPUNK_clusters$Cluster)), nco
 SerotypeToIndex_dict <- 1:length(unique(PopPUNK_clusters$Serotype))
 names(SerotypeToIndex_dict) <- (unique(PopPUNK_clusters$Serotype))
 
-IndexToSerotype_dict <- sort(unique(PopPUNK_clusters$Serotype))
+IndexToSerotype_dict <- (unique(PopPUNK_clusters$Serotype))
 names(IndexToSerotype_dict) <- 1:length(unique(PopPUNK_clusters$Serotype))
 
 PPclustToIndex_dict <- 1:length(unique(PopPUNK_clusters$Cluster))
@@ -485,6 +485,15 @@ for (i in 1:length(unique(PopPUNK_clusters$Cluster))) {
 }
 saveRDS(PPxSero_matrix_prob2, "Navajo_PPsero_mig.rds")
 # new migration matrix that is closer to original one
+
+for (i in 1:nrow(PopPUNK_clusters)) {
+  PPxSero_matrix[PPclustToIndex_dict[as.character(PopPUNK_clusters$Cluster[i])],SerotypeToIndex_dict[PopPUNK_clusters$Serotype[i]]] <- 1
+}
+# matrix shows information whether PP and serotype co-occur in the dataset (1=TRUE)
+# this can be used as the migration matrix:
+PPxSero_matrix_prob <- PPxSero_matrix / sum(PPxSero_matrix)
+PPxSero_matrix_prob <- matrix(sapply(PPxSero_matrix_prob,as.double), nrow = nrow(PPxSero_matrix), ncol = ncol(PPxSero_matrix))
+saveRDS(PPxSero_matrix_prob, "Navajo_PPsero_mig.rds")
 
 # start population:
 PPsero_startpop <- matrix(0, nrow = length(unique(PopPUNK_clusters$Cluster)), ncol = length(unique(PopPUNK_clusters$Serotype)))

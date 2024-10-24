@@ -558,9 +558,9 @@ PP_mass_cluster_freq_3_sero <- matrix(0,nrow = no_PopPUNK_clusters, ncol = lengt
 PP_mass_cluster_freq_sero_names <- unique(PopPUNK_clusters$Serotype)
 for (i in 1:no_PopPUNK_clusters){
   for (k in unique(PopPUNK_clusters$Serotype)){
-  PP_mass_cluster_freq_1_sero[i,which(unique(Mass_Samples_accCodes$Serotype)==k)] <- length(which(PopPUNK_clusters[which(PopPUNK_clusters$Cluster==unique(PopPUNK_clusters$Cluster)[i]),][PopPUNK_clusters[which(PopPUNK_clusters$Cluster==unique(PopPUNK_clusters$Cluster)[i]),]$Serotype ==k, ]$"SeqYear"==2001))
-  PP_mass_cluster_freq_2_sero[i,which(unique(Mass_Samples_accCodes$Serotype)==k)] <- length(which(PopPUNK_clusters[which(PopPUNK_clusters$Cluster==unique(PopPUNK_clusters$Cluster)[i]),][PopPUNK_clusters[which(PopPUNK_clusters$Cluster==unique(PopPUNK_clusters$Cluster)[i]),]$Serotype ==k, ]$"SeqYear"==2004))
-  PP_mass_cluster_freq_3_sero[i,which(unique(Mass_Samples_accCodes$Serotype)==k)] <- length(which(PopPUNK_clusters[which(PopPUNK_clusters$Cluster==unique(PopPUNK_clusters$Cluster)[i]),][PopPUNK_clusters[which(PopPUNK_clusters$Cluster==unique(PopPUNK_clusters$Cluster)[i]),]$Serotype ==k, ]$"SeqYear"==2007))
+  PP_mass_cluster_freq_1_sero[i,which(unique(PopPUNK_clusters$Serotype)==k)] <- length(which(PopPUNK_clusters[which(PopPUNK_clusters$Cluster==unique(PopPUNK_clusters$Cluster)[i]),][PopPUNK_clusters[which(PopPUNK_clusters$Cluster==unique(PopPUNK_clusters$Cluster)[i]),]$Serotype ==k, ]$"SeqYear"==2001))
+  PP_mass_cluster_freq_2_sero[i,which(unique(PopPUNK_clusters$Serotype)==k)] <- length(which(PopPUNK_clusters[which(PopPUNK_clusters$Cluster==unique(PopPUNK_clusters$Cluster)[i]),][PopPUNK_clusters[which(PopPUNK_clusters$Cluster==unique(PopPUNK_clusters$Cluster)[i]),]$Serotype ==k, ]$"SeqYear"==2004))
+  PP_mass_cluster_freq_3_sero[i,which(unique(PopPUNK_clusters$Serotype)==k)] <- length(which(PopPUNK_clusters[which(PopPUNK_clusters$Cluster==unique(PopPUNK_clusters$Cluster)[i]),][PopPUNK_clusters[which(PopPUNK_clusters$Cluster==unique(PopPUNK_clusters$Cluster)[i]),]$Serotype ==k, ]$"SeqYear"==2007))
   }
 }
 

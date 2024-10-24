@@ -135,7 +135,7 @@ if(args[1] == "Navajo" & args[2] == "PopPUNK"){
   sero_no = length(unique(seq_clusters$Serotype))
   
   #model_start_pop <- readRDS(file = "Navajo_PPsero_startpop.rds")
-  model_start_pop <- readRDS(file = "Navajo_PPsero_startpop3.rds")
+  model_start_pop <- readRDS(file = "Navajo_PPsero_startpop.rds")
   #mass_VT <- readRDS(file = "Navajo_SeroVT.rds")
   #PCV13_VTs <- rep(0,sero_no)
   #names(PCV13_VTs) <- unique(seq_clusters$Serotype)
@@ -153,7 +153,7 @@ if(args[1] == "Navajo" & args[2] == "PopPUNK"){
   mass_clusters <- length(unique(seq_clusters$Cluster))
   avg_cluster_freq <- readRDS(file = "Navajo_PPsero_mig.rds")
   dt <- 1/12
-  peripost_mass_cluster_freq <- data.frame("year" = 1:12, rbind(mass_cluster_freq_4,mass_cluster_freq_5,mass_cluster_freq_6, mass_cluster_freq_7,mass_cluster_freq_8,mass_cluster_freq_9, mass_cluster_freq_10, mass_cluster_freq_11,mass_cluster_freq_12, mass_cluster_freq_13, mass_cluster_freq_14,mass_cluster_freq_15))
+  peripost_mass_cluster_freq <- data.frame("year" = 1:14, rbind(mass_cluster_freq_2,mass_cluster_freq_3,mass_cluster_freq_4,mass_cluster_freq_5,mass_cluster_freq_6, mass_cluster_freq_7,mass_cluster_freq_8,mass_cluster_freq_9, mass_cluster_freq_10, mass_cluster_freq_11,mass_cluster_freq_12, mass_cluster_freq_13, mass_cluster_freq_14,mass_cluster_freq_15))
   names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
   vacc_time1 <- 2
   vacc_time2 <- 12

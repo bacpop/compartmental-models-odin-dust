@@ -13,9 +13,6 @@ path_to_data <- "~/Documents/PhD_Project/Data/"
 ### Reading in the Accession Codes, Population and the Sequence Clusters
 UK_metadata <- read.csv("~/Documents/PhD_Project/Data/StrepPneumo_UK/metadata.csv")
 
-
-
-
 UK_ids <- UK_metadata$id
 UK_ids_dict <- 1:length(UK_ids)
 names(UK_ids_dict) <- UK_ids
@@ -499,22 +496,22 @@ plot(colSums(UK_cluster_freqs_sero[[1]])/sum(colSums(UK_cluster_freqs_sero[[1]])
 points(colSums(PPsero_startpop2)/sum(colSums(PPsero_startpop2)), col = "red")
 # the serotype distribution is quite far off
 
-# same PPsero_startpop6 for Mass
-PPsero_startpop3 <- matrix(0, nrow = length(unique(PopPUNK_clusters$Cluster)), ncol = length(unique(PopPUNK_clusters$Serotype)))
+# same as PPsero_startpop6 for Mass
+PPsero_startpop4 <- matrix(0, nrow = length(unique(PopPUNK_clusters$Cluster)), ncol = length(unique(PopPUNK_clusters$Serotype)))
 PP_expand_factor <- 15000 / sum(UK_cluster_freqs_sero[[1]])
 exp_noise <- 1000
-for (i in 1:nrow(PPsero_startpop3)) {
-    PPsero_startpop3[i,] <- (sapply((UK_cluster_freqs_sero[[1]][i,] + rexp(n = length(UK_cluster_freqs_sero[[1]][i,]), rate = exp_noise)) * PP_expand_factor, rpois, n=1)) + ceiling(PPxSero_matrix_prob2[i,])
+for (i in 1:nrow(PPsero_startpop4)) {
+    PPsero_startpop4[i,] <- (sapply((UK_cluster_freqs_sero[[1]][i,] + rexp(n = length(UK_cluster_freqs_sero[[1]][i,]), rate = exp_noise)) * PP_expand_factor, rpois, n=1)) + ceiling(PPxSero_matrix_prob2[i,])
   #PPsero_startpop5[i,] <- PP_mass_cluster_freq_1_sero[i,] + ceiling(PPxSero_matrix_prob[i,])
 }
-saveRDS(PPsero_startpop3, "UK_PPsero_startpop.rds")
+saveRDS(PPsero_startpop4, "UK_PPsero_startpop.rds")
 # see next bit, I had already implemented that
 
 plot(rowSums(UK_cluster_freqs_sero[[1]])/sum(rowSums(UK_cluster_freqs_sero[[1]])))
-points(rowSums(PPsero_startpop3)/sum(rowSums(PPsero_startpop3)), col = "red")
+points(rowSums(PPsero_startpop4)/sum(rowSums(PPsero_startpop4)), col = "red")
 
 plot(colSums(UK_cluster_freqs_sero[[1]])/sum(colSums(UK_cluster_freqs_sero[[1]])))
-points(colSums(PPsero_startpop3)/sum(colSums(PPsero_startpop3)), col = "red")
+points(colSums(PPsero_startpop4)/sum(colSums(PPsero_startpop4)), col = "red")
 # the serotype distribution is much closter now
 
 # serotype VT vector
