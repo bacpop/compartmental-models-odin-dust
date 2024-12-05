@@ -257,3 +257,57 @@ for (i in 1:nrow(Navajo_matching_Mass)) {
 # translate ggCaller presence-absence matrix into anno-space
 # take translated matrix and translate it into other dataset
 # problem: annotations that only exist in one dataset. Please think about this.
+
+# 05.12.2024
+mmseq_results_FindNavajoInMass <- read.delim("~/Documents/PhD_Project/Data/Mapping_ggCaller/MMseqs2_results/run3/bestResultNavajoInMass.m8", header=FALSE)
+
+mmseq_results_FindMassInNavajo <- read.delim("~/Documents/PhD_Project/Data/Mapping_ggCaller/MMseqs2_results/run3_FindMassInNavajo/bestResultsMassInNavajo.m8", header=FALSE)
+
+NavajoInMass_dict <- mmseq_results_FindNavajoInMass$V2
+names(NavajoInMass_dict) <- mmseq_results_FindNavajoInMass$V1
+
+MassInNavajo_dict <- mmseq_results_FindMassInNavajo$V2
+names(MassInNavajo_dict) <- mmseq_results_FindMassInNavajo$V1
+
+match_count <- 0
+no_match_count <- 0
+for (i in 1:length(names(NavajoInMass_dict))){
+  name <- names(NavajoInMass_dict)[i]
+  val <- NavajoInMass_dict[name]
+  return_val <- MassInNavajo_dict[val]
+  if(name != return_val){
+    if(mmseq_results_FindNavajoInMass$V3[i]>0){
+      no_match_count <- no_match_count + 1 
+    }
+  }
+  else{
+    if(mmseq_results_FindNavajoInMass$V3[i]>0){
+    match_count <- match_count + 1
+    }
+  }
+}
+# no quality check
+#> no_match_count (0.0)
+#[1] 1343
+#> match_count (0.0)
+#[1] 3872
+
+#> no_match_count (0.90)
+#[1] 463
+#> match_count (0.90)
+#[1] 3103
+
+#> no_match_count (0.95)
+#[1] 204
+#> match_count (0.95)
+#[1] 1382
+
+#> no_match_count (0.99)
+#[1] 64
+#> match_count (0.99)
+#[1] 252
+
+# this is already much more promising.
+# I did the bestResult filtering / search with mmseqs2, which makes the mapping back and forth already much more consistent
+# I need to think about how many matches I really expect, considering the singleton genes in both datasets
+# and 

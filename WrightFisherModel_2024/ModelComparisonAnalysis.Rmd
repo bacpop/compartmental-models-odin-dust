@@ -1,0 +1,133 @@
+---
+title: "Model comparison 2, 3, 4, 5 parameters"
+output: html_notebook
+---
+
+```{r}
+### Mass
+
+# Null model
+Mass_2param_mcmc2 <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_12_05/ModelComparison_Mass/PPxSero_ggCaller_PopPUNK_Null_det_pmcmc_run2.rds")
+Mass_2param_mcmc2_probs <- coda::as.mcmc(cbind(Mass_2param_mcmc2$probabilities, Mass_2param_mcmc2$pars))
+#coda::effectiveSize(Mass_2param_mcmc2_probs)
+#summary(coda::as.mcmc(Mass_2param_mcmc2_probs))
+Mass_likelihood_2param <- median(Mass_2param_mcmc2_probs[,"log_likelihood"])
+#mean(Mass_2param_mcmc2_probs[,"log_likelihood"])
+rm(Mass_2param_mcmc2)
+
+# 3-parameter model
+Mass_3param_mcmc2 <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_12_05/ModelComparison_Mass/PPxSero_ggCaller_PopPUNK_3param_det_pmcmc_run2.rds")
+Mass_3param_mcmc2_probs <- coda::as.mcmc(cbind(Mass_3param_mcmc2$probabilities, Mass_3param_mcmc2$pars))
+#coda::effectiveSize(Mass_3param_mcmc2_probs)
+#summary(coda::as.mcmc(Mass_3param_mcmc2_probs))
+Mass_likelihood_3param <- median(Mass_3param_mcmc2_probs[,"log_likelihood"])
+#mean(Mass_3param_mcmc2_probs[,"log_likelihood"])
+rm(Mass_3param_mcmc2)
+
+# 4-parameter model
+Mass_4param_mcmc2 <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_12_05/ModelComparison_Mass/PPxSero_ggCaller_PopPUNK_4param_det_pmcmc_run2.rds")
+Mass_4param_mcmc2_probs <- coda::as.mcmc(cbind(Mass_4param_mcmc2$probabilities, Mass_4param_mcmc2$pars))
+#coda::effectiveSize(Mass_4param_mcmc2_probs)
+#summary(coda::as.mcmc(Mass_4param_mcmc2_probs))
+Mass_likelihood_4param <- median(Mass_4param_mcmc2_probs[,"log_likelihood"])
+#mean(Mass_4param_mcmc2_probs[,"log_likelihood"])
+rm(Mass_4param_mcmc2)
+
+# 5-parameter model
+Mass_5param_mcmc2 <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_12_05/ModelComparison_Mass/PPxSero_ggCaller_PopPUNK_5param_det_pmcmc_run2.rds")
+Mass_5param_mcmc2_probs <- coda::as.mcmc(cbind(Mass_5param_mcmc2$probabilities, Mass_5param_mcmc2$pars))
+#coda::effectiveSize(Mass_5param_mcmc2_probs)
+#summary(coda::as.mcmc(Mass_5param_mcmc2_probs))
+Mass_likelihood_5param <- median(Mass_5param_mcmc2_probs[,"log_likelihood"])
+#mean(Mass_5param_mcmc2_probs[,"log_likelihood"])
+rm(Mass_5param_mcmc2)
+
+```
+
+# Likelihood ratio test
+#  lambda = -2*(x_1-x_2).
+# pvalue_testing_null=1-pchisq(lambda,difference_in_degrees_of_freedom) 
+```{r}
+lambda <- -2 * (Mass_likelihood_2param - Mass_likelihood_3param)
+pchisq(lambda, 1,lower.tail = FALSE)
+# 0.001665563
+
+lambda <- -2 * (Mass_likelihood_2param - Mass_likelihood_4param)
+pchisq(lambda, 2,lower.tail = FALSE)
+# 4.630899e-21
+
+lambda <- -2 * (Mass_likelihood_3param - Mass_likelihood_4param)
+pchisq(lambda, 1,lower.tail = FALSE)
+# 5.594179e-20
+
+lambda <- -2 * (Mass_likelihood_2param - Mass_likelihood_5param)
+pchisq(lambda, 3,lower.tail = FALSE)
+# 2.381506e-20
+
+lambda <- -2 * (Mass_likelihood_3param - Mass_likelihood_5param)
+pchisq(lambda, 2,lower.tail = FALSE)
+# 4.25975e-19
+
+lambda <- -2 * (Mass_likelihood_4param - Mass_likelihood_5param)
+pchisq(lambda, 1,lower.tail = FALSE)
+# 0.3586622
+```
+
+```{r}
+### UK
+
+# Null model
+UK_2param_mcmc2 <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_12_05/ModelComparison_UK/UK_PPxSero_ggCaller_PopPUNK_Null_det_pmcmc_run2.rds")
+UK_2param_mcmc2_probs <- coda::as.mcmc(cbind(UK_2param_mcmc2$probabilities, UK_2param_mcmc2$pars))
+#coda::effectiveSize(UK_2param_mcmc2_probs)
+#summary(coda::as.mcmc(UK_2param_mcmc2_probs))
+UK_likelihood_2param <- median(UK_2param_mcmc2_probs[,"log_likelihood"])
+#mean(UK_2param_mcmc2_probs[,"log_likelihood"])
+rm(UK_2param_mcmc2)
+
+# 3-parameter model
+UK_3param_mcmc2 <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_12_05/ModelComparison_UK/UK_PPxSero_ggCaller_PopPUNK_3param_det_pmcmc_run2.rds")
+UK_3param_mcmc2_probs <- coda::as.mcmc(cbind(UK_3param_mcmc2$probabilities, UK_3param_mcmc2$pars))
+#coda::effectiveSize(UK_3param_mcmc2_probs)
+#summary(coda::as.mcmc(UK_3param_mcmc2_probs))
+UK_likelihood_3param <- median(UK_3param_mcmc2_probs[,"log_likelihood"])
+#mean(UK_3param_mcmc2_probs[,"log_likelihood"])
+rm(UK_3param_mcmc2)
+
+# 4-parameter model
+UK_4param_mcmc2 <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_12_05/ModelComparison_UK/UK_PPxSero_ggCaller_PopPUNK_4param_det_pmcmc_run2.rds")
+UK_4param_mcmc2_probs <- coda::as.mcmc(cbind(UK_4param_mcmc2$probabilities, UK_4param_mcmc2$pars))
+#coda::effectiveSize(UK_4param_mcmc2_probs)
+#summary(coda::as.mcmc(UK_4param_mcmc2_probs))
+UK_likelihood_4param <- median(UK_4param_mcmc2_probs[,"log_likelihood"])
+#mean(UK_4param_mcmc2_probs[,"log_likelihood"])
+rm(UK_4param_mcmc2)
+
+#this one does not exist yet:
+# 5-parameter model
+UK_5param_mcmc2 <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_12_05/ModelComparison_UK/UK_PPxSero_ggCaller_PopPUNK_5param_det_pmcmc_run2.rds")
+UK_5param_mcmc2_probs <- coda::as.mcmc(cbind(UK_5param_mcmc2$probabilities, UK_5param_mcmc2$pars))
+#coda::effectiveSize(UK_5param_mcmc2_probs)
+#summary(coda::as.mcmc(UK_5param_mcmc2_probs))
+UK_likelihood_5param <- median(UK_5param_mcmc2_probs[,"log_likelihood"])
+#mean(UK_5param_mcmc2_probs[,"log_likelihood"])
+rm(UK_5param_mcmc2)
+
+```
+
+# Likelihood ratio test
+#  lambda = -2*(x_1-x_2).
+# pvalue_testing_null=1-pchisq(lambda,difference_in_degrees_of_freedom) 
+```{r}
+lambda <- -2 * (UK_likelihood_2param - UK_likelihood_3param)
+pchisq(lambda, 1,lower.tail = FALSE)
+# 1
+
+lambda <- -2 * (UK_likelihood_2param - UK_likelihood_4param)
+pchisq(lambda, 2,lower.tail = FALSE)
+# 5.09473e-35
+
+lambda <- -2 * (UK_likelihood_3param - UK_likelihood_4param)
+pchisq(lambda, 1,lower.tail = FALSE)
+# 9.157337e-37
+```

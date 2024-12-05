@@ -5722,6 +5722,101 @@ lollipop_cluster_freqs_2x2_VTandNVT_labelSero(year = "2007", plot_title = "PopPU
 
 ```
 
+```{r}
+# look at time trajectory of this fit
+
+#newStart PPxSeroWithSero fit (16.10.2024)
+#PPxSeroWithSero <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_10_16/Mass_PPxSero_NewStart/Mass_PPxSero_WithSero/PPxSeroWithSero_ggCaller_PopPUNK_det_pmcmc_run2.rds")
+#PPxSeroWithSero_mcmc <- coda::as.mcmc(cbind(PPxSeroWithSero$probabilities, PPxSeroWithSero$pars))
+#coda::effectiveSize(PPxSeroWithSero_mcmc)
+#summary(coda::as.mcmc(PPxSeroWithSero_mcmc))
+#library(bayestestR)
+#map_estimate(PPxSeroWithSero$pars)
+# sigma_f -3.24, prop_f 0.25, m -4.59, v 0.07
+fitPPxSeroWithSero_params <- list(dt = 1/36, species_no = mass_clusters, sero_no = length(unique(seq_clusters$Serotype)), gene_no = nrow(intermed_gene_presence_absence_consensus)-1, Pop_ini = model_start_pop, Pop_eq = as.double(rowSums(model_start_pop)), capacity = sum(model_start_pop), Genotypes = intermed_gene_presence_absence_consensus_matrix, sigma_f = -3.24, prop_f = 0.25, delta = delta_ranking, m = -4.59, migVec = avg_cluster_freq, vaccTypes = mass_VT, v = 0.07, vacc_time = 0)
+
+WF_PPxSeroWithSero <- odin.dust::odin_dust("NFDS_Model_PPxSeroWithSero.R")
+WFmodel_ppxSeroWithSero <- WF_PPxSeroWithSero$new(pars = fitPPxSeroWithSero_params,
+                         time = 0,
+                         n_particles = 1L,
+                         n_threads = 4L,
+                         seed = 1L)
+#simMeanggCPP1_clust <- rowMeans(WFmodel_ppxSeroWithSero$run(0)[2:(PP_mass_clusters+1),])
+#simMeanggCPP1_sero <- rowMeans(WFmodel_ppxSeroWithSero$run(0)[(PP_mass_clusters + 2):(PP_mass_clusters + sero_no+1),])
+#simMeanggCPP2_clust <- rowMeans(WFmodel_ppxSeroWithSero$run(36)[2:(PP_mass_clusters+1),])
+#simMeanggCPP2_sero <- rowMeans(WFmodel_ppxSeroWithSero$run(36)[(PP_mass_clusters + 2):(PP_mass_clusters + sero_no+1),])
+#simMeanggCPP3_clust <- rowMeans(WFmodel_ppxSeroWithSero$run(72)[2:(PP_mass_clusters+1),])
+#simMeanggCPP3_sero <- rowMeans(WFmodel_ppxSeroWithSero$run(72)[(PP_mass_clusters + 2):(PP_mass_clusters + sero_no+1),])
+
+empty_vec <- rep(0,mass_clusters)
+sim_ggCPP2 <- array(rep(empty_vec,219),dim = c(mass_clusters, 219))
+
+for (i in 0:218) {
+  sim_ggCPP2[,i+1] <- (WFmodel_ppxSeroWithSero$run(i)[2:(PP_mass_clusters+1),])
+}
+
+library("viridis") 
+plot(1:mass_clusters, mass_cluster_freq_1/sum(mass_cluster_freq_1), pch = 19, col = "#E69F00", ylim = c(0, 0.2))
+for (i in 1:218) {
+  points((1:mass_clusters)+ ((i-1)*0.0045), sim_ggCPP2[,i]/sum(sim_ggCPP2[,i]), col = viridis(218)[i], cex = 1.5)
+}
+#points((1:mass_clusters),sim_ggCPP2[,1]/sum(sim_ggCPP2[,1]), bg = viridis(73)[1], pch = 21, col = "#E69F00", cex = 1.5)
+#points((1:mass_clusters)+0.18,sim_ggCPP2[,37]/sum(sim_ggCPP2[,37]), bg = viridis(73)[37], pch = 21, col = "#D55E00", cex = 1.5)
+#points((1:mass_clusters)+0.36,sim_ggCPP2[,73]/sum(sim_ggCPP2[,73]), bg = viridis(73)[73], pch = 21, col = "#CC79A7", cex = 1.5)
+points(mass_cluster_freq_1/sum(mass_cluster_freq_1), col = "#E69F00", pch = 19, cex = 1.5)
+points((1:mass_clusters)+0.162,mass_cluster_freq_2/sum(mass_cluster_freq_2), col = "#D55E00", pch = 19, cex = 1.5)
+points((1:mass_clusters)+0.324,mass_cluster_freq_3/sum(mass_cluster_freq_3), col = "#CC79A7", pch = 19, cex = 1.5)
+abline(v= (1:mass_clusters) + 0.7 )
+legend(40, 0.2, legend = c("Model 0", "Model 36", "Model 72","Data 2001", "Data 2004", "Data 2007"), fill = c(viridis(73)[1], viridis(73)[37], viridis(73)[73], "#E69F00","#D55E00", "#CC79A7"), cex = 2)
+
+
+for (j in 1:mass_clusters) {
+  loc <- "/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_11_06/TimeTrajMass/"
+  file_name <- paste("Cluster", as.character(j), ".pdf", sep = "")
+  pdf(file = paste(loc,file_name,sep = ""),   # The directory you want to save the file in
+    width = 12, # The width of the plot in inches
+    height = 6)
+  plot(c(0,36,72), c((mass_cluster_freq_1/sum(mass_cluster_freq_1))[j],(mass_cluster_freq_2/sum(mass_cluster_freq_2))[j], (mass_cluster_freq_3/sum(mass_cluster_freq_3))[j]), pch = 4, col = "red", ylim = c(0, 0.2), xlim = c(0, 220))
+for (i in 1:218) {
+  points(0+ ((i-1)), sim_ggCPP2[j,i]/sum(sim_ggCPP2[,i]), col = viridis(218)[i], cex = 1.5, pch = 19)
+}
+points(c(0,36,72), c((mass_cluster_freq_1/sum(mass_cluster_freq_1))[j],(mass_cluster_freq_2/sum(mass_cluster_freq_2))[j], (mass_cluster_freq_3/sum(mass_cluster_freq_3))[j]), pch = 4, col = "red", cex = 2)
+#legend(40, 0.2, legend = c("Model 0", "Model 36", "Model 72","Data 2001", "Data 2004", "Data 2007"), fill = c(viridis(218)[1], viridis(218)[37], viridis(218)[73], "black","black", "black"), cex = 2)
+dev.off()
+}
+
+plot(c(0,36,72), c((mass_cluster_freq_1/sum(mass_cluster_freq_1))[1],(mass_cluster_freq_2/sum(mass_cluster_freq_2))[1], (mass_cluster_freq_3/sum(mass_cluster_freq_3))[1]), pch = 19, col = "#E69F00", ylim = c(0, 0.2), xlim = c(0, 220))
+for (i in 1:218) {
+  points(0+ ((i-1)), sim_ggCPP2[1,i]/sum(sim_ggCPP2[,i]), col = viridis(218)[i], cex = 1.5)
+}
+points(c(0,36,72), c((mass_cluster_freq_1/sum(mass_cluster_freq_1))[1],(mass_cluster_freq_2/sum(mass_cluster_freq_2))[1], (mass_cluster_freq_3/sum(mass_cluster_freq_3))[1]), pch = 4, col = "black")
+
+
+# plot all trajectories together with lines
+# this is very crowded though
+plot(c(0,36,72), c((mass_cluster_freq_1/sum(mass_cluster_freq_1))[1],(mass_cluster_freq_2/sum(mass_cluster_freq_2))[1], (mass_cluster_freq_3/sum(mass_cluster_freq_3))[1]), pch = 4, col = viridis(mass_clusters)[1], ylim = c(0, 0.2), xlim = c(0, 220))
+for (j in 1:mass_clusters) {
+  #loc <- "/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_11_06/TimeTrajMass/"
+  #file_name <- paste("Cluster", as.character(j), ".pdf", sep = "")
+  #pdf(file = paste(loc,file_name,sep = ""),   # The directory you want to save the file in
+  #  width = 12, # The width of the plot in inches
+  #  height = 6)
+  plot_vec <- rep(0, 218)
+for (i in 1:218) {
+  plot_vec[i] <- sim_ggCPP2[j,i]/sum(sim_ggCPP2[,i])
+  #lines(0+ ((i-1)), sim_ggCPP2[j,i]/sum(sim_ggCPP2[,i]), col = viridis(mass_clusters)[j], cex = 1.5, pch = 19)
+}
+  lines(plot_vec, col = viridis(mass_clusters)[j])
+points(c(0,36,72), c((mass_cluster_freq_1/sum(mass_cluster_freq_1))[j],(mass_cluster_freq_2/sum(mass_cluster_freq_2))[j], (mass_cluster_freq_3/sum(mass_cluster_freq_3))[j]), pch = 4, col = viridis(mass_clusters)[j], cex = 2)
+#legend(40, 0.2, legend = c("Model 0", "Model 36", "Model 72","Data 2001", "Data 2004", "Data 2007"), fill = c(viridis(218)[1], viridis(218)[37], viridis(218)[73], "black","black", "black"), cex = 2)
+#dev.off()
+}
+```
+
+
+
+
+
 #look at fits for Mass PPxSero
 ```{r}
 #Data
@@ -6283,6 +6378,8 @@ sd_Mass_ParamSamples <- apply(cluster_samples_ParamVar_rel, 2,sd)
 mean_Mass_ParamSamples <- apply(cluster_samples_ParamVar_rel,2,mean)
 sd_Mass_ParamSamples/mean_Mass_ParamSamples
 
+mean_Mass_ParamSamples_Null <- apply(cluster_samples_ParamVar_Null_rel,2,mean)
+
 # for data
 # draw vectors from data distribution
 mass_cluster_freq_3 <- readRDS(file = "PP_mass_cluster_freq_3.rds")
@@ -6384,13 +6481,60 @@ cluster_nullprorata <- mass_cluster_freq_1
 cluster_nullprorata[which(PPcluster_VTs == "VT")] <- 0
 cluster_change_nullprorata <- cluster_nullprorata/sum(cluster_nullprorata) - mass_cluster_freq_1/sum(mass_cluster_freq_1)
 
-plot(sort(cluster_change_data, decreasing = TRUE), col = PPcluster_VTs_cols[order(cluster_change_data, decreasing = TRUE)], cex = 1.2)
+#normal null model 
+cluster_change_model_null <- mean_Mass_ParamSamples_Null - mass_cluster_freq_1/sum(mass_cluster_freq_1)
+
+
+plot(sort(cluster_change_data, decreasing = TRUE), col = PPcluster_VTs_cols[order(cluster_change_data, decreasing = TRUE)], cex = 1.2,xaxt = "n", xlab = "Cluster")
+axis(1, at = 1:length(cluster_change_data), labels = unique(PopPUNK_clusters$Cluster)[order(cluster_change_data, decreasing = TRUE)])
 abline(h=0, lty = 2)
 points(cluster_change_model[order(cluster_change_data, decreasing = TRUE)], pch = 4, col = PPcluster_VTs_cols[order(cluster_change_data, decreasing = TRUE)], cex = 1.2)
 points(cluster_change_nullprorata[order(cluster_change_data, decreasing = TRUE)], pch = 2, col = PPcluster_VTs_cols[order(cluster_change_data, decreasing = TRUE)], cex = 1.2)
 # Add a legend
 legend(0, -0.025, legend=c("Data VT", "Model VT", "Null pro rata VT", "Data mixed","Model mixed","Null pro rata mixed","Data NVT", "Model NVT","Null pro rata NVT"),
-       col=c("red","red","red", "orange","orange", "orange","black", "black","black"),pch = c(1,2,4), cex=1)
+       col=c("red","red","red", "orange","orange", "orange","black", "black","black"),pch = c(1,4,2), cex=1)
+
+plot(sort(cluster_change_data, decreasing = TRUE), col = PPcluster_VTs_cols[order(cluster_change_data, decreasing = TRUE)], cex = 1.2,xaxt = "n", xlab = "Cluster")
+axis(1, at = 1:length(cluster_change_data), labels = unique(PopPUNK_clusters$Cluster)[order(cluster_change_data, decreasing = TRUE)])
+abline(h=0, lty = 2)
+points(cluster_change_model[order(cluster_change_data, decreasing = TRUE)], pch = 4, col = PPcluster_VTs_cols[order(cluster_change_data, decreasing = TRUE)], cex = 1.2)
+points(cluster_change_model_null[order(cluster_change_data, decreasing = TRUE)], pch = 2, col = PPcluster_VTs_cols[order(cluster_change_data, decreasing = TRUE)], cex = 1.2)
+# Add a legend
+legend(0, -0.025, legend=c("Data VT", "Model VT", "Null Model VT", "Data mixed","Model mixed","Null Model mixed","Data NVT", "Model NVT","Null Model NVT"),
+       col=c("red","red","red", "orange","orange", "orange","black", "black","black"),pch = c(1,4,2), cex=1)
+
+
+#plot(sort(cluster_change_data, decreasing = TRUE), col = PPcluster_VTs_cols[order(cluster_change_data, decreasing = TRUE)], cex = 1.2)
+
+plot(-(sort(cluster_change_data, decreasing = TRUE) - cluster_change_model[order(cluster_change_data, decreasing = TRUE)]), pch = 4, col = PPcluster_VTs_cols[order(cluster_change_data, decreasing = TRUE)], cex = 1.2, ylim = c(-0.1, 0.1),xaxt = "n", xlab = "Cluster")
+axis(1, at = 1:length(cluster_change_data), labels = unique(PopPUNK_clusters$Cluster)[order(cluster_change_data, decreasing = TRUE)])
+abline(h=0, lty = 2)
+points(-(sort(cluster_change_data, decreasing = TRUE) - cluster_change_nullprorata[order(cluster_change_data, decreasing = TRUE)]), pch = 2, col = PPcluster_VTs_cols[order(cluster_change_data, decreasing = TRUE)], cex = 1.2)
+# Add a legend
+legend(0, 0.1, legend=c("Data VT", "Model VT", "Null pro rata VT", "Data mixed","Model mixed","Null pro rata mixed","Data NVT", "Model NVT","Null pro rata NVT"),
+       col=c("red","red","red", "orange","orange", "orange","black", "black","black"),pch = c(1,4,2), cex=1)
+
+# with my standard null model (not pro rata)
+plot(-(sort(cluster_change_data, decreasing = TRUE) - cluster_change_model[order(cluster_change_data, decreasing = TRUE)]), pch = 4, col = PPcluster_VTs_cols[order(cluster_change_data, decreasing = TRUE)], cex = 1.2, ylim = c(-0.1, 0.1),xaxt = "n", xlab = "Cluster")
+axis(1, at = 1:length(cluster_change_data), labels = unique(PopPUNK_clusters$Cluster)[order(cluster_change_data, decreasing = TRUE)])
+abline(h=0, lty = 2)
+points(-(sort(cluster_change_data, decreasing = TRUE) - cluster_change_model_null[order(cluster_change_data, decreasing = TRUE)]), pch = 2, col = PPcluster_VTs_cols[order(cluster_change_data, decreasing = TRUE)], cex = 1.2)
+# Add a legend
+legend(0, 0.1, legend=c("Data VT", "Model VT", "Null pro rata VT", "Data mixed","Model mixed","Null pro rata mixed","Data NVT", "Model NVT","Null pro rata NVT"),
+       col=c("red","red","red", "orange","orange", "orange","black", "black","black"),pch = c(1,4,2), cex=1)
+
+
+# data and model sorted by model
+plot(cluster_change_data[order(cluster_change_model, decreasing = TRUE)], col = PPcluster_VTs_cols[order(cluster_change_model, decreasing = TRUE)], cex = 1.2,xaxt = "n", xlab = "Cluster")
+axis(1, at = 1:length(cluster_change_data), labels = unique(PopPUNK_clusters$Cluster)[order(cluster_change_model, decreasing = TRUE)])
+abline(h=0, lty = 2)
+points(cluster_change_model[order(cluster_change_model, decreasing = TRUE)], pch = 4, col = PPcluster_VTs_cols[order(cluster_change_model, decreasing = TRUE)], cex = 1.2)
+
+# for null model
+plot(cluster_change_data[order(cluster_change_model_null, decreasing = TRUE)], col = PPcluster_VTs_cols[order(cluster_change_model_null, decreasing = TRUE)], cex = 1.2,xaxt = "n", xlab = "Cluster")
+axis(1, at = 1:length(cluster_change_data), labels = unique(PopPUNK_clusters$Cluster)[order(cluster_change_model_null, decreasing = TRUE)])
+abline(h=0, lty = 2)
+points(cluster_change_model_null[order(cluster_change_model_null, decreasing = TRUE)], pch = 2, col = PPcluster_VTs_cols[order(cluster_change_model_null, decreasing = TRUE)], cex = 1.2)
 ```
 
 
@@ -6460,5 +6604,18 @@ lollipop_cluster_freqs_VTandNVT_labelSero_TAC(year = "2007", plot_title = "PopPU
 
 combined_compare(simMeanggCPP2_sero, mass_cluster_freq_2) + combined_compare(simMeanggCPP3_sero, mass_cluster_freq_3)
 #[1] -179.7438
+```
+
+```{r}
+#NB
+# found a note from Dan Weinberger's talk (03.07.2024) in our lab: he said that the serotype prevalence stays the same pre/post vaccine
+# i.e. the serotypes get swapped out but the most common is at a certain freq, the second at another, and so on
+# Zipf's law?
+plot(sort(PP_mass_sero_freq_1, decreasing = TRUE)/sum(PP_mass_sero_freq_1))
+points(sort(PP_mass_sero_freq_2, decreasing = TRUE)/sum(PP_mass_sero_freq_2), col = "blue")
+points(sort(PP_mass_sero_freq_3, decreasing = TRUE)/sum(PP_mass_sero_freq_3), col = "red")
+
+# well, I don't know. maybe ish.
+# could try that on other datasets
 ```
 
