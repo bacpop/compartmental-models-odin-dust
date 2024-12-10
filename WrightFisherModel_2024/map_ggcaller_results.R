@@ -310,4 +310,35 @@ for (i in 1:length(names(NavajoInMass_dict))){
 # this is already much more promising.
 # I did the bestResult filtering / search with mmseqs2, which makes the mapping back and forth already much more consistent
 # I need to think about how many matches I really expect, considering the singleton genes in both datasets
-# and 
+
+# 06.12.2024
+# after a short conversation with Sam: filter representatives first (by 5-95% intermed freq genes), then do mapping with mmseqs and then compare forward/backward search
+# things that do no match at all (prob not under NFDS)
+# try 98% amino acids sequence identity
+# rep is longest member btw
+
+library(stringr)
+
+Mass_gene_cluster_rep_str <- paste(readLines("~/Documents/PhD_Project/Data/Mapping_ggCaller/Massachusetts/pangenome_reference.fa"), collapse="\n")
+Mass_gene_cluster_rep_str_split <- strsplit(Mass_gene_cluster_rep_str, ">")
+Mass_gene_cluster_rep_dict <- c()
+for (i in 2:length(Mass_gene_cluster_rep_str_split[[1]])) {
+  local_split <- str_split_fixed(Mass_gene_cluster_rep_str_split[[1]][i],"\n",2)
+  #cluster_name <- paste(">",local_split[1,1], sep = "")
+  cluster_name <- local_split[1,1]
+  cluster_seq <- local_split[1,2]
+  Mass_gene_cluster_rep_dict[cluster_name] <- cluster_seq
+}
+
+
+Mass_ggC_intermed_gene_names <- readRDS(file = "Mass_ggC_intermed_gene_names.rds")
+print_str <- ""
+for (gene_name in Mass_ggC_intermed_gene_names) {
+  print_str <- paste(print_str, ">", gene_name, "\n",Mass_gene_cluster_rep_dict[gene_name], sep = "")
+}
+fileConn<-file("~/Documents/PhD_Project/Data/Mapping_ggCaller/Massachusetts/pangenome_reference_filtered.fa")
+writeLines(print_str, fileConn)
+close(fileConn)
+
+# repeat this for UK
+# and then run mmseqs again

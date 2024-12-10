@@ -32,7 +32,8 @@ pi_w_genotypes[] <- sum(pi_w_freq[1:gene_no,i])
 # those are the individuals' probabilities multiplied by the number of individual that have this genotype
 #probs[,] <- ((1 + sigma_f)^pi_f_genotypes[i] * (1 + sigma_w)^pi_w_genotypes[i]) * Pop[i,j] * (1- (as.integer(time >= vacc_time) * vT[j] * v))
 #probs[,] <- (1 + exp(sigma_f))^pi_f_genotypes[i] * Pop[i,j] * (1- (as.integer(time >= vacc_time) * vaccTypes[j] * v))
-probs[,] <- ((1 + exp(sigma_f))^pi_f_genotypes[i] * (1 + sigma_w)^pi_w_genotypes[i]) * Pop[i,j] * (1- (as.integer(time >= vacc_time1) * as.integer(time < vacc_time2) * vaccTypes1[j] * v)) * (1- (as.integer(time >= vacc_time2) * vaccTypes2[j] * v))
+#probs[,] <- ((1 + exp(sigma_f))^pi_f_genotypes[i] * (1 + exp(sigma_w))^pi_w_genotypes[i]) * Pop[i,j] * (1- (as.integer(time >= vacc_time1) * as.integer(time < vacc_time2) * vaccTypes1[j] * v)) * (1- (as.integer(time >= vacc_time2) * vaccTypes2[j] * v))
+probs[,] <- ((1 + exp(sigma_f) + exp(sigma_w))^pi_f_genotypes[i] * (1 + exp(sigma_w))^pi_w_genotypes[i]) * Pop[i,j] * (1- (as.integer(time >= vacc_time1) * as.integer(time < vacc_time2) * vaccTypes1[j] * v)) * (1- (as.integer(time >= vacc_time2) * vaccTypes2[j] * v))
 #probs[,] <- (1 + exp(sigma_f))^pi_f_genotypes[i] * Pop[i,j] * (1- (as.integer(time >= vacc_time1) * as.integer(time < vacc_time2) * vaccTypes1[j] * v)) * (1- (as.integer(time >= vacc_time2) * vaccTypes2[j] * v))
 
 

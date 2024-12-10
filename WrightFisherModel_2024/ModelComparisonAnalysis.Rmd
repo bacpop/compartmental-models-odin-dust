@@ -4,6 +4,7 @@ output: html_notebook
 ---
 
 ```{r}
+library(bayestestR)
 ### Mass
 
 # Null model
@@ -13,7 +14,17 @@ Mass_2param_mcmc2_probs <- coda::as.mcmc(cbind(Mass_2param_mcmc2$probabilities, 
 #summary(coda::as.mcmc(Mass_2param_mcmc2_probs))
 Mass_likelihood_2param <- median(Mass_2param_mcmc2_probs[,"log_likelihood"])
 #mean(Mass_2param_mcmc2_probs[,"log_likelihood"])
+param_estimates <- map_estimate(Mass_2param_mcmc2$pars)
+#-4.54, 0.04
+param_median <- apply(Mass_2param_mcmc2_probs, 2, median)
+percentile95_low <- apply(Mass_2param_mcmc2_probs,2,quantile,.025)
+percentile95_up <- apply(Mass_2param_mcmc2_probs,2,quantile,.975)
+#     log_prior log_likelihood  log_posterior              m              v 
+#    0.00000000  -282.73532201  -282.73532201    -4.55624600     0.03722269 
+#    0.00000000  -285.77115406  -285.77115406    -4.78545282     0.02894042 
+#    0.00000000  -282.05070637  -282.05070637    -4.33260021     0.04784521
 rm(Mass_2param_mcmc2)
+rm(Mass_2param_mcmc2_probs)
 
 # 3-parameter model
 Mass_3param_mcmc2 <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_12_05/ModelComparison_Mass/PPxSero_ggCaller_PopPUNK_3param_det_pmcmc_run2.rds")
@@ -22,7 +33,17 @@ Mass_3param_mcmc2_probs <- coda::as.mcmc(cbind(Mass_3param_mcmc2$probabilities, 
 #summary(coda::as.mcmc(Mass_3param_mcmc2_probs))
 Mass_likelihood_3param <- median(Mass_3param_mcmc2_probs[,"log_likelihood"])
 #mean(Mass_3param_mcmc2_probs[,"log_likelihood"])
+param_estimates <- map_estimate(Mass_3param_mcmc2$pars)
+# -6.49, -4.50, 0.05
+param_median <- apply(Mass_3param_mcmc2_probs, 2, median)
+percentile95_low <- apply(Mass_3param_mcmc2_probs,2,quantile,.025)
+percentile95_up <- apply(Mass_3param_mcmc2_probs,2,quantile,.975)
+#     log_prior log_likelihood  log_posterior        sigma_f              m              v 
+#    0.00000000  -277.79240627  -277.79240627    -6.60076644    -4.51591959     0.05206014
+#    0.00000000  -282.04398459  -282.04398459    -8.28515193    -4.78809296     0.03730393
+#    0.00000000  -276.63008552  -276.63008552    -5.92139441    -4.24192984     0.06905461
 rm(Mass_3param_mcmc2)
+rm(Mass_3param_mcmc2_probs)
 
 # 4-parameter model
 Mass_4param_mcmc2 <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_12_05/ModelComparison_Mass/PPxSero_ggCaller_PopPUNK_4param_det_pmcmc_run2.rds")
@@ -31,7 +52,17 @@ Mass_4param_mcmc2_probs <- coda::as.mcmc(cbind(Mass_4param_mcmc2$probabilities, 
 #summary(coda::as.mcmc(Mass_4param_mcmc2_probs))
 Mass_likelihood_4param <- median(Mass_4param_mcmc2_probs[,"log_likelihood"])
 #mean(Mass_4param_mcmc2_probs[,"log_likelihood"])
+param_estimates <- map_estimate(Mass_4param_mcmc2$pars)
+# -3.27, 0.24, -4.36, 0.08
+param_median <- apply(Mass_4param_mcmc2_probs, 2, median)
+percentile95_low <- apply(Mass_4param_mcmc2_probs,2,quantile,.025)
+percentile95_up <- apply(Mass_4param_mcmc2_probs,2,quantile,.975)
+#     log_prior log_likelihood  log_posterior        sigma_f         prop_f              m              v 
+#    0.00000000  -235.91378600  -235.91378600    -3.28140914     0.25168999    -4.31905913     0.08061989 
+#    0.00000000  -240.56908318  -240.56908318    -4.18698747     0.11780847    -4.80025991     0.06278332
+#     0.0000000   -233.6428808   -233.6428808     -2.1707973      0.4555952     -3.8273690      0.1059178
 rm(Mass_4param_mcmc2)
+rm(Mass_4param_mcmc2_probs)
 
 # 5-parameter model
 Mass_5param_mcmc2 <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_12_05/ModelComparison_Mass/PPxSero_ggCaller_PopPUNK_5param_det_pmcmc_run2.rds")
@@ -40,7 +71,17 @@ Mass_5param_mcmc2_probs <- coda::as.mcmc(cbind(Mass_5param_mcmc2$probabilities, 
 #summary(coda::as.mcmc(Mass_5param_mcmc2_probs))
 Mass_likelihood_5param <- median(Mass_5param_mcmc2_probs[,"log_likelihood"])
 #mean(Mass_5param_mcmc2_probs[,"log_likelihood"])
+param_estimates <- map_estimate(Mass_5param_mcmc2$pars)
+# -3.07, 0.25, -308.77, -4.27, 0.08
+param_median <- apply(Mass_5param_mcmc2_probs, 2, median)
+percentile95_low <- apply(Mass_5param_mcmc2_probs,2,quantile,.025)
+percentile95_up <- apply(Mass_5param_mcmc2_probs,2,quantile,.975)
+#      log_prior log_likelihood  log_posterior        sigma_f         prop_f        sigma_w              m              v 
+#     0.00000000  -235.49249990  -235.49249990    -3.16379492     0.24679261  -450.09478345    -4.29818407     0.08237048 
+#     0.0000000   -239.8943341   -239.8943341     -3.4820120      0.1705453   -970.0844042     -4.7681127      0.0648898 
+#     0.0000000   -233.6029196   -233.6029196     -2.5691558      0.3820193    -31.7122708     -3.7922820      0.1061980 
 rm(Mass_5param_mcmc2)
+rm(Mass_5param_mcmc2_probs)
 
 ```
 
@@ -130,4 +171,67 @@ pchisq(lambda, 2,lower.tail = FALSE)
 lambda <- -2 * (UK_likelihood_3param - UK_likelihood_4param)
 pchisq(lambda, 1,lower.tail = FALSE)
 # 9.157337e-37
+```
+
+```{r}
+### Navajo
+
+# Null model
+Navajo_2param_mcmc2 <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_12_05/ModelComparison_Navajo/Navajo_PPxSero2vacc_ggCaller_PopPUNK_Null_det_pmcmc_run2.rds")
+Navajo_2param_mcmc2_probs <- coda::as.mcmc(cbind(Navajo_2param_mcmc2$probabilities, Navajo_2param_mcmc2$pars))
+#coda::effectiveSize(Navajo_2param_mcmc2_probs)
+#summary(coda::as.mcmc(Navajo_2param_mcmc2_probs))
+Navajo_likelihood_2param <- median(Navajo_2param_mcmc2_probs[,"log_likelihood"])
+#mean(Navajo_2param_mcmc2_probs[,"log_likelihood"])
+rm(Navajo_2param_mcmc2)
+
+# 3-parameter model
+Navajo_3param_mcmc2 <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_12_05/ModelComparison_Navajo/Navajo_PPxSero2vacc_ggCaller_PopPUNK_3param_det_pmcmc_run2.rds")
+Navajo_3param_mcmc2_probs <- coda::as.mcmc(cbind(Navajo_3param_mcmc2$probabilities, Navajo_3param_mcmc2$pars))
+#coda::effectiveSize(Navajo_3param_mcmc2_probs)
+#summary(coda::as.mcmc(Navajo_3param_mcmc2_probs))
+Navajo_likelihood_3param <- median(Navajo_3param_mcmc2_probs[,"log_likelihood"])
+#mean(Navajo_3param_mcmc2_probs[,"log_likelihood"])
+rm(Navajo_3param_mcmc2)
+
+# 4-parameter model
+Navajo_4param_mcmc2 <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_12_05/ModelComparison_Navajo/Navajo_PPxSero2vacc_ggCaller_PopPUNK_4param_det_pmcmc_run2.rds")
+Navajo_4param_mcmc2_probs <- coda::as.mcmc(cbind(Navajo_4param_mcmc2$probabilities, Navajo_4param_mcmc2$pars))
+#coda::effectiveSize(Navajo_4param_mcmc2_probs)
+#summary(coda::as.mcmc(Navajo_4param_mcmc2_probs))
+Navajo_likelihood_4param <- median(Navajo_4param_mcmc2_probs[,"log_likelihood"])
+#mean(Navajo_4param_mcmc2_probs[,"log_likelihood"])
+rm(Navajo_4param_mcmc2)
+### this does not look good
+# I had −611.0528 in TAC report, not -775.1046
+# hmm, 21.10.2024 looks more like -775
+# and in TAC presentation was also -778
+
+#this one does not exist yet:
+# 5-parameter model
+Navajo_5param_mcmc2 <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_12_05/ModelComparison_Navajo/Navajo_PPxSero2vacc_ggCaller_PopPUNK_5param_det_pmcmc_run2.rds")
+Navajo_5param_mcmc2_probs <- coda::as.mcmc(cbind(Navajo_5param_mcmc2$probabilities, Navajo_5param_mcmc2$pars))
+#coda::effectiveSize(Navajo_5param_mcmc2_probs)
+#summary(coda::as.mcmc(Navajo_5param_mcmc2_probs))
+Navajo_likelihood_5param <- median(Navajo_5param_mcmc2_probs[,"log_likelihood"])
+#mean(Navajo_5param_mcmc2_probs[,"log_likelihood"])
+rm(Navajo_5param_mcmc2)
+
+```
+
+# Likelihood ratio test
+#  lambda = -2*(x_1-x_2).
+# pvalue_testing_null=1-pchisq(lambda,difference_in_degrees_of_freedom) 
+```{r}
+lambda <- -2 * (Navajo_likelihood_2param - Navajo_likelihood_3param)
+pchisq(lambda, 1,lower.tail = FALSE)
+#  1.341161e-46
+
+lambda <- -2 * (Navajo_likelihood_2param - Navajo_likelihood_4param)
+pchisq(lambda, 2,lower.tail = FALSE)
+# 1.930802e-45
+
+lambda <- -2 * (Navajo_likelihood_3param - Navajo_likelihood_4param)
+pchisq(lambda, 1,lower.tail = FALSE)
+# 0.5011485
 ```
