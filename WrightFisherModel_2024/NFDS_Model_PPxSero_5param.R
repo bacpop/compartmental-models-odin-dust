@@ -33,7 +33,9 @@ pi_w_genotypes[] <- sum(pi_w_freq[1:gene_no,i])
 #probs[,] <- ((1 + exp(sigma_f) + exp(sigma_w))^pi_f_genotypes[i] * (1 + exp(sigma_w))^pi_w_genotypes[i]) * Pop[i,j] * (1- (as.integer(time >= vacc_time) * vaccTypes[j] * v))
 #probs[,] <- ((1 + exp(sigma_f + sigma_w))^pi_f_genotypes[i] * (1 + exp(sigma_w))^pi_w_genotypes[i]) * Pop[i,j] * (1- (as.integer(time >= vacc_time) * vaccTypes[j] * v))
 # this (above) is a nice idea but it does not work with the fitting
-probs[,] <- ((1 + exp(sigma_f))^pi_f_genotypes[i] * (1 + exp(sigma_w))^pi_w_genotypes[i]) * Pop[i,j] * (1- (as.integer(time >= vacc_time) * vaccTypes[j] * v))
+#probs[,] <- ((1 + exp(sigma_f))^pi_f_genotypes[i] * (1 + exp(sigma_w))^pi_w_genotypes[i]) * Pop[i,j] * (1- (as.integer(time >= vacc_time) * vaccTypes[j] * v))
+# new version, just trying it out
+probs[,] <- ((1 + exp(sigma_f) + exp(sigma_w))^pi_f_genotypes[i] * (1 + exp(sigma_w))^pi_w_genotypes[i]) * Pop[i,j] * (1- (as.integer(time >= vacc_time) * vaccTypes[j] * v))
 #probs[,] <- (1 + exp(sigma_f))^pi_f_genotypes[i] * Pop[i,j] * (1- (as.integer(time >= vacc_time) * vaccTypes[j] * v))
 
 

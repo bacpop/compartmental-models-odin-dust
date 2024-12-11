@@ -266,6 +266,9 @@ for (i in 1:length(UK_time_points)) {
 }
 
 saveRDS(UK_ggCaller_intermed_consensus,"UK_ggCaller_intermed_consensus.rds")
+
+UK_ggC_intermed_gene_names <- UK_ggCaller_intermed_consensus[-1,1]
+saveRDS(UK_ggC_intermed_gene_names, file = "UK_ggC_intermed_gene_names.rds")
 ```
 
 # Calculate VT/NVT for clusters

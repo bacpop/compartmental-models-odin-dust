@@ -340,5 +340,125 @@ fileConn<-file("~/Documents/PhD_Project/Data/Mapping_ggCaller/Massachusetts/pang
 writeLines(print_str, fileConn)
 close(fileConn)
 
-# repeat this for UK
+# repeat this for UK and Navajo
 # and then run mmseqs again
+
+filter_cluster_rep_file <- function(cluster_rep_file, intermed_gene_names, filtered_file){
+  # read in fasta file with cluster representatives as string
+  gene_cluster_rep_str_split <- strsplit(cluster_rep_file, ">")
+  gene_cluster_rep_dict <- c()
+  for (i in 2:length(gene_cluster_rep_str_split[[1]])) {
+    local_split <- str_split_fixed(gene_cluster_rep_str_split[[1]][i],"\n",2)
+    #cluster_name <- paste(">",local_split[1,1], sep = "")
+    cluster_name <- local_split[1,1]
+    cluster_seq <- local_split[1,2]
+    gene_cluster_rep_dict[cluster_name] <- cluster_seq
+  }
+  # add intermediate gene names and sequences to file string
+  print_str <- ""
+  for (gene_name in intermed_gene_names) {
+    print_str <- paste(print_str, ">", gene_name, "\n",gene_cluster_rep_dict[gene_name], sep = "")
+  }
+  # write output file
+  writeLines(print_str, filtered_file)
+  close(filtered_file)
+}
+
+### UK
+UK_ggC_intermed_gene_names <- readRDS("UK_ggC_intermed_gene_names.rds")
+UK_gene_cluster_rep_str <- paste(readLines("~/Documents/PhD_Project/Data/Mapping_ggCaller/UK/pangenome_reference.fa"), collapse="\n")
+UK_filtered_reps <- file("~/Documents/PhD_Project/Data/Mapping_ggCaller/UK/pangenome_reference_filtered.fa")
+filter_cluster_rep_file(UK_gene_cluster_rep_str, UK_ggC_intermed_gene_names, UK_filtered_reps)
+
+### Navajo
+Navajo_gene_cluster_rep_str <- paste(readLines("~/Documents/PhD_Project/Data/Mapping_ggCaller/Navajo/pangenome_reference.fa"), collapse="\n")
+Navajo_ggC_intermed_gene_names <- readRDS("Navajo_ggC_intermed_gene_names.rds")
+Navajo_filtered_reps <- file("~/Documents/PhD_Project/Data/Mapping_ggCaller/Navajo/pangenome_reference_filtered.fa")
+filter_cluster_rep_file(Navajo_gene_cluster_rep_str, Navajo_ggC_intermed_gene_names, Navajo_filtered_reps)
+
+# 11.12.2024
+mmseq_results_FindUKInMass <- read.delim("~/Documents/PhD_Project/Data/Mapping_ggCaller/MMseqs2_results/FindIntermedUKinIntermedMass/bestResultUKinMass.m8", header=FALSE)
+
+mmseq_results_FindMassInUK <- read.delim("~/Documents/PhD_Project/Data/Mapping_ggCaller/MMseqs2_results/FindIntermedMassInIntermedUK/bestResultMassInUK.m8", header=FALSE)
+
+#UKInMass_dict_val <- 
+
+UKInMass_dict <- mmseq_results_FindUKInMass$V2
+names(UKInMass_dict) <- mmseq_results_FindUKInMass$V1
+
+MassInUK_dict <- mmseq_results_FindMassInUK$V2
+names(MassInUK_dict) <- mmseq_results_FindMassInUK$V1
+
+UKMass_seq_id_vec <- mmseq_results_FindUKInMass$V3
+
+recip_matching <- function(AinB_dict, BinA_dict, seq_id_vec, seq_identity = 0.95){
+  match_count <- 0
+  no_match_count <- 0
+  match_dict <- c()
+  
+  for (i in 1:length(names(AinB_dict))){
+    name <- names(AinB_dict)[i]
+    val <- AinB_dict[name]
+    return_val <- BinA_dict[val]
+    if(name != return_val){
+      if(seq_id_vec[i]>=seq_identity){
+        no_match_count <- no_match_count + 1 
+      }
+    }
+    else{
+      if(seq_id_vec[i]>=seq_identity){
+        match_count <- match_count + 1
+        match_dict[name] <- val
+      }
+    }
+  }
+  print(paste("recip matches", match_count))
+  print(paste("non-recip matches", no_match_count))
+  match_dict
+}
+
+#> match_count
+#[1] 397
+#> no_match_count
+#[1] 78
+
+Mass_ggC_intermed_gene_freqs <- readRDS("Mass_ggC_intermed_gene_freqs.rds")
+names(Mass_ggC_intermed_gene_freqs) <- Mass_ggC_intermed_gene_names
+
+UK_ggC_intermed_gene_freqs <- readRDS("UK_ggC_intermed_gene_freqs.rds")
+names(UK_ggC_intermed_gene_freqs) <- UK_ggC_intermed_gene_names
+
+match_UKMass_95 <- recip_matching(UKInMass_dict, MassInUK_dict, UKMass_seq_id_vec, 0.95)
+match_UKMass_90 <- recip_matching(UKInMass_dict, MassInUK_dict, UKMass_seq_id_vec, 0.90)
+match_UKMass_99 <- recip_matching(UKInMass_dict, MassInUK_dict, UKMass_seq_id_vec, 0.99)
+
+plot(UK_ggC_intermed_gene_freqs[names(match_UKMass_90)], Mass_ggC_intermed_gene_freqs[match_UKMass_90[names(match_UKMass_90)]])
+plot(UK_ggC_intermed_gene_freqs[names(match_UKMass_95)], Mass_ggC_intermed_gene_freqs[match_UKMass_95[names(match_UKMass_95)]])
+plot(UK_ggC_intermed_gene_freqs[names(match_UKMass_99)], Mass_ggC_intermed_gene_freqs[match_UKMass_99[names(match_UKMass_99)]])
+
+# same with unfiltered matches
+mmseq_results_FindUKInMass_unfiltered <- read.delim("~/Documents/PhD_Project/Data/Mapping_ggCaller/MMseqs2_results/FindAllUKinAllMass/bestResultUKinMass.m8", header=FALSE)
+mmseq_results_FindMassInUK_unfiltered <- read.delim("~/Documents/PhD_Project/Data/Mapping_ggCaller/MMseqs2_results/FindAllMassInAllUK/bestResultMassInUK.m8", header=FALSE)
+
+UKInMassUnfiltered_dict <- mmseq_results_FindUKInMass_unfiltered$V2
+names(UKInMassUnfiltered_dict) <- mmseq_results_FindUKInMass_unfiltered$V1
+
+MassInUKUnfiltered_dict <- mmseq_results_FindMassInUK_unfiltered$V2
+names(MassInUKUnfiltered_dict) <- mmseq_results_FindMassInUK_unfiltered$V1
+
+UKMassUnfiltered_seq_id_vec <- mmseq_results_FindUKInMass_unfiltered$V3
+
+# make a plot that shows how frequent genes are with recip matches and those that do not have a recip match
+Mass_ggC_all_gene_freqs_dict <- readRDS("Mass_ggC_all_gene_freqs.rds")
+names(Mass_ggC_all_gene_freqs_dict) <- readRDS("Mass_ggC_all_gene_names.rds")
+
+UK_ggC_all_gene_freqs_dict <- readRDS("UK_ggC_all_gene_freqs.rds")
+names(UK_ggC_all_gene_freqs_dict) <- readRDS("UK_ggC_all_gene_names.rds")
+
+match_UKMassUnfiltered_90 <- recip_matching(UKInMassUnfiltered_dict, MassInUKUnfiltered_dict, UKMassUnfiltered_seq_id_vec, 0.90)
+match_UKMassUnfiltered_95 <- recip_matching(UKInMassUnfiltered_dict, MassInUKUnfiltered_dict, UKMassUnfiltered_seq_id_vec, 0.95)
+match_UKMassUnfiltered_99 <- recip_matching(UKInMassUnfiltered_dict, MassInUKUnfiltered_dict, UKMassUnfiltered_seq_id_vec, 0.99)
+
+plot(UK_ggC_all_gene_freqs_dict[names(match_UKMassUnfiltered_90)], Mass_ggC_all_gene_freqs_dict[match_UKMassUnfiltered_90[names(match_UKMassUnfiltered_90)]])
+plot(UK_ggC_all_gene_freqs_dict[names(match_UKMassUnfiltered_95)], Mass_ggC_all_gene_freqs_dict[match_UKMassUnfiltered_95[names(match_UKMassUnfiltered_95)]])
+plot(UK_ggC_all_gene_freqs_dict[names(match_UKMassUnfiltered_99)], Mass_ggC_all_gene_freqs_dict[match_UKMassUnfiltered_99[names(match_UKMassUnfiltered_99)]])

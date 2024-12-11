@@ -837,6 +837,12 @@ ggC_filter <- as.integer(ggC_gene_freq_2001<=0.95 & ggC_gene_freq_2001>=0.05)
 ggC_intermed_gene_names <- ggCaller_gene_presence_absence_2001[which(ggC_filter==1),1]
 saveRDS(ggC_intermed_gene_names, file = "Mass_ggC_intermed_gene_names.rds")
 
+ggC_intermed_gene_freqs <- ggC_gene_freq_2001[which(ggC_filter==1)]
+saveRDS(ggC_intermed_gene_freqs, file = "Mass_ggC_intermed_gene_freqs.rds")
+
+ggC_all_gene_freqs <- ggC_gene_freq_2001
+saveRDS(ggC_all_gene_freqs, file = "Mass_ggC_all_gene_freqs.rds")
+
 # intermediate gene presence absence matrices filtered by genes that are present at 5-95% frequency in 2001
 ggC_intermed_gene_presence_absence_2001 <- data.frame(matrix(0, nrow = sum(ggC_filter)+1, ncol = length(Mass_Samples_accCodes[Mass_Samples_accCodes$`Year of Isolation`==2001,]$`Isolate Name`)+1))
 ggC_intermed_gene_presence_absence_2001 <- ggCaller_gene_presence_absence_2001[c(1,which(ggC_filter==1)+1),]

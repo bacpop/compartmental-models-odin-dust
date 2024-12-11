@@ -124,6 +124,13 @@ UK_2param_mcmc2_probs <- coda::as.mcmc(cbind(UK_2param_mcmc2$probabilities, UK_2
 #summary(coda::as.mcmc(UK_2param_mcmc2_probs))
 UK_likelihood_2param <- median(UK_2param_mcmc2_probs[,"log_likelihood"])
 #mean(UK_2param_mcmc2_probs[,"log_likelihood"])
+param_median <- apply(UK_2param_mcmc2_probs, 2, median)
+percentile95_low <- apply(UK_2param_mcmc2_probs,2,quantile,.025)
+percentile95_up <- apply(UK_2param_mcmc2_probs,2,quantile,.975)
+#     log_prior log_likelihood  log_posterior              m              v 
+#    0.00000000  -640.85538465  -640.85538465    -4.36018953     0.02798267 
+#    0.00000000  -643.95162152  -643.95162152    -4.56306240     0.02164408
+#    0.00000000  -640.17013460  -640.17013460    -4.16166788     0.03482034
 rm(UK_2param_mcmc2)
 
 # 3-parameter model
@@ -133,6 +140,13 @@ UK_3param_mcmc2_probs <- coda::as.mcmc(cbind(UK_3param_mcmc2$probabilities, UK_3
 #summary(coda::as.mcmc(UK_3param_mcmc2_probs))
 UK_likelihood_3param <- median(UK_3param_mcmc2_probs[,"log_likelihood"])
 #mean(UK_3param_mcmc2_probs[,"log_likelihood"])
+param_median <- apply(UK_3param_mcmc2_probs, 2, median)
+percentile95_low <- apply(UK_3param_mcmc2_probs,2,quantile,.025)
+percentile95_up <- apply(UK_3param_mcmc2_probs,2,quantile,.975)
+#     log_prior log_likelihood  log_posterior        sigma_f              m              v 
+#    0.00000000  -642.10337603  -642.10337603   -19.07597327    -4.52497824     0.02894815 
+#    0.00000000  -652.65879091  -652.65879091  -307.70593047    -4.75223182     0.02277319 
+#     0.0000000   -640.2573559   -640.2573559     -4.2676913     -2.4375028      0.6825091
 rm(UK_3param_mcmc2)
 
 # 4-parameter model
@@ -142,6 +156,13 @@ UK_4param_mcmc2_probs <- coda::as.mcmc(cbind(UK_4param_mcmc2$probabilities, UK_4
 #summary(coda::as.mcmc(UK_4param_mcmc2_probs))
 UK_likelihood_4param <- median(UK_4param_mcmc2_probs[,"log_likelihood"])
 #mean(UK_4param_mcmc2_probs[,"log_likelihood"])
+param_median <- apply(UK_4param_mcmc2_probs, 2, median)
+percentile95_low <- apply(UK_4param_mcmc2_probs,2,quantile,.025)
+percentile95_up <- apply(UK_4param_mcmc2_probs,2,quantile,.975)
+#     log_prior log_likelihood  log_posterior        sigma_f         prop_f              m              v 
+#    0.00000000  -561.89311301  -561.89311301    -3.21313461     0.14847513    -3.97671477     0.09081274
+#    0.00000000  -566.34600127  -566.34600127    -3.62415671     0.10767921    -4.26552560     0.07626173
+#     0.0000000   -560.4980507   -560.4980507     -2.5274892      0.1524845     -3.6791013      0.1069834 
 rm(UK_4param_mcmc2)
 
 #this one does not exist yet:
@@ -183,6 +204,13 @@ Navajo_2param_mcmc2_probs <- coda::as.mcmc(cbind(Navajo_2param_mcmc2$probabiliti
 #summary(coda::as.mcmc(Navajo_2param_mcmc2_probs))
 Navajo_likelihood_2param <- median(Navajo_2param_mcmc2_probs[,"log_likelihood"])
 #mean(Navajo_2param_mcmc2_probs[,"log_likelihood"])
+param_median <- apply(Navajo_2param_mcmc2_probs, 2, median)
+percentile95_low <- apply(Navajo_2param_mcmc2_probs,2,quantile,.025)
+percentile95_up <- apply(Navajo_2param_mcmc2_probs,2,quantile,.975)
+#     log_prior log_likelihood  log_posterior              m              v 
+#     0.0000000   -878.0629747   -878.0629747     -3.6893245      0.1181851 
+#    0.00000000  -881.36090195  -881.36090195    -3.99475933     0.06562337
+#     0.0000000   -877.3314368   -877.3314368     -3.2919001      0.2179553 
 rm(Navajo_2param_mcmc2)
 
 # 3-parameter model
@@ -192,6 +220,13 @@ Navajo_3param_mcmc2_probs <- coda::as.mcmc(cbind(Navajo_3param_mcmc2$probabiliti
 #summary(coda::as.mcmc(Navajo_3param_mcmc2_probs))
 Navajo_likelihood_3param <- median(Navajo_3param_mcmc2_probs[,"log_likelihood"])
 #mean(Navajo_3param_mcmc2_probs[,"log_likelihood"])
+param_median <- apply(Navajo_3param_mcmc2_probs, 2, median)
+percentile95_low <- apply(Navajo_3param_mcmc2_probs,2,quantile,.025)
+percentile95_up <- apply(Navajo_3param_mcmc2_probs,2,quantile,.975)
+#     log_prior log_likelihood  log_posterior        sigma_f              m              v 
+#     0.0000000   -775.3308326   -775.3308326     -4.5142096     -2.8810714      0.2341128
+#     0.0000000   -779.0923917   -779.0923917     -5.0989938     -3.3458219      0.1111547
+#     0.0000000   -774.0645465   -774.0645465     -3.8534879     -2.2976970      0.5704883
 rm(Navajo_3param_mcmc2)
 
 # 4-parameter model
@@ -201,6 +236,14 @@ Navajo_4param_mcmc2_probs <- coda::as.mcmc(cbind(Navajo_4param_mcmc2$probabiliti
 #summary(coda::as.mcmc(Navajo_4param_mcmc2_probs))
 Navajo_likelihood_4param <- median(Navajo_4param_mcmc2_probs[,"log_likelihood"])
 #mean(Navajo_4param_mcmc2_probs[,"log_likelihood"])
+param_median <- apply(Navajo_4param_mcmc2_probs, 2, median)
+percentile95_low <- apply(Navajo_4param_mcmc2_probs,2,quantile,.025)
+percentile95_up <- apply(Navajo_4param_mcmc2_probs,2,quantile,.975)
+#     log_prior log_likelihood  log_posterior        sigma_f         prop_f              m              v 
+#     0.0000000   -775.1045809   -775.1045809     -4.3816666      0.8891211     -2.8791399      0.2336864
+#     0.0000000   -779.1645089   -779.1645089     -5.0194125      0.7804437     -3.3327171      0.1113736
+#     0.0000000   -773.3687772   -773.3687772     -3.6963467      0.9960815     -2.3210855      0.5919767
+
 rm(Navajo_4param_mcmc2)
 ### this does not look good
 # I had −611.0528 in TAC report, not -775.1046
