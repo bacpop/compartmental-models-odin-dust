@@ -204,6 +204,15 @@ UK_gene_freq_preVac <- UK_gene_freq_preVac / preVac_datapoints
 UK_gene_filter <- as.integer(UK_gene_freq_preVac<=0.95 & UK_gene_freq_preVac>=0.05)
 # sum(UK_gene_filter)
 # 1614 intermediate-frequency genes (of 6526)
+
+UK_ggC_intermed_gene_freqs <- UK_gene_freq_preVac[which(UK_gene_filter==1)]
+saveRDS(UK_ggC_intermed_gene_freqs, file = "UK_ggC_intermed_gene_freqs.rds")
+
+UK_ggC_all_gene_freqs <- UK_gene_freq_preVac
+saveRDS(UK_ggC_all_gene_freqs, file = "UK_ggC_all_gene_freqs.rds")
+
+UK_ggC_all_gene_names <- UK_ggCaller_byYear[[1]][-1,1]
+saveRDS(UK_ggC_all_gene_names, file = "UK_ggC_all_gene_names.rds")
 ```
 
 # create intermediate frequency dataframes

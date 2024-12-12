@@ -260,6 +260,10 @@ for (i in 1:length(Navajo_time_points_selected)) {
 }
 
 saveRDS(Navajo_ggCaller_intermed_consensus,"Navajo_ggCaller_intermed_consensus.rds")
+
+# intermed gene name list for mapping ggCaller
+Navajo_ggC_intermed_gene_names <- Navajo_ggCaller_intermed_consensus[-1,1]
+saveRDS(Navajo_ggC_intermed_gene_names, file = "Navajo_ggC_intermed_gene_names.rds")
 ```
 
 # Calculate VT/NVT for clusters
