@@ -390,6 +390,7 @@ MassInUK_dict <- mmseq_results_FindMassInUK$V2
 names(MassInUK_dict) <- mmseq_results_FindMassInUK$V1
 
 UKMass_seq_id_vec <- mmseq_results_FindUKInMass$V3
+MassUK_seq_id_vec <- mmseq_results_FindMassInUK$V3
 
 recip_matching <- function(AinB_dict, BinA_dict, seq_id_vec, seq_identity = 0.95){
   match_count <- 0
@@ -450,6 +451,7 @@ MassInUKUnfiltered_dict <- mmseq_results_FindMassInUK_unfiltered$V2
 names(MassInUKUnfiltered_dict) <- mmseq_results_FindMassInUK_unfiltered$V1
 
 UKMassUnfiltered_seq_id_vec <- mmseq_results_FindUKInMass_unfiltered$V3
+MassUKUnfiltered_seq_id_vec <- mmseq_results_FindMassInUK_unfiltered$V3
 
 # make a plot that shows how frequent genes are with recip matches and those that do not have a recip match
 Mass_ggC_all_gene_freqs_dict <- readRDS("Mass_ggC_all_gene_freqs.rds")
@@ -461,10 +463,48 @@ names(UK_ggC_all_gene_freqs_dict) <- readRDS("UK_ggC_all_gene_names.rds")
 match_UKMassUnfiltered_90 <- recip_matching(UKInMassUnfiltered_dict, MassInUKUnfiltered_dict, UKMassUnfiltered_seq_id_vec, 0.90)
 match_UKMassUnfiltered_95 <- recip_matching(UKInMassUnfiltered_dict, MassInUKUnfiltered_dict, UKMassUnfiltered_seq_id_vec, 0.95)
 match_UKMassUnfiltered_99 <- recip_matching(UKInMassUnfiltered_dict, MassInUKUnfiltered_dict, UKMassUnfiltered_seq_id_vec, 0.99)
+match_MassUKUnfiltered_90 <- recip_matching(MassInUKUnfiltered_dict, UKInMassUnfiltered_dict, MassUKUnfiltered_seq_id_vec, 0.90)
 par(pty="s")
 plot(UK_ggC_all_gene_freqs_dict[names(match_UKMassUnfiltered_90)], Mass_ggC_all_gene_freqs_dict[match_UKMassUnfiltered_90[names(match_UKMassUnfiltered_90)]], xlab = "UK gene frequencies", ylab = "Mass gene frequencies",main="All Gene Frequencies, 90% sequence identity")
 abline(0,1)
 plot(UK_ggC_all_gene_freqs_dict[names(match_UKMassUnfiltered_95)], Mass_ggC_all_gene_freqs_dict[match_UKMassUnfiltered_95[names(match_UKMassUnfiltered_95)]], xlab = "UK gene frequencies", ylab = "Mass gene frequencies",main="All Gene Frequencies, 95% sequence identity")
 abline(0,1)
 plot(UK_ggC_all_gene_freqs_dict[names(match_UKMassUnfiltered_99)], Mass_ggC_all_gene_freqs_dict[match_UKMassUnfiltered_99[names(match_UKMassUnfiltered_99)]], xlab = "UK gene frequencies", ylab = "Mass gene frequencies",main="All Gene Frequencies, 99% sequence identity")
+abline(0,1)
+
+### 13.12.2024
+# colour these plots in by whether genes are predicted to be under NFDS or not
+Mass_delta_ranking <- readRDS(file = "ggC_delta_ranking.rds")
+UK_delta_ranking <- readRDS(file = "UK_delta_ranking.rds")
+# UK genes under NFDS 4-param model (Dec 2024): 0.1432
+# Mass genes under NFDS 4-param model (Dec 2024): 0.2797
+# gene under NFDS if delta[i] <= prop_f * gene_no
+Mass_delta_ranking_names <- Mass_delta_ranking
+names(Mass_delta_ranking_names) <- Mass_ggC_intermed_gene_names
+Mass_intermed_gene_underNFDS <- rep(0, length(Mass_delta_ranking_names))
+names(Mass_intermed_gene_underNFDS) <- names(Mass_delta_ranking_names)
+Mass_intermed_gene_underNFDS[which((Mass_delta_ranking_names <= 0.2797 * length(Mass_delta_ranking_names)))] <- 1
+#if(Mass_delta_ranking <= 0.2797 * length(Mass_delta_ranking)) 1 else 0
+UK_delta_ranking_names <- UK_delta_ranking
+names(UK_delta_ranking_names) <- UK_ggC_intermed_gene_names
+UK_intermed_gene_underNFDS <- rep(0, length(UK_delta_ranking_names))
+names(UK_intermed_gene_underNFDS) <- names(UK_delta_ranking_names)
+UK_intermed_gene_underNFDS[which((UK_delta_ranking_names <= 0.1432 * length(UK_delta_ranking_names)))] <- 1
+# expand this vector to all genes, NFDS or not
+# Mass
+Mass_underNFDS <- rep(0, length(Mass_ggC_all_gene_freqs_dict))
+names(Mass_underNFDS) <- readRDS("Mass_ggC_all_gene_names.rds")
+Mass_underNFDS[names(which(Mass_intermed_gene_underNFDS==1))] <- 1
+# UK
+UK_underNFDS <- rep(0, length(UK_ggC_all_gene_freqs_dict))
+names(UK_underNFDS) <- readRDS("UK_ggC_all_gene_names.rds")
+UK_underNFDS[names(which(UK_intermed_gene_underNFDS==1))] <- 1
+# create color vector
+colours_UKMassUnfiltered_90 <- rep("black", length(match_UKMassUnfiltered_90))
+names(colours_UKMassUnfiltered_90) <- names(match_UKMassUnfiltered_90)
+colours_UKMassUnfiltered_90[names(which(UK_underNFDS[names(match_UKMassUnfiltered_90)]==1))] <- "blue"
+colours_UKMassUnfiltered_90[match_MassUKUnfiltered_90[names(which(Mass_underNFDS[match_UKMassUnfiltered_90]==1))]] <- "red"
+
+par(pty="s")
+plot(UK_ggC_all_gene_freqs_dict[names(match_UKMassUnfiltered_90)], Mass_ggC_all_gene_freqs_dict[match_UKMassUnfiltered_90[names(match_UKMassUnfiltered_90)]], xlab = "UK gene frequencies", ylab = "Mass gene frequencies",main="All Gene Frequencies, 90% sequence identity", col = colours_UKMassUnfiltered_90)
 abline(0,1)
