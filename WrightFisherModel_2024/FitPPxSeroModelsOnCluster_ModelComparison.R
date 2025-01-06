@@ -154,6 +154,7 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   mass_cluster_freq_14 <- readRDS(file = "Nepal_cluster_freqs_14.rds")
   mass_cluster_freq_15 <- readRDS(file = "Nepal_cluster_freqs_15.rds")
   mass_cluster_freq_16 <- readRDS(file = "Nepal_cluster_freqs_16.rds")
+  mass_cluster_freq_17 <- readRDS(file = "Nepal_cluster_freqs_17.rds")
   
   mass_clusters <- length(unique(seq_clusters$Cluster))
   sero_no = length(unique(seq_clusters$Serotype))
@@ -164,7 +165,7 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   mass_clusters <- length(unique(seq_clusters$Cluster))
   avg_cluster_freq <- readRDS(file = "Nepal_PPsero_mig.rds")
   dt <- 1/12
-  peripost_mass_cluster_freq <- data.frame("year" = 1:9, rbind(mass_cluster_freq_8,mass_cluster_freq_9, mass_cluster_freq_10, mass_cluster_freq_11,mass_cluster_freq_12, mass_cluster_freq_13, mass_cluster_freq_14,mass_cluster_freq_15,mass_cluster_freq_16))
+  peripost_mass_cluster_freq <- data.frame("year" = 1:10, rbind(mass_cluster_freq_8,mass_cluster_freq_9, mass_cluster_freq_10, mass_cluster_freq_11,mass_cluster_freq_12, mass_cluster_freq_13, mass_cluster_freq_14,mass_cluster_freq_15,mass_cluster_freq_16,mass_cluster_freq_17))
   names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
   vacc_time <- 6
   output_filename <- "Nepal_PPxSero_ggCaller_PopPUNK"

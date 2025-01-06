@@ -9,23 +9,44 @@ editor_options:
 path_to_data <- "~/Documents/PhD_Project/Data/"
 ```
 
+### new data, December 2024
+
 # read in meta data (esp. serotype, sequencing year)
 ```{r}
-Nepal_meta_data <- read.csv(paste(path_to_data, "StrepPneumo_Nepal/GPS_data/gps1+gps2_metadata_results_leonie.csv",sep = ""))
-Nepal_time_points <- sort(unique(Nepal_meta_data$Year))
+#Nepal_meta_data <- read.csv(paste(path_to_data, "StrepPneumo_Nepal/GPS_data/gps1+gps2_metadata_results_leonie.csv",sep = ""))
+library(readxl)
+Nepal_meta_data <- read_excel("~/Documents/PhD_Project/Data/StrepPneumo_Nepal_gps_v2/GPS1_and_GPS2_Nepal_dataset_3Dec2024.xlsx")
 
-Nepal_SeqYear_dict <- Nepal_meta_data$Year
-names(Nepal_SeqYear_dict) <- Nepal_meta_data$Lane_id
+sheets <- readxl::excel_sheets("~/Documents/PhD_Project/Data/StrepPneumo_Nepal_gps_v2/GPS1_and_GPS2_Nepal_dataset_3Dec2024.xlsx") 
+tibble <- lapply(sheets, function(x) readxl::read_excel("~/Documents/PhD_Project/Data/StrepPneumo_Nepal_gps_v2/GPS1_and_GPS2_Nepal_dataset_3Dec2024.xlsx", sheet = x)) 
 
-Nepal_meta_IDtoInd <- 1:nrow(Nepal_meta_data)
-names(Nepal_meta_IDtoInd) <- Nepal_meta_data$Lane_id
+# turn tibbles into proper data frames
+# GPS1
+Nepal_meta_data_gps1 <-   as.data.frame(readxl::read_excel("~/Documents/PhD_Project/Data/StrepPneumo_Nepal_gps_v2/GPS1_and_GPS2_Nepal_dataset_3Dec2024.xlsx", sheet = "GPS1"))
+Nepal_meta_data_gps1_selection <- Nepal_meta_data_gps1[,c(2:6,8:13, 25, 75)]
+Nepal_meta_data_gps1_selection$GPS <- 1
+# GPS2
+Nepal_meta_data_gps2 <- as.data.frame(readxl::read_excel("~/Documents/PhD_Project/Data/StrepPneumo_Nepal_gps_v2/GPS1_and_GPS2_Nepal_dataset_3Dec2024.xlsx", sheet = "GPS2")) 
+Nepal_meta_data_gps2_selection <- Nepal_meta_data_gps2[,c(1,2,4:11,21,22, 49)]
+Nepal_meta_data_gps2_selection$GPS <- 2
+colnames(Nepal_meta_data_gps2_selection)[2] <- "Public_name"
+
+Nepal_meta_data_gps_joined <- rbind(Nepal_meta_data_gps1_selection, Nepal_meta_data_gps2_selection)
+
+Nepal_time_points <- sort(unique(Nepal_meta_data_gps_joined$Year))
+
+Nepal_SeqYear_dict <- Nepal_meta_data_gps_joined$Year
+names(Nepal_SeqYear_dict) <- Nepal_meta_data_gps_joined$Lane_id
+
+Nepal_meta_IDtoInd <- 1:nrow(Nepal_meta_data_gps_joined)
+names(Nepal_meta_IDtoInd) <- Nepal_meta_data_gps_joined$Lane_id
 ```
 
 ```{r}
 seq_no_per_year <- rep(0, length(Nepal_time_points))
 names(seq_no_per_year) <- Nepal_time_points
 for (i in 1:length(Nepal_time_points)) {
-  seq_no_per_year[i] <- length(which(Nepal_meta_data$Year==Nepal_time_points[i]))
+  seq_no_per_year[i] <- length(which(Nepal_meta_data_gps_joined$Year==Nepal_time_points[i]))
 }
 barplot(seq_no_per_year, xlab = "Sequencing Years", ylim = c(0, 1200), ylab = "Sequence Counts")
 # PCV10 was introduced in 2015
@@ -41,7 +62,7 @@ Nepal_time_points_preVac <- Nepal_time_points_selected[1:11]
 
 ```{r}
 # serotyping seems to be a bit difficult in this dataset
-unique(Nepal_meta_dataPP$In_silico_serotype)
+#unique(Nepal_meta_dataPP$In_silico_serotype)
 #> length(which(Nepal_meta_data$In_silico_serotype == "UNTYPABLE"))
 #[1] 163
 #> length(which(Nepal_meta_data$In_silico_serotype == "COVERAGE TOO LOW"))
@@ -62,30 +83,81 @@ unique(Nepal_meta_dataPP$In_silico_serotype)
 
 # wait, I also have the phenotypic seroytype. I will use this one. 
 # and if it does not exist, use in silico and then see how many cases remain
-Nepal_has_serotype <- rep(FALSE, nrow(Nepal_meta_data))
-names(Nepal_has_serotype) <- Nepal_meta_data$Lane_id
+Nepal_has_serotype <- rep(FALSE, nrow(Nepal_meta_data_gps_joined))
+names(Nepal_has_serotype) <- Nepal_meta_data_gps_joined$Lane_id
 
 
-Nepal_has_serotype[Nepal_meta_data$Lane_id[which(Nepal_meta_data$Phenotypic_serotype != "_" & Nepal_meta_data$Phenotypic_serotype != "NT")]] <- TRUE
-Nepal_has_serotype[Nepal_meta_data$Lane_id[which(Nepal_meta_data$In_silico_serotype != "UNTYPABLE" & Nepal_meta_data$In_silico_serotype != "COVERAGE TOO LOW" & Nepal_meta_data$In_silico_serotype != "SWISS_NT" & Nepal_meta_data$In_silico_serotype != "ALTERNATIVE_ALIB_NT")]] <- TRUE
+Nepal_has_serotype[Nepal_meta_data_gps_joined$Lane_id[which(Nepal_meta_data_gps_joined$Phenotypic_serotype != "_" & Nepal_meta_data_gps_joined$Phenotypic_serotype != "NT")]] <- TRUE
+Nepal_has_serotype[Nepal_meta_data_gps_joined$Lane_id[which(Nepal_meta_data_gps_joined$In_silico_serotype != "UNTYPABLE" & Nepal_meta_data_gps_joined$In_silico_serotype != "COVERAGE TOO LOW" & Nepal_meta_data_gps_joined$In_silico_serotype != "SWISS_NT" & Nepal_meta_data_gps_joined$In_silico_serotype != "ALTERNATIVE_ALIB_NT")]] <- TRUE
 
-# this has 195 without serotype, before (only taking in silico) had 225 missing values
+### TIDY UP SEROTYPES 
+# e.g. these (Nepal 6B)  (Vellor 6B) need to be merged into 6B
+# I am not sure whether the phenotypic serotype or the in-silico serotype is more reliable
+
+# this has 237 without serotype
 
 # store values for those serotypes
-Nepal_Serotype_dict <- rep(NA, nrow(Nepal_meta_data))
-names(Nepal_Serotype_dict) <- Nepal_meta_data$Lane_id
+Nepal_Serotype_dict <- rep(NA, nrow(Nepal_meta_data_gps_joined))
+names(Nepal_Serotype_dict) <- Nepal_meta_data_gps_joined$Lane_id
 
 
-Nepal_Serotype_dict[Nepal_meta_data$Lane_id[which(Nepal_meta_data$In_silico_serotype != "UNTYPABLE" & Nepal_meta_data$In_silico_serotype != "COVERAGE TOO LOW" & Nepal_meta_data$In_silico_serotype != "SWISS_NT"  & Nepal_meta_data$In_silico_serotype != "ALTERNATIVE_ALIB_NT")]] <- Nepal_meta_data$In_silico_serotype[which(Nepal_meta_data$In_silico_serotype != "UNTYPABLE" & Nepal_meta_data$In_silico_serotype != "COVERAGE TOO LOW" & Nepal_meta_data$In_silico_serotype != "SWISS_NT" & Nepal_meta_data$In_silico_serotype != "ALTERNATIVE_ALIB_NT")]
+Nepal_Serotype_dict[Nepal_meta_data_gps_joined$Lane_id[which(Nepal_meta_data_gps_joined$In_silico_serotype != "UNTYPABLE" & Nepal_meta_data_gps_joined$In_silico_serotype != "COVERAGE TOO LOW" & Nepal_meta_data_gps_joined$In_silico_serotype != "SWISS_NT"  & Nepal_meta_data_gps_joined$In_silico_serotype != "ALTERNATIVE_ALIB_NT")]] <- Nepal_meta_data_gps_joined$In_silico_serotype[which(Nepal_meta_data_gps_joined$In_silico_serotype != "UNTYPABLE" & Nepal_meta_data_gps_joined$In_silico_serotype != "COVERAGE TOO LOW" & Nepal_meta_data_gps_joined$In_silico_serotype != "SWISS_NT" & Nepal_meta_data_gps_joined$In_silico_serotype != "ALTERNATIVE_ALIB_NT")]
 
-Nepal_Serotype_dict[Nepal_meta_data$Lane_id[which(Nepal_meta_data$Phenotypic_serotype != "_" & Nepal_meta_data$Phenotypic_serotype != "NT")]] <- Nepal_meta_data$Phenotypic_serotype[which(Nepal_meta_data$Phenotypic_serotype != "_" & Nepal_meta_data$Phenotypic_serotype != "NT")]
+Nepal_Serotype_dict[Nepal_meta_data_gps_joined$Lane_id[which(Nepal_meta_data_gps_joined$Phenotypic_serotype != "_" & Nepal_meta_data_gps_joined$Phenotypic_serotype != "NT")]] <- Nepal_meta_data_gps_joined$Phenotypic_serotype[which(Nepal_meta_data_gps_joined$Phenotypic_serotype != "_" & Nepal_meta_data_gps_joined$Phenotypic_serotype != "NT")]
+
+is_equal <- function(a,b){
+  identical(a,b)
+}
+
+length(which(as.vector(sapply(Nepal_meta_data_gps_joined$Phenotypic_serotype, is_equal, Nepal_meta_data_gps_joined$In_silico_serotype, simplify = TRUE))==FALSE))
+
+in_silico_copy <- Nepal_meta_data_gps_joined$In_silico_serotype
+in_silico_copy[which(in_silico_copy=="UNTYPABLE")] <- "NT"
+
+not_the_same <- 0
+not_same_pheno <- c()
+not_same_insilico <- c()
+for (i in 1:length(Nepal_meta_data_gps_joined$Phenotypic_serotype)) {
+  #print(Nepal_meta_data_gps_joined$Phenotypic_serotype[i])
+  #print(Nepal_meta_data_gps_joined$In_silico_serotype[i])
+  if(!is.na(Nepal_meta_data_gps_joined$Phenotypic_serotype[i]) & !is.na(Nepal_meta_data_gps_joined$In_silico_serotype[i])){
+    if(Nepal_meta_data_gps_joined$Phenotypic_serotype[i] != in_silico_copy[i]){
+    not_the_same <- not_the_same + 1
+    not_same_pheno[not_the_same] <- Nepal_meta_data_gps_joined$Phenotypic_serotype[i]
+    not_same_insilico[not_the_same] <- Nepal_meta_data_gps_joined$In_silico_serotype[i]
+  }
+  } 
+}
+
+not_same_serotype_df <- as.data.frame(cbind(not_same_pheno, not_same_insilico))
+
+# okay, based on John's and Steph's feedback:
+# trust the in-silico phenotype
+# and then use the phenotypic one only for those that are not in-silico typed
+
+# store values for those serotypes
+Nepal_Serotype_dict <- rep(NA, nrow(Nepal_meta_data_gps_joined))
+names(Nepal_Serotype_dict) <- Nepal_meta_data_gps_joined$Lane_id
+
+Nepal_Serotype_dict[Nepal_meta_data_gps_joined$Lane_id[which(Nepal_meta_data_gps_joined$Phenotypic_serotype != "_")]] <- Nepal_meta_data_gps_joined$Phenotypic_serotype[which(Nepal_meta_data_gps_joined$Phenotypic_serotype != "_")]
+
+Nepal_Serotype_dict[Nepal_meta_data_gps_joined$Lane_id[which(Nepal_meta_data_gps_joined$In_silico_serotype != "COVERAGE TOO LOW")]] <- Nepal_meta_data_gps_joined$In_silico_serotype[which(Nepal_meta_data_gps_joined$In_silico_serotype != "COVERAGE TOO LOW")]
+
+Nepal_Serotype_dict[which(Nepal_Serotype_dict == "UNTYPABLE" | Nepal_Serotype_dict == "SWISS_NT" | Nepal_Serotype_dict == "ALTERNATIVE_ALIB_NT")] <- "NT"
+
+Nepal_Serotype_dict[which(Nepal_Serotype_dict == "(Nepal 2) (vellor 2)")] <- "2"
+
+# keep 23B1? subtype of 23B
+# And SEROGROUP 24? It seems that in GPS1 they called 24F and 24A separately but in GPS2, they only called SEROGROUP 24. I will assume that this is the newer, correct way to do it.
+
+Nepal_Serotype_dict[which(Nepal_Serotype_dict == "24F" | Nepal_Serotype_dict == "24A")] <- "SEROGROUP 24"
 ```
 
 
 
 # read in PopPUNK results
 ```{r}
-PP_all <- read.csv(paste(path_to_data, "StrepPneumo_Nepal/GPS_PopPUNK/poppunk_clusters/poppunk_clusters_clusters.csv",sep = ""))
+PP_all <- read.csv(paste(path_to_data, "StrepPneumo_Nepal_gps_v2/poppunk_clusters/poppunk_clusters_clusters.csv",sep = ""))
 # since Nepal was in the database, I had to run PopPUNK with --write-references
 # so now I need to filter this dataset to only have the real Nepal sequences
 
@@ -104,14 +176,16 @@ names(PP_taxon_ind_dict) <- PP_all$Taxon
 PP_is_Nepal_dict <- rep(FALSE,nrow(PP_all))
 names(PP_is_Nepal_dict) <- PP_all$Taxon
 
-for (i in 1:length(Nepal_meta_data$Lane_id)) {
+for (i in 1:length(Nepal_meta_data_gps_joined$Lane_id)) {
   if(Nepal_has_serotype[i]){ # checks if we have serotype for this sequence and only includes it in PP dataset if yes
-    PP_is_Nepal_dict[Nepal_meta_data$Lane_id[i]] <- TRUE
+    PP_is_Nepal_dict[Nepal_meta_data_gps_joined$Lane_id[i]] <- TRUE
   }
 }
 
 Nepal_PP <- PP_all[which(PP_is_Nepal_dict[PP_all$Taxon]),]
 no_Nepal_PP <- length(unique(Nepal_PP$Cluster)) 
+# 187 clusters 
+# before: (with misassemblies)
 # 181 clusters
 
 Nepal_seq_clusters_dict <- Nepal_PP$Cluster
@@ -120,12 +194,13 @@ names(Nepal_seq_clusters_dict) <- Nepal_PP$Taxon
 
 # filter meta data by PopPUNK sequences (PopPUNK qc removed some of the sequences)
 ```{r}
-Nepal_meta_dataPP <- Nepal_meta_data[sort(Nepal_meta_IDtoInd[Nepal_PP$Taxon]),c("Lane_id", "Year")]
+Nepal_meta_dataPP <- Nepal_meta_data_gps_joined[sort(Nepal_meta_IDtoInd[Nepal_PP$Taxon]),c("Lane_id", "Year")]
 Nepal_meta_dataPP$Serotype <- Nepal_Serotype_dict[Nepal_meta_dataPP$Lane_id]
 
 # length(which(Nepal_meta_dataPP$Serotype == "SEROGROUP 24"))
 #[1] 19
 # I think I will leave them in for now
+# now 39
 
 rownames(Nepal_meta_dataPP) <- 1:nrow(Nepal_meta_dataPP)
 
@@ -161,7 +236,7 @@ Nepal_PP$VT <- PCV10_VTsPP[Nepal_PP$Serotype]
 
 # read in ggCaller results
 ```{r}
-Nepal_ggCaller <- read.csv(paste(path_to_data, "StrepPneumo_Nepal/GPS_ggCaller/gene_presence_absence.csv", sep = ""), header=FALSE)
+Nepal_ggCaller <- read.csv(paste(path_to_data, "StrepPneumo_Nepal_gps_v2/ggCaller_output/gene_presence_absence.csv", sep = ""), header=FALSE)
 ```
 
 ```{r}
@@ -220,6 +295,7 @@ Nepal_gene_freq_preVac <- Nepal_gene_freq_preVac / preVac_datapoints
 
 Nepal_gene_filter <- as.integer(Nepal_gene_freq_preVac<=0.95 & Nepal_gene_freq_preVac>=0.05)
 # 2120 intermediate-frequency genes (of 6533)
+# now: 2890 intermediate-frequency genes (of 9059)
 ```
 
 # create intermediate frequency dataframes
@@ -402,6 +478,7 @@ PPxSero_matrix <- matrix(0, nrow = length(unique(PopPUNK_clusters$Cluster)), nco
 # [1] "10A"   "11A"   "14"    "15A"   "15B/C" "15F"   "16F"   "17F"   "18C"   "19A"   "19F"   "21"    "22F"   "23A"
 #[15] "23B"   "23F"   "3"     "31"    "33F"   "34"    "35B"   "35F"   "37"    "38"    "6A"    "6B"    "6C"    "7C" 
 #[29] "7F"    "9N"    "9V"    "NT"
+# now, 74 serotypes
 
 SerotypeToIndex_dict <- 1:length(unique(PopPUNK_clusters$Serotype))
 names(SerotypeToIndex_dict) <- sort(unique(PopPUNK_clusters$Serotype))
@@ -448,7 +525,7 @@ exp_noise <- 10
 # instead, I could maybe use the existing PP_model_start_pop and distribute it to the different serotypes?
 PPsero_startpop2 <-  matrix(0, nrow = length(unique(PopPUNK_clusters$Cluster)), ncol = length(unique(PopPUNK_clusters$Serotype)))
 for (i in 1:length(unique(PopPUNK_clusters$Cluster))) {
-  PPsero_startpop2[i,] <- round((PPxSero_matrix[i,] * Navajo_model_start_pop[i])/sum(PPxSero_matrix[i,]))
+  PPsero_startpop2[i,] <- round((PPxSero_matrix[i,] * Nepal_model_start_pop[i])/sum(PPxSero_matrix[i,]))
 }
 saveRDS(PPsero_startpop2, "Nepal_PPsero_startpop.rds")
 # this is very close to the original PP_model_start_pop

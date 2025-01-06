@@ -291,3 +291,77 @@ lambda <- -2 * (Navajo_likelihood_3param - Navajo_likelihood_4param)
 pchisq(lambda, 1,lower.tail = FALSE)
 # 0.5011485
 ```
+
+```{r}
+### Navajo 1vacc only (remove last two time points)
+
+# Null model
+Navajo_2param_mcmc2 <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_12_16/ModelComparison_Navajo1vacc/Navajo_PPxSero_ggCaller_PopPUNK_Null_det_pmcmc_run2.rds")
+Navajo_2param_mcmc2_probs <- coda::as.mcmc(cbind(Navajo_2param_mcmc2$probabilities, Navajo_2param_mcmc2$pars))
+#coda::effectiveSize(Navajo_2param_mcmc2_probs)
+#summary(coda::as.mcmc(Navajo_2param_mcmc2_probs))
+Navajo_likelihood_2param <- median(Navajo_2param_mcmc2_probs[,"log_likelihood"])
+#mean(Navajo_2param_mcmc2_probs[,"log_likelihood"])
+param_mean <- apply(Navajo_2param_mcmc2_probs, 2, mean)
+percentile95_low <- apply(Navajo_2param_mcmc2_probs,2,quantile,.025)
+percentile95_up <- apply(Navajo_2param_mcmc2_probs,2,quantile,.975)
+#     log_prior log_likelihood  log_posterior              m              v 
+#     0.0000000   -701.8488109   -701.8488109     -3.6866418      0.2503319  
+#    0.00000000  -705.01409216  -705.01409216    -4.02234594     0.08606398
+#     0.0000000   -700.6613721   -700.6613721     -3.2655542      0.6474211 
+rm(Navajo_2param_mcmc2)
+
+# 3-parameter model
+Navajo_3param_mcmc2 <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_12_16/ModelComparison_Navajo1vacc/Navajo_PPxSero_ggCaller_PopPUNK_3param_det_pmcmc_run2.rds")
+Navajo_3param_mcmc2_probs <- coda::as.mcmc(cbind(Navajo_3param_mcmc2$probabilities, Navajo_3param_mcmc2$pars))
+#coda::effectiveSize(Navajo_3param_mcmc2_probs)
+#summary(coda::as.mcmc(Navajo_3param_mcmc2_probs))
+Navajo_likelihood_3param <- median(Navajo_3param_mcmc2_probs[,"log_likelihood"])
+#mean(Navajo_3param_mcmc2_probs[,"log_likelihood"])
+param_mean <- apply(Navajo_3param_mcmc2_probs, 2, mean)
+percentile95_low <- apply(Navajo_3param_mcmc2_probs,2,quantile,.025)
+percentile95_up <- apply(Navajo_3param_mcmc2_probs,2,quantile,.975)
+#     log_prior log_likelihood  log_posterior        sigma_f              m              v 
+#     0.0000000   -610.9405032   -610.9405032     -4.3314127     -2.8257480      0.5298071
+#     0.0000000   -613.6806814   -613.6806814     -4.9125579     -3.2855823      0.1930156
+#     0.0000000   -609.6755103   -609.6755103     -3.7622178     -2.3097844      0.9545226
+rm(Navajo_3param_mcmc2)
+
+# 4-parameter model
+Navajo_4param_mcmc2 <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_12_16/ModelComparison_Navajo1vacc/Navajo_PPxSero_ggCaller_PopPUNK_4param_det_pmcmc_run2.rds")
+Navajo_4param_mcmc2_probs <- coda::as.mcmc(cbind(Navajo_4param_mcmc2$probabilities, Navajo_4param_mcmc2$pars))
+#coda::effectiveSize(Navajo_4param_mcmc2_probs)
+#summary(coda::as.mcmc(Navajo_4param_mcmc2_probs))
+Navajo_likelihood_4param <- median(Navajo_4param_mcmc2_probs[,"log_likelihood"])
+#mean(Navajo_4param_mcmc2_probs[,"log_likelihood"])
+param_mean <- apply(Navajo_4param_mcmc2_probs, 2, mean)
+percentile95_low <- apply(Navajo_4param_mcmc2_probs,2,quantile,.025)
+percentile95_up <- apply(Navajo_4param_mcmc2_probs,2,quantile,.975)
+#     log_prior log_likelihood  log_posterior        sigma_f         prop_f              m              v 
+#     0.0000000   -610.7004392   -610.7004392     -4.1531442      0.8844782     -2.8148291      0.5380844
+#     0.0000000   -613.8915897   -613.8915897     -4.7886661      0.7590421     -3.2743311      0.1927550
+#     0.0000000   -608.9142628   -608.9142628     -3.4933885      0.9948709     -2.2823608      0.9599296
+rm(Navajo_4param_mcmc2)
+### this does not look good
+# I had −611.0528 in TAC report, not -775.1046
+# hmm, 21.10.2024 looks more like -775
+# and in TAC presentation was also -778
+
+#this one does not exist yet:
+# 5-parameter model
+Navajo_5param_mcmc2 <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_12_16/ModelComparison_Navajo1vacc/Navajo_PPxSero_ggCaller_PopPUNK_5param_det_pmcmc_run2.rds")
+Navajo_5param_mcmc2_probs <- coda::as.mcmc(cbind(Navajo_5param_mcmc2$probabilities, Navajo_5param_mcmc2$pars))
+#coda::effectiveSize(Navajo_5param_mcmc2_probs)
+#summary(coda::as.mcmc(Navajo_5param_mcmc2_probs))
+Navajo_likelihood_5param <- median(Navajo_5param_mcmc2_probs[,"log_likelihood"])
+#mean(Navajo_5param_mcmc2_probs[,"log_likelihood"])
+param_mean <- apply(Navajo_5param_mcmc2_probs, 2, mean)
+percentile95_low <- apply(Navajo_5param_mcmc2_probs,2,quantile,.025)
+percentile95_up <- apply(Navajo_5param_mcmc2_probs,2,quantile,.975)
+#     log_prior log_likelihood  log_posterior        sigma_f         prop_f        sigma_w              m              v 
+#     0.0000000   -611.0122849   -611.0122849     -4.4521764      0.7516427   -390.2870444     -2.7957420      0.5501861
+#     0.0000000   -614.4283639   -614.4283639     -8.2494761      0.1038850   -966.0429177     -3.2195127      0.2030093
+#     0.0000000   -609.0143275   -609.0143275     -2.3695043      0.9933520     -4.0538421     -2.2925315      0.9379878
+rm(Navajo_5param_mcmc2)
+
+```
