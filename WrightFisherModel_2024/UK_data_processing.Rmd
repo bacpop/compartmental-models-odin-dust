@@ -50,7 +50,9 @@ saveRDS(UK_metadata, file = "UK_metadata.rds")
 
 # use UKjoined data because that should include all sequences that I have metadata for (but there are many, many more that I cannot use...)
 ```{r}
-PP_all <- read.csv(paste(path_to_data, "StrepPneumoUKjoined/PopPUNK/poppunk_clusters_clusters.csv",sep = ""))
+#PP_all <- read.csv(paste(path_to_data, "StrepPneumoUKjoined/PopPUNK/poppunk_clusters_clusters.csv",sep = ""))
+PP_all <- read.csv(paste(path_to_data, "StrepPneumoUKjoined/poppunk_clusters_GPSCs_v9/poppunk_clusters_external_clusters.csv",sep = ""))
+colnames(PP_all) <- c("Taxon","Cluster")
 no_PP_all <- length(unique(PP_all$Cluster)) 
 ```
 
@@ -68,7 +70,8 @@ for (i in 1:length(UK_metadata$Accession)) {
 UK_PP <- PP_all[PP_is_UK_dict,]
 UK_PP <- UK_PP[-nrow(UK_PP),]
 no_UK_PP <- length(unique(UK_PP$Cluster)) 
-# 59 clusters
+# 54 GPSCs
+# 59 clusters (old)
 
 UK_seq_clusters_dict <- UK_PP$Cluster
 names(UK_seq_clusters_dict) <- UK_PP$Taxon

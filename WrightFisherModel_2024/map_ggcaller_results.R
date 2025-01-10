@@ -465,6 +465,7 @@ match_UKMassUnfiltered_95 <- recip_matching(UKInMassUnfiltered_dict, MassInUKUnf
 match_UKMassUnfiltered_99 <- recip_matching(UKInMassUnfiltered_dict, MassInUKUnfiltered_dict, UKMassUnfiltered_seq_id_vec, 0.99)
 match_MassUKUnfiltered_90 <- recip_matching(MassInUKUnfiltered_dict, UKInMassUnfiltered_dict, MassUKUnfiltered_seq_id_vec, 0.90)
 match_MassUKUnfiltered_95 <- recip_matching(MassInUKUnfiltered_dict, UKInMassUnfiltered_dict, MassUKUnfiltered_seq_id_vec, 0.95)
+match_MassUKUnfiltered_99 <- recip_matching(MassInUKUnfiltered_dict, UKInMassUnfiltered_dict, MassUKUnfiltered_seq_id_vec, 0.99)
 par(pty="s")
 plot(UK_ggC_all_gene_freqs_dict[names(match_UKMassUnfiltered_90)], Mass_ggC_all_gene_freqs_dict[match_UKMassUnfiltered_90[names(match_UKMassUnfiltered_90)]], xlab = "UK gene frequencies", ylab = "Mass gene frequencies",main="All Gene Frequencies, 90% sequence identity")
 abline(0,1)
@@ -501,20 +502,28 @@ UK_underNFDS <- rep(0, length(UK_ggC_all_gene_freqs_dict))
 names(UK_underNFDS) <- readRDS("UK_ggC_all_gene_names.rds")
 UK_underNFDS[names(which(UK_intermed_gene_underNFDS==1))] <- 1
 # create color vector
-colours_UKMassUnfiltered_90 <- rep("black", length(match_UKMassUnfiltered_90))
+colours_UKMassUnfiltered_90 <- rep("grey", length(match_UKMassUnfiltered_90))
 names(colours_UKMassUnfiltered_90) <- names(match_UKMassUnfiltered_90)
 colours_UKMassUnfiltered_90[names(which(UK_underNFDS[names(match_UKMassUnfiltered_90)]==1))] <- "blue"
 colours_UKMassUnfiltered_90[match_MassUKUnfiltered_90[names(which(Mass_underNFDS[match_UKMassUnfiltered_90]==1))]] <- "red"
 colours_UKMassUnfiltered_90[intersect(names(which(UK_underNFDS[names(match_UKMassUnfiltered_90)]==1)),match_MassUKUnfiltered_90[names(which(Mass_underNFDS[match_UKMassUnfiltered_90]==1))])] <- "purple"
 
-colours_UKMassUnfiltered_95 <- rep("black", length(match_UKMassUnfiltered_95))
+colours_UKMassUnfiltered_95 <- rep("grey", length(match_UKMassUnfiltered_95))
 names(colours_UKMassUnfiltered_95) <- names(match_UKMassUnfiltered_95)
 colours_UKMassUnfiltered_95[names(which(UK_underNFDS[names(match_UKMassUnfiltered_95)]==1))] <- "blue"
 colours_UKMassUnfiltered_95[match_MassUKUnfiltered_95[names(which(Mass_underNFDS[match_UKMassUnfiltered_95]==1))]] <- "red"
 colours_UKMassUnfiltered_95[intersect(names(which(UK_underNFDS[names(match_UKMassUnfiltered_95)]==1)),match_MassUKUnfiltered_95[names(which(Mass_underNFDS[match_UKMassUnfiltered_95]==1))])] <- "purple"
 
+colours_UKMassUnfiltered_99 <- rep("grey", length(match_UKMassUnfiltered_99))
+names(colours_UKMassUnfiltered_99) <- names(match_UKMassUnfiltered_99)
+colours_UKMassUnfiltered_99[names(which(UK_underNFDS[names(match_UKMassUnfiltered_99)]==1))] <- "blue"
+colours_UKMassUnfiltered_99[match_MassUKUnfiltered_99[names(which(Mass_underNFDS[match_UKMassUnfiltered_99]==1))]] <- "red"
+colours_UKMassUnfiltered_99[intersect(names(which(UK_underNFDS[names(match_UKMassUnfiltered_99)]==1)),match_MassUKUnfiltered_99[names(which(Mass_underNFDS[match_UKMassUnfiltered_99]==1))])] <- "purple"
+
 par(pty="s")
-plot(UK_ggC_all_gene_freqs_dict[names(match_UKMassUnfiltered_90)], Mass_ggC_all_gene_freqs_dict[match_UKMassUnfiltered_90[names(match_UKMassUnfiltered_90)]], xlab = "UK gene frequencies", ylab = "Mass gene frequencies",main="All Gene Frequencies, 90% sequence identity", col = colours_UKMassUnfiltered_90)
+plot(UK_ggC_all_gene_freqs_dict[names(match_UKMassUnfiltered_90)], Mass_ggC_all_gene_freqs_dict[match_UKMassUnfiltered_90[names(match_UKMassUnfiltered_90)]], xlab = "UK gene frequencies", ylab = "Mass gene frequencies",main="All Gene Frequencies, 90% sequence identity", col = colours_UKMassUnfiltered_90, pch = 19)
 abline(0,1)
-plot(UK_ggC_all_gene_freqs_dict[names(match_UKMassUnfiltered_95)], Mass_ggC_all_gene_freqs_dict[match_UKMassUnfiltered_95[names(match_UKMassUnfiltered_95)]], xlab = "UK gene frequencies", ylab = "Mass gene frequencies",main="All Gene Frequencies, 95% sequence identity", col = colours_UKMassUnfiltered_95)
+plot(UK_ggC_all_gene_freqs_dict[names(match_UKMassUnfiltered_95)], Mass_ggC_all_gene_freqs_dict[match_UKMassUnfiltered_95[names(match_UKMassUnfiltered_95)]], xlab = "UK gene frequencies", ylab = "Mass gene frequencies",main="All Gene Frequencies, 95% sequence identity", col = colours_UKMassUnfiltered_95, pch = 19)
+abline(0,1)
+plot(UK_ggC_all_gene_freqs_dict[names(match_UKMassUnfiltered_99)], Mass_ggC_all_gene_freqs_dict[match_UKMassUnfiltered_99[names(match_UKMassUnfiltered_99)]], xlab = "UK gene frequencies", ylab = "Mass gene frequencies",main="All Gene Frequencies, 99% sequence identity", col = colours_UKMassUnfiltered_99, pch = 19)
 abline(0,1)

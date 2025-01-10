@@ -25,11 +25,29 @@ tibble <- lapply(sheets, function(x) readxl::read_excel("~/Documents/PhD_Project
 Nepal_meta_data_gps1 <-   as.data.frame(readxl::read_excel("~/Documents/PhD_Project/Data/StrepPneumo_Nepal_gps_v2/GPS1_and_GPS2_Nepal_dataset_3Dec2024.xlsx", sheet = "GPS1"))
 Nepal_meta_data_gps1_selection <- Nepal_meta_data_gps1[,c(2:6,8:13, 25, 75)]
 Nepal_meta_data_gps1_selection$GPS <- 1
+
+#GPS2 serotypes
+Nepal_gps2_serotyping <- read.csv("~/Documents/PhD_Project/Data/StrepPneumo_Nepal_gps_v2/SerotypeSummary.csv", header = FALSE)
+colnames(Nepal_gps2_serotyping) <- c("Sample","Serotype","Genetic_Variant","Contamination_Status")
+
+spl_serotype_names <- function(serotype_str){
+  split1 <- strsplit(serotype_str, "/data/SerotypingResults/", fixed = TRUE)[[1]][2]
+  split2 <- strsplit(split1, "_RESULT", fixed = TRUE)[[1]][1]
+  split2
+}
+Nepal_gps2_serotyping$Sample <- as.vector(sapply(Nepal_gps2_serotyping$Sample,spl_serotype_names))
+
+gps2_serotype_dict <- Nepal_gps2_serotyping$Serotype
+names(gps2_serotype_dict) <- Nepal_gps2_serotyping$Sample
+
 # GPS2
 Nepal_meta_data_gps2 <- as.data.frame(readxl::read_excel("~/Documents/PhD_Project/Data/StrepPneumo_Nepal_gps_v2/GPS1_and_GPS2_Nepal_dataset_3Dec2024.xlsx", sheet = "GPS2")) 
-Nepal_meta_data_gps2_selection <- Nepal_meta_data_gps2[,c(1,2,4:11,21,22, 49)]
+Nepal_meta_data_gps2_selection <- Nepal_meta_data_gps2[,c(1,2,4:11,21,22)]
 Nepal_meta_data_gps2_selection$GPS <- 2
 colnames(Nepal_meta_data_gps2_selection)[2] <- "Public_name"
+Nepal_meta_data_gps2_selection$"In_silico_serotype" <- rep(NA, nrow(Nepal_meta_data_gps2_selection))
+Nepal_meta_data_gps2_selection$"In_silico_serotype" <- gps2_serotype_dict[Nepal_meta_data_gps2_selection$"Lane_id"]
+#note: there are 66 entries in here that do not have genome data available 
 
 Nepal_meta_data_gps_joined <- rbind(Nepal_meta_data_gps1_selection, Nepal_meta_data_gps2_selection)
 
@@ -83,6 +101,7 @@ Nepal_time_points_preVac <- Nepal_time_points_selected[1:11]
 
 # wait, I also have the phenotypic seroytype. I will use this one. 
 # and if it does not exist, use in silico and then see how many cases remain
+# no - in-silico is more reliable
 Nepal_has_serotype <- rep(FALSE, nrow(Nepal_meta_data_gps_joined))
 names(Nepal_has_serotype) <- Nepal_meta_data_gps_joined$Lane_id
 
@@ -113,6 +132,8 @@ length(which(as.vector(sapply(Nepal_meta_data_gps_joined$Phenotypic_serotype, is
 
 in_silico_copy <- Nepal_meta_data_gps_joined$In_silico_serotype
 in_silico_copy[which(in_silico_copy=="UNTYPABLE")] <- "NT"
+in_silico_copy[which(in_silico_copy=="SWISS_NT")] <- "NT"
+in_silico_copy[which(in_silico_copy=="ALTERNATIVE_ALIB_NT")] <- "NT"
 
 not_the_same <- 0
 not_same_pheno <- c()
@@ -141,40 +162,67 @@ names(Nepal_Serotype_dict) <- Nepal_meta_data_gps_joined$Lane_id
 
 Nepal_Serotype_dict[Nepal_meta_data_gps_joined$Lane_id[which(Nepal_meta_data_gps_joined$Phenotypic_serotype != "_")]] <- Nepal_meta_data_gps_joined$Phenotypic_serotype[which(Nepal_meta_data_gps_joined$Phenotypic_serotype != "_")]
 
-Nepal_Serotype_dict[Nepal_meta_data_gps_joined$Lane_id[which(Nepal_meta_data_gps_joined$In_silico_serotype != "COVERAGE TOO LOW")]] <- Nepal_meta_data_gps_joined$In_silico_serotype[which(Nepal_meta_data_gps_joined$In_silico_serotype != "COVERAGE TOO LOW")]
+Nepal_Serotype_dict[Nepal_meta_data_gps_joined$Lane_id[which(Nepal_meta_data_gps_joined$In_silico_serotype != "COVERAGE TOO LOW" & Nepal_meta_data_gps_joined$In_silico_serotype != "coverage too low")]] <- Nepal_meta_data_gps_joined$In_silico_serotype[which(Nepal_meta_data_gps_joined$In_silico_serotype != "COVERAGE TOO LOW" & Nepal_meta_data_gps_joined$In_silico_serotype != "coverage too low")]
 
-Nepal_Serotype_dict[which(Nepal_Serotype_dict == "UNTYPABLE" | Nepal_Serotype_dict == "SWISS_NT" | Nepal_Serotype_dict == "ALTERNATIVE_ALIB_NT")] <- "NT"
+Nepal_Serotype_dict[which(Nepal_Serotype_dict == "UNTYPABLE" | Nepal_Serotype_dict == "SWISS_NT" | Nepal_Serotype_dict == "ALTERNATIVE_ALIB_NT" | Nepal_Serotype_dict == "untypable" | Nepal_Serotype_dict == "NCC1_pspK_non_encapsulated" | Nepal_Serotype_dict == "NCC3_aliD_non_encapsulated" | Nepal_Serotype_dict == "NCC2_S_mitis_aliC_aliD_non_encapsulated" | Nepal_Serotype_dict == "NCC2_aliC_aliD_non_encapsulated")] <- "NT"
 
 Nepal_Serotype_dict[which(Nepal_Serotype_dict == "(Nepal 2) (vellor 2)")] <- "2"
+Nepal_Serotype_dict[which(Nepal_Serotype_dict == "23B1")] <- "23B"
+Nepal_Serotype_dict[which(Nepal_Serotype_dict == "01")] <- "1"
+Nepal_Serotype_dict[which(Nepal_Serotype_dict == "02")] <- "2"
+Nepal_Serotype_dict[which(Nepal_Serotype_dict == "03")] <- "3"
+Nepal_Serotype_dict[which(Nepal_Serotype_dict == "04")] <- "4"
+Nepal_Serotype_dict[which(Nepal_Serotype_dict == "05")] <- "5"
+Nepal_Serotype_dict[which(Nepal_Serotype_dict == "06A")] <- "6A"
+Nepal_Serotype_dict[which(Nepal_Serotype_dict == "06B")] <- "6B"
+Nepal_Serotype_dict[which(Nepal_Serotype_dict == "06C")] <- "6C"
+Nepal_Serotype_dict[which(Nepal_Serotype_dict == "06D")] <- "6D"
+Nepal_Serotype_dict[which(Nepal_Serotype_dict == "07B")] <- "7B"
+Nepal_Serotype_dict[which(Nepal_Serotype_dict == "07C")] <- "7C"
+Nepal_Serotype_dict[which(Nepal_Serotype_dict == "07F")] <- "7F"
+Nepal_Serotype_dict[which(Nepal_Serotype_dict == "08")] <- "8"
+Nepal_Serotype_dict[which(Nepal_Serotype_dict == "09L")] <- "9L"
+Nepal_Serotype_dict[which(Nepal_Serotype_dict == "09N")] <- "9N"
+Nepal_Serotype_dict[which(Nepal_Serotype_dict == "09V")] <- "9V"
+Nepal_Serotype_dict[which(Nepal_Serotype_dict == "15B")] <- "15B/15C"
+Nepal_Serotype_dict[which(Nepal_Serotype_dict == "15C")] <- "15B/15C"
+Nepal_Serotype_dict[which(Nepal_Serotype_dict == "20A")] <- "20"
+Nepal_Serotype_dict[which(Nepal_Serotype_dict == "20B")] <- "20"
+Nepal_Serotype_dict[which(Nepal_Serotype_dict == "24F")] <- "24B/24C/24F"
+Nepal_Serotype_dict[which(Nepal_Serotype_dict == "33F")] <- "33A/33E/33F"
 
 # keep 23B1? subtype of 23B
 # And SEROGROUP 24? It seems that in GPS1 they called 24F and 24A separately but in GPS2, they only called SEROGROUP 24. I will assume that this is the newer, correct way to do it.
 
-Nepal_Serotype_dict[which(Nepal_Serotype_dict == "24F" | Nepal_Serotype_dict == "24A")] <- "SEROGROUP 24"
+#Nepal_Serotype_dict[which(Nepal_Serotype_dict == "24F" | Nepal_Serotype_dict == "24A")] <- "SEROGROUP 24"
+# not necessary anymore after doing my own serotyping
+
+length(unique(Nepal_Serotype_dict))
+#[1] 69
 ```
 
 
 
 # read in PopPUNK results
 ```{r}
-PP_all <- read.csv(paste(path_to_data, "StrepPneumo_Nepal_gps_v2/poppunk_clusters/poppunk_clusters_clusters.csv",sep = ""))
+PP_all <- read.csv(paste(path_to_data, "StrepPneumo_Nepal_gps_v2/poppunk_clusters_GPSCs_v9/poppunk_clusters_external_clusters.csv",sep = ""))
 # since Nepal was in the database, I had to run PopPUNK with --write-references
 # so now I need to filter this dataset to only have the real Nepal sequences
 
 # remove appendix "_contigs_velvet"
-remove_contigs_velvet <- function(str_with_app){
-  str_without_app <- strsplit(str_with_app, "_contigs_velvet", fixed = TRUE)[[1]][1]
-  str_without_app
-}
+#remove_contigs_velvet <- function(str_with_app){
+#  str_without_app <- strsplit(str_with_app, "_contigs_velvet", fixed = TRUE)[[1]][1]
+#  str_without_app
+#}
 
-PP_all$Taxon <- sapply(PP_all$Taxon, remove_contigs_velvet)
-PP_all <- PP_all[!duplicated(PP_all$Taxon),]
+#PP_all$Taxon <- sapply(PP_all$Taxon, remove_contigs_velvet)
+PP_all <- PP_all[!duplicated(PP_all$sample),]
 
 PP_taxon_ind_dict <- 1:nrow(PP_all)
-names(PP_taxon_ind_dict) <- PP_all$Taxon
+names(PP_taxon_ind_dict) <- PP_all$sample
 
 PP_is_Nepal_dict <- rep(FALSE,nrow(PP_all))
-names(PP_is_Nepal_dict) <- PP_all$Taxon
+names(PP_is_Nepal_dict) <- PP_all$sample
 
 for (i in 1:length(Nepal_meta_data_gps_joined$Lane_id)) {
   if(Nepal_has_serotype[i]){ # checks if we have serotype for this sequence and only includes it in PP dataset if yes
@@ -182,26 +230,29 @@ for (i in 1:length(Nepal_meta_data_gps_joined$Lane_id)) {
   }
 }
 
-Nepal_PP <- PP_all[which(PP_is_Nepal_dict[PP_all$Taxon]),]
-no_Nepal_PP <- length(unique(Nepal_PP$Cluster)) 
+Nepal_PP <- PP_all[which(PP_is_Nepal_dict[PP_all$sample]),]
+Nepal_PP <- Nepal_PP[which(!(is.na(Nepal_PP$GPSC))),]
+no_Nepal_PP <- length(unique(Nepal_PP$GPSC)) 
+# now: 169 (GPSCs)
+# before: (PopPUNK clusters, not directly based on GPSCs)
 # 187 clusters 
 # before: (with misassemblies)
 # 181 clusters
 
-Nepal_seq_clusters_dict <- Nepal_PP$Cluster
-names(Nepal_seq_clusters_dict) <- Nepal_PP$Taxon
+Nepal_seq_clusters_dict <- Nepal_PP$GPSC
+names(Nepal_seq_clusters_dict) <- Nepal_PP$sample
 ```
 
 # filter meta data by PopPUNK sequences (PopPUNK qc removed some of the sequences)
 ```{r}
-Nepal_meta_dataPP <- Nepal_meta_data_gps_joined[sort(Nepal_meta_IDtoInd[Nepal_PP$Taxon]),c("Lane_id", "Year")]
+Nepal_meta_dataPP <- Nepal_meta_data_gps_joined[sort(Nepal_meta_IDtoInd[Nepal_PP$sample]),c("Lane_id", "Year")]
 Nepal_meta_dataPP$Serotype <- Nepal_Serotype_dict[Nepal_meta_dataPP$Lane_id]
 
 # length(which(Nepal_meta_dataPP$Serotype == "SEROGROUP 24"))
 #[1] 19
 # I think I will leave them in for now
 # now 39
-
+# now none 
 rownames(Nepal_meta_dataPP) <- 1:nrow(Nepal_meta_dataPP)
 
 Nepal_meta_IDtoIndPP <- 1:nrow(Nepal_meta_dataPP)
@@ -218,7 +269,7 @@ names(Nepal_meta_IDtoIndPP) <- Nepal_meta_dataPP$Lane_id
 #names(Nepal_Serotype_dict) <- Nepal_meta_dataPP$Lane_id
 # I created a new version of this above, that takes phenotypic serotype when possible
 
-Nepal_PP$Serotype <- Nepal_Serotype_dict[Nepal_PP$Taxon]
+Nepal_PP$Serotype <- Nepal_Serotype_dict[Nepal_PP$sample]
 
 # create dictionary for VTs of the PCV10
 # 1, 4, 5, 6b, 7f, 9V, 14, 18c, 19f and 23f serotypes (source: NCBI)
@@ -253,10 +304,10 @@ Nepal_ggCaller_bool[1,-1] <- sapply(Nepal_ggCaller_bool[1,-1], strsplit, split =
 colnames(Nepal_ggCaller_bool) <- Nepal_ggCaller_bool[1,]
 
 # filter ggCaller results by the ones 
-Nepal_ggCallerPP_bool <- data.frame(matrix(0, nrow = nrow(Nepal_ggCaller_bool), ncol = length(Nepal_PP$Taxon)+1))
-Nepal_ggCallerPP_bool[-1,-1] <- Nepal_ggCaller_bool[-1,c(Nepal_PP$Taxon)]
-colnames(Nepal_ggCallerPP_bool) <- c("Gene",Nepal_PP$Taxon)
-Nepal_ggCallerPP_bool[1,] <- c("Gene",Nepal_PP$Taxon)
+Nepal_ggCallerPP_bool <- data.frame(matrix(0, nrow = nrow(Nepal_ggCaller_bool), ncol = length(Nepal_PP$sample)+1))
+Nepal_ggCallerPP_bool[-1,-1] <- Nepal_ggCaller_bool[-1,c(Nepal_PP$sample)]
+colnames(Nepal_ggCallerPP_bool) <- c("Gene",Nepal_PP$sample)
+Nepal_ggCallerPP_bool[1,] <- c("Gene",Nepal_PP$sample)
 Nepal_ggCallerPP_bool[,1] <- Nepal_ggCaller_bool[,1]
 ```
 
@@ -339,10 +390,10 @@ cons_genomes <- function(x){
 
 # overall
 Nepal_ggCaller_intermed_consensus <- data.frame(matrix(0, nrow = sum(Nepal_gene_filter)+1, ncol = no_Nepal_PP+1))
-Nepal_ggCaller_intermed_consensus[1,-1] <- paste("SeqCl_",unique(Nepal_PP$Cluster),sep = "")
+Nepal_ggCaller_intermed_consensus[1,-1] <- paste("SeqCl_",unique(Nepal_PP$GPSC),sep = "")
 
-for (i in unique(Nepal_PP$Cluster)) {
-  Nepal_ggCaller_intermed_consensus[-1,(which(unique(Nepal_PP$Cluster) == i))+1] <- apply(as.matrix(Nepal_ggCaller_intermed[-1,c(FALSE,Nepal_seq_clusters_dict[unlist(Nepal_ggCaller_intermed[1,-1])]==i)]), 1, cons_genomes)
+for (i in unique(Nepal_PP$GPSC)) {
+  Nepal_ggCaller_intermed_consensus[-1,(which(unique(Nepal_PP$GPSC) == i))+1] <- apply(as.matrix(Nepal_ggCaller_intermed[-1,c(FALSE,Nepal_seq_clusters_dict[unlist(Nepal_ggCaller_intermed[1,-1])]==i)]), 1, cons_genomes)
 
 }
 Nepal_ggCaller_intermed_consensus[,1] <- Nepal_ggCaller_intermed[,1]
@@ -352,9 +403,9 @@ Nepal_ggCaller_byYear_intermed_consensus <- vector(mode = "list", length = lengt
 
 for (i in 1:length(Nepal_time_points_selected)) {
   Nepal_ggCaller_year <- data.frame(matrix(0, nrow = sum(Nepal_gene_filter)+1,ncol = no_Nepal_PP+1))
-  Nepal_ggCaller_year[1,-1] <- paste("SeqCl_",unique(Nepal_PP$Cluster),sep = "")
-  for (j in unique(Nepal_PP$Cluster)) {
-    Nepal_ggCaller_year[-1,(which(unique(Nepal_PP$Cluster) == j))+1] <- apply(as.matrix(Nepal_ggCaller_byYear_intermed[[i]][-1,c(FALSE,Nepal_seq_clusters_dict[unlist(Nepal_ggCaller_byYear_intermed[[i]][1,-1])]==j)]), 1, cons_genomes)
+  Nepal_ggCaller_year[1,-1] <- paste("SeqCl_",unique(Nepal_PP$GPSC),sep = "")
+  for (j in unique(Nepal_PP$GPSC)) {
+    Nepal_ggCaller_year[-1,(which(unique(Nepal_PP$GPSC) == j))+1] <- apply(as.matrix(Nepal_ggCaller_byYear_intermed[[i]][-1,c(FALSE,Nepal_seq_clusters_dict[unlist(Nepal_ggCaller_byYear_intermed[[i]][1,-1])]==j)]), 1, cons_genomes)
   }
   Nepal_ggCaller_year[,1] <- Nepal_ggCaller_byYear_intermed[[i]][,1]
   Nepal_ggCaller_byYear_intermed_consensus[[i]] <- Nepal_ggCaller_year
@@ -377,8 +428,8 @@ names(Nepal_SeqToSero_dict) <- Nepal_meta_dataPP$Lane_id
 # calculate Vaccine Type consensus for clusters
 Nepal_VT <- rep(0, no_Nepal_PP)
 
-for (i in unique(Nepal_PP$Cluster)){
-  Nepal_VT[(which(unique(Nepal_PP$Cluster) == i))] <- ceiling(median(as.integer(PCV10_VTs[Nepal_SeqToSero_dict[Nepal_PP[Nepal_PP$Cluster == i,"Taxon"]]])))
+for (i in unique(Nepal_PP$GPSC)){
+  Nepal_VT[(which(unique(Nepal_PP$GPSC) == i))] <- ceiling(median(as.integer(PCV10_VTs[Nepal_SeqToSero_dict[Nepal_PP[Nepal_PP$GPSC == i,"sample"]]])))
 }
 # 1 means VT
 # 0 means NVT
@@ -396,8 +447,8 @@ Nepal_cluster_freqs <- vector(mode = "list", length = length(Nepal_time_points_s
 
 for(j in 1:length(Nepal_time_points_selected)){
   Nepal_cluster_freqs[[j]] <- rep(0, no_Nepal_PP)
-  for (i in unique(Nepal_PP$Cluster)){
-    Nepal_cluster_freqs[[j]][which(unique(Nepal_PP$Cluster) == i)] <- length(which(Nepal_meta_dataPP[Nepal_meta_IDtoIndPP[Nepal_PP[Nepal_PP$Cluster == i,"Taxon"]],]$Year==Nepal_time_points_selected[j]))
+  for (i in unique(Nepal_PP$GPSC)){
+    Nepal_cluster_freqs[[j]][which(unique(Nepal_PP$GPSC) == i)] <- length(which(Nepal_meta_dataPP[Nepal_meta_IDtoIndPP[Nepal_PP[Nepal_PP$GPSC == i,"sample"]],]$Year==Nepal_time_points_selected[j]))
   }
 }
 
@@ -469,11 +520,11 @@ saveRDS(Nepal_delta_ranking,"Nepal_delta_ranking.rds")
 ```{r}
 PopPUNK_clusters <- readRDS("Nepal_PP.rds")
 Nepal_model_start_pop <- readRDS("Nepal_model_start_pop.rds")
-mass_clusters <- length(unique(PopPUNK_clusters$Cluster))
+mass_clusters <- length(unique(PopPUNK_clusters$GPSC))
 Nepal_avg_cluster_freq <- rep(1/mass_clusters, mass_clusters)
 
 
-PPxSero_matrix <- matrix(0, nrow = length(unique(PopPUNK_clusters$Cluster)), ncol = length(unique(PopPUNK_clusters$Serotype)))
+PPxSero_matrix <- matrix(0, nrow = length(unique(PopPUNK_clusters$GPSC)), ncol = length(unique(PopPUNK_clusters$Serotype)))
 # sort(unique(PopPUNK_clusters$Serotype))
 # [1] "10A"   "11A"   "14"    "15A"   "15B/C" "15F"   "16F"   "17F"   "18C"   "19A"   "19F"   "21"    "22F"   "23A"
 #[15] "23B"   "23F"   "3"     "31"    "33F"   "34"    "35B"   "35F"   "37"    "38"    "6A"    "6B"    "6C"    "7C" 
@@ -486,11 +537,11 @@ names(SerotypeToIndex_dict) <- sort(unique(PopPUNK_clusters$Serotype))
 IndexToSerotype_dict <- sort(unique(PopPUNK_clusters$Serotype))
 names(IndexToSerotype_dict) <- 1:length(unique(PopPUNK_clusters$Serotype))
 
-PPclustToIndex_dict <- 1:length(unique(PopPUNK_clusters$Cluster))
-names(PPclustToIndex_dict) <- sort(unique(PopPUNK_clusters$Cluster))
+PPclustToIndex_dict <- 1:length(unique(PopPUNK_clusters$GPSC))
+names(PPclustToIndex_dict) <- sort(unique(PopPUNK_clusters$GPSC))
 
 for (i in 1:nrow(PopPUNK_clusters)) {
-  PPxSero_matrix[PPclustToIndex_dict[as.character(PopPUNK_clusters$Cluster[i])],SerotypeToIndex_dict[PopPUNK_clusters$Serotype[i]]] <- 1
+  PPxSero_matrix[PPclustToIndex_dict[as.character(PopPUNK_clusters$GPSC[i])],SerotypeToIndex_dict[PopPUNK_clusters$Serotype[i]]] <- 1
 }
 # matrix shows information whether PP and serotype co-occur in the dataset (1=TRUE)
 # this can be used as the migration matrix:
@@ -499,18 +550,18 @@ for (i in 1:nrow(PopPUNK_clusters)) {
 #saveRDS(PPxSero_matrix_prob, "Navajo_PPsero_mig.rds")
 
 
-PPxSero_matrix_prob2 <-  matrix(0, nrow = length(unique(PopPUNK_clusters$Cluster)), ncol = length(unique(PopPUNK_clusters$Serotype)))
-for (i in 1:length(unique(PopPUNK_clusters$Cluster))) {
+PPxSero_matrix_prob2 <-  matrix(0, nrow = length(unique(PopPUNK_clusters$GPSC)), ncol = length(unique(PopPUNK_clusters$Serotype)))
+for (i in 1:length(unique(PopPUNK_clusters$GPSC))) {
   PPxSero_matrix_prob2[i,] <- ((PPxSero_matrix[i,] * Nepal_avg_cluster_freq[i])/sum(PPxSero_matrix[i,]))
 }
 saveRDS(PPxSero_matrix_prob2, "Nepal_PPsero_mig.rds")
 # new migration matrix that is closer to original one
 
 # start population:
-PPsero_startpop <- matrix(0, nrow = length(unique(PopPUNK_clusters$Cluster)), ncol = length(unique(PopPUNK_clusters$Serotype)))
+PPsero_startpop <- matrix(0, nrow = length(unique(PopPUNK_clusters$GPSC)), ncol = length(unique(PopPUNK_clusters$Serotype)))
 
 for (i in which(PopPUNK_clusters$SeqYear=="1998")) {
-  PPsero_startpop[PPclustToIndex_dict[PopPUNK_clusters$Cluster[i]],SerotypeToIndex_dict[PopPUNK_clusters$Serotype[i]]] <- PPsero_startpop[PPclustToIndex_dict[PopPUNK_clusters$Cluster[i]],SerotypeToIndex_dict[PopPUNK_clusters$Serotype[i]]] + 1
+  PPsero_startpop[PPclustToIndex_dict[PopPUNK_clusters$GPSC[i]],SerotypeToIndex_dict[PopPUNK_clusters$Serotype[i]]] <- PPsero_startpop[PPclustToIndex_dict[PopPUNK_clusters$GPSC[i]],SerotypeToIndex_dict[PopPUNK_clusters$Serotype[i]]] + 1
 }
 #PPsero_startpop <- PPsero_startpop * 15000 / sum(PPsero_startpop)
 
@@ -523,8 +574,8 @@ exp_noise <- 10
 
 # this lead to a start population that is way too evenly distributed across the different clusters
 # instead, I could maybe use the existing PP_model_start_pop and distribute it to the different serotypes?
-PPsero_startpop2 <-  matrix(0, nrow = length(unique(PopPUNK_clusters$Cluster)), ncol = length(unique(PopPUNK_clusters$Serotype)))
-for (i in 1:length(unique(PopPUNK_clusters$Cluster))) {
+PPsero_startpop2 <-  matrix(0, nrow = length(unique(PopPUNK_clusters$GPSC)), ncol = length(unique(PopPUNK_clusters$Serotype)))
+for (i in 1:length(unique(PopPUNK_clusters$GPSC))) {
   PPsero_startpop2[i,] <- round((PPxSero_matrix[i,] * Nepal_model_start_pop[i])/sum(PPxSero_matrix[i,]))
 }
 saveRDS(PPsero_startpop2, "Nepal_PPsero_startpop.rds")

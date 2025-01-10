@@ -162,7 +162,7 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   model_start_pop <- readRDS(file = "Nepal_PPsero_startpop.rds")
   
   mass_VT <- readRDS(file = "Nepal_SeroVT.rds")
-  mass_clusters <- length(unique(seq_clusters$Cluster))
+  mass_clusters <- length(unique(seq_clusters$GPSC))
   avg_cluster_freq <- readRDS(file = "Nepal_PPsero_mig.rds")
   dt <- 1/12
   peripost_mass_cluster_freq <- data.frame("year" = 1:10, rbind(mass_cluster_freq_8,mass_cluster_freq_9, mass_cluster_freq_10, mass_cluster_freq_11,mass_cluster_freq_12, mass_cluster_freq_13, mass_cluster_freq_14,mass_cluster_freq_15,mass_cluster_freq_16,mass_cluster_freq_17))
@@ -304,6 +304,7 @@ migVec <- data.frame(avg_cluster_freq)
 #           sero_no = p[((((((nrow(Pop_ini) * ncol(Pop_ini)) + length(Pop_eq)) + nrow(Genotypes) * ncol(Genotypes)) + 2 + gene_no) + sero_no) + 4 + (nrow(migVec) * ncol(migVec)) +1)]), as.list(theta))
 #  }
 #}
+##################################
 
 if(params_total == 2){
 
@@ -678,6 +679,7 @@ if(params_total == 2){
   det_pmcmc_run <- mcstate::pmcmc(mcmc_pars, det_filter, control = control)
   
   n_steps <- 1000
+  #n_steps <- 500
   n_burnin <- 0
   
   
@@ -694,6 +696,7 @@ if(params_total == 2){
   #n_threads_total = 8
   
   det_pmcmc_run <- mcstate::pmcmc(mcmc_pars, det_filter, control = control)
+  #processed_chains <- mcstate::pmcmc_thin(det_pmcmc_run, burnin = 100, thin = 1)
   processed_chains <- mcstate::pmcmc_thin(det_pmcmc_run, burnin = 250, thin = 1)
   parameter_mean_hpd <- apply(processed_chains$pars, 2, mean)
   print(parameter_mean_hpd)
@@ -731,6 +734,7 @@ if(params_total == 2){
   det_pmcmc_run <- mcstate::pmcmc(det_mcmc_pars, det_filter, control = control)
   
   n_steps <- 20000
+  #n_steps <- 5000
   n_burnin <- 0
   
   
@@ -742,6 +746,7 @@ if(params_total == 2){
     adaptive_proposal = TRUE,
     n_chains = 4, n_workers = 4, n_threads_total = 4)
   det_pmcmc_run2 <- mcstate::pmcmc(det_mcmc_pars, det_filter, control = control)
+  #processed_chains <- mcstate::pmcmc_thin(det_pmcmc_run2, burnin = 1000, thin = 1)
   processed_chains <- mcstate::pmcmc_thin(det_pmcmc_run2, burnin = 2000, thin = 1)
   parameter_mean_hpd <- apply(processed_chains$pars, 2, mean)
   print(parameter_mean_hpd)

@@ -43,7 +43,10 @@ Navajo_time_points_preVac2 <- Navajo_time_seq[1:13]
 
 # read in PopPUNK results
 ```{r}
-PP_all <- read.csv(paste(path_to_data, "StrepPneumo_NavajoNew/PopPUNK/poppunk_clusters_clusters.csv",sep = ""))
+#PP_all <- read.csv(paste(path_to_data, "StrepPneumo_NavajoNew/PopPUNK/poppunk_clusters_clusters.csv",sep = ""))
+PP_all <- read.csv(paste(path_to_data, "StrepPneumo_NavajoNew/poppunk_clusters_GPSCs_v9/poppunk_clusters_external_clusters.csv",sep = ""))
+colnames(PP_all) <- c("Taxon", "Cluster")
+
 PP_taxon_ind_dict <- 1:nrow(PP_all)
 names(PP_taxon_ind_dict) <- PP_all$Taxon
 
@@ -54,15 +57,28 @@ for (i in 1:length(Navajo_meta_data$Accession)) {
   PP_is_Navajo_dict[Navajo_meta_data$Accession[i]] <- TRUE
 }
 Navajo_PP <- PP_all[PP_is_Navajo_dict,]
+Navajo_PP <- Navajo_PP[which(!(is.na(Navajo_PP$Cluster))),]
 no_Navajo_PP <- length(unique(Navajo_PP$Cluster)) 
-# 73 clusters
+# 68 GPSCs
+# 73 clusters (old)
 
 Navajo_seq_clusters_dict <- Navajo_PP$Cluster
 names(Navajo_seq_clusters_dict) <- Navajo_PP$Taxon
 ```
 
+# filter meta data by PopPUNK sequences (PopPUNK qc removed some of the sequences)
 ```{r}
-saveRDS(Navajo_meta_data, "Navajo_meta_data.rds")
+Navajo_meta_dataPP <- Navajo_meta_data[sort(Navajo_meta_IDtoInd[Navajo_PP$Taxon]),c("Accession", "Year", "Sero")]
+
+rownames(Navajo_meta_dataPP) <- 1:nrow(Navajo_meta_dataPP)
+
+Navajo_meta_IDtoIndPP <- 1:nrow(Navajo_meta_dataPP)
+names(Navajo_meta_IDtoIndPP) <- Navajo_meta_dataPP$Lane_id
+```
+
+```{r}
+saveRDS(Navajo_meta_dataPP, "Navajo_meta_data.rds")
+Navajo_meta_data <- readRDS("Navajo_meta_data.rds")
 ```
 
 ```{r}
@@ -195,6 +211,7 @@ for (i in 1:length(Navajo_time_points_preVac1)) {
 Navajo_gene_freq_preVac <- Navajo_gene_freq_preVac / preVac_datapoints
 
 Navajo_gene_filter <- as.integer(Navajo_gene_freq_preVac<=0.95 & Navajo_gene_freq_preVac>=0.05)
+# 1831
 # 1689 intermediate-frequency genes (of 5713)
 ```
 

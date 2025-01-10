@@ -314,7 +314,9 @@ no_PopPUNK_clusters_old <- length(unique(PopPUNK_clusters_old$Cluster)) # number
 ```
 
 ```{r}
-PopPUNK_all <- read.csv("/Users/llorenz/Documents/PhD_Project/Data/Massachusetts_SeqClusters/PopPUNKwithStandardDB/poppunk_clusters_clusters.csv")
+#PopPUNK_all <- read.csv("/Users/llorenz/Documents/PhD_Project/Data/Massachusetts_SeqClusters/PopPUNKwithStandardDB/poppunk_clusters_clusters.csv")
+PopPUNK_all <- read.csv("/Users/llorenz/Documents/PhD_Project/Data/Massachusetts_SeqClusters/poppunk_clusters_GPSCs_v9/poppunk_clusters_external_clusters.csv")
+colnames(PopPUNK_all) <- c("Taxon","Cluster")
 no_PopPUNK_all <- length(unique(PopPUNK_all$Cluster)) # number of clusters in dataset
 ```
 
@@ -352,7 +354,7 @@ for (i in 1:nrow(PopPUNK_all)) {
 
 no_PopPUNK_clusters <- length(unique(PopPUNK_clusters$Cluster)) 
 
-
+# 52 GPSCs
 # 55 clusters! (used to be 62?)
 ```
 
@@ -1274,9 +1276,9 @@ for (i in 1:mass_seqs){
 ```
 
 ```{r}
-#saveRDS(mass_seq_freq_1,file = "mass_seq_freq_1.rds")
-#saveRDS(mass_seq_freq_2, file = "mass_seq_freq_2.rds")
-#saveRDS(mass_seq_freq_3, file = "mass_seq_freq_3.rds")
+saveRDS(mass_seq_freq_1,file = "mass_seq_freq_1.rds")
+saveRDS(mass_seq_freq_2, file = "mass_seq_freq_2.rds")
+saveRDS(mass_seq_freq_3, file = "mass_seq_freq_3.rds")
 ```
 
 ```{r}
