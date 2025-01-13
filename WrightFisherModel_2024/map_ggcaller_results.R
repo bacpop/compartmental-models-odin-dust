@@ -485,13 +485,15 @@ Mass_delta_ranking_names <- Mass_delta_ranking
 names(Mass_delta_ranking_names) <- Mass_ggC_intermed_gene_names
 Mass_intermed_gene_underNFDS <- rep(0, length(Mass_delta_ranking_names))
 names(Mass_intermed_gene_underNFDS) <- names(Mass_delta_ranking_names)
-Mass_intermed_gene_underNFDS[which((Mass_delta_ranking_names <= 0.2797 * length(Mass_delta_ranking_names)))] <- 1
+# new GPSC fit suggests Mass 0.2784
+Mass_intermed_gene_underNFDS[which((Mass_delta_ranking_names <= 0.2784 * length(Mass_delta_ranking_names)))] <- 1
 #if(Mass_delta_ranking <= 0.2797 * length(Mass_delta_ranking)) 1 else 0
 UK_delta_ranking_names <- UK_delta_ranking
 names(UK_delta_ranking_names) <- UK_ggC_intermed_gene_names
 UK_intermed_gene_underNFDS <- rep(0, length(UK_delta_ranking_names))
 names(UK_intermed_gene_underNFDS) <- names(UK_delta_ranking_names)
-UK_intermed_gene_underNFDS[which((UK_delta_ranking_names <= 0.1432 * length(UK_delta_ranking_names)))] <- 1
+# and UK GPSC fit: 0.2095
+UK_intermed_gene_underNFDS[which((UK_delta_ranking_names <= 0.2095 * length(UK_delta_ranking_names)))] <- 1
 # expand this vector to all genes, NFDS or not
 # Mass
 Mass_underNFDS <- rep(0, length(Mass_ggC_all_gene_freqs_dict))
@@ -502,23 +504,25 @@ UK_underNFDS <- rep(0, length(UK_ggC_all_gene_freqs_dict))
 names(UK_underNFDS) <- readRDS("UK_ggC_all_gene_names.rds")
 UK_underNFDS[names(which(UK_intermed_gene_underNFDS==1))] <- 1
 # create color vector
+col_clb <- c("#000000", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7") #8 colorblind friendly colors
+
 colours_UKMassUnfiltered_90 <- rep("grey", length(match_UKMassUnfiltered_90))
 names(colours_UKMassUnfiltered_90) <- names(match_UKMassUnfiltered_90)
-colours_UKMassUnfiltered_90[names(which(UK_underNFDS[names(match_UKMassUnfiltered_90)]==1))] <- "blue"
-colours_UKMassUnfiltered_90[match_MassUKUnfiltered_90[names(which(Mass_underNFDS[match_UKMassUnfiltered_90]==1))]] <- "red"
-colours_UKMassUnfiltered_90[intersect(names(which(UK_underNFDS[names(match_UKMassUnfiltered_90)]==1)),match_MassUKUnfiltered_90[names(which(Mass_underNFDS[match_UKMassUnfiltered_90]==1))])] <- "purple"
+colours_UKMassUnfiltered_90[names(which(UK_underNFDS[names(match_UKMassUnfiltered_90)]==1))] <- col_clb[2]
+colours_UKMassUnfiltered_90[match_MassUKUnfiltered_90[names(which(Mass_underNFDS[match_UKMassUnfiltered_90]==1))]] <- col_clb[3]
+colours_UKMassUnfiltered_90[intersect(names(which(UK_underNFDS[names(match_UKMassUnfiltered_90)]==1)),match_MassUKUnfiltered_90[names(which(Mass_underNFDS[match_UKMassUnfiltered_90]==1))])] <- col_clb[8]
 
 colours_UKMassUnfiltered_95 <- rep("grey", length(match_UKMassUnfiltered_95))
 names(colours_UKMassUnfiltered_95) <- names(match_UKMassUnfiltered_95)
-colours_UKMassUnfiltered_95[names(which(UK_underNFDS[names(match_UKMassUnfiltered_95)]==1))] <- "blue"
-colours_UKMassUnfiltered_95[match_MassUKUnfiltered_95[names(which(Mass_underNFDS[match_UKMassUnfiltered_95]==1))]] <- "red"
-colours_UKMassUnfiltered_95[intersect(names(which(UK_underNFDS[names(match_UKMassUnfiltered_95)]==1)),match_MassUKUnfiltered_95[names(which(Mass_underNFDS[match_UKMassUnfiltered_95]==1))])] <- "purple"
+colours_UKMassUnfiltered_95[names(which(UK_underNFDS[names(match_UKMassUnfiltered_95)]==1))] <- col_clb[2]
+colours_UKMassUnfiltered_95[match_MassUKUnfiltered_95[names(which(Mass_underNFDS[match_UKMassUnfiltered_95]==1))]] <- col_clb[3]
+colours_UKMassUnfiltered_95[intersect(names(which(UK_underNFDS[names(match_UKMassUnfiltered_95)]==1)),match_MassUKUnfiltered_95[names(which(Mass_underNFDS[match_UKMassUnfiltered_95]==1))])] <- col_clb[8]
 
 colours_UKMassUnfiltered_99 <- rep("grey", length(match_UKMassUnfiltered_99))
 names(colours_UKMassUnfiltered_99) <- names(match_UKMassUnfiltered_99)
-colours_UKMassUnfiltered_99[names(which(UK_underNFDS[names(match_UKMassUnfiltered_99)]==1))] <- "blue"
-colours_UKMassUnfiltered_99[match_MassUKUnfiltered_99[names(which(Mass_underNFDS[match_UKMassUnfiltered_99]==1))]] <- "red"
-colours_UKMassUnfiltered_99[intersect(names(which(UK_underNFDS[names(match_UKMassUnfiltered_99)]==1)),match_MassUKUnfiltered_99[names(which(Mass_underNFDS[match_UKMassUnfiltered_99]==1))])] <- "purple"
+colours_UKMassUnfiltered_99[names(which(UK_underNFDS[names(match_UKMassUnfiltered_99)]==1))] <- col_clb[2]
+colours_UKMassUnfiltered_99[match_MassUKUnfiltered_99[names(which(Mass_underNFDS[match_UKMassUnfiltered_99]==1))]] <- col_clb[3]
+colours_UKMassUnfiltered_99[intersect(names(which(UK_underNFDS[names(match_UKMassUnfiltered_99)]==1)),match_MassUKUnfiltered_99[names(which(Mass_underNFDS[match_UKMassUnfiltered_99]==1))])] <- col_clb[8]
 
 par(pty="s")
 plot(UK_ggC_all_gene_freqs_dict[names(match_UKMassUnfiltered_90)], Mass_ggC_all_gene_freqs_dict[match_UKMassUnfiltered_90[names(match_UKMassUnfiltered_90)]], xlab = "UK gene frequencies", ylab = "Mass gene frequencies",main="All Gene Frequencies, 90% sequence identity", col = colours_UKMassUnfiltered_90, pch = 19)
@@ -527,3 +531,4 @@ plot(UK_ggC_all_gene_freqs_dict[names(match_UKMassUnfiltered_95)], Mass_ggC_all_
 abline(0,1)
 plot(UK_ggC_all_gene_freqs_dict[names(match_UKMassUnfiltered_99)], Mass_ggC_all_gene_freqs_dict[match_UKMassUnfiltered_99[names(match_UKMassUnfiltered_99)]], xlab = "UK gene frequencies", ylab = "Mass gene frequencies",main="All Gene Frequencies, 99% sequence identity", col = colours_UKMassUnfiltered_99, pch = 19)
 abline(0,1)
+

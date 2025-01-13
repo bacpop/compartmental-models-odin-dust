@@ -45,8 +45,8 @@ percentile95_up <- apply(Mass_3param_mcmc2_probs,2,quantile,.975)
 rm(Mass_3param_mcmc2)
 rm(Mass_3param_mcmc2_probs)
 
-# 4-parameter model
-Mass_4param_mcmc2 <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_12_05/ModelComparison_Mass/PPxSero_ggCaller_PopPUNK_4param_det_pmcmc_run2.rds")
+# 4-parameter model with GPSCs
+Mass_4param_mcmc2 <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2025_01_13/Mass_GPSCs/PPxSero_ggCaller_PopPUNK_4param_det_pmcmc_run2.rds")
 Mass_4param_mcmc2_probs <- coda::as.mcmc(cbind(Mass_4param_mcmc2$probabilities, Mass_4param_mcmc2$pars))
 #coda::effectiveSize(Mass_4param_mcmc2_probs)
 #summary(coda::as.mcmc(Mass_4param_mcmc2_probs))
@@ -54,9 +54,12 @@ Mass_likelihood_4param <- median(Mass_4param_mcmc2_probs[,"log_likelihood"])
 #mean(Mass_4param_mcmc2_probs[,"log_likelihood"])
 param_estimates <- map_estimate(Mass_4param_mcmc2$pars)
 # -3.27, 0.24, -4.36, 0.08
+# GPSCs:
+# -3.24, 0.24, -4.31, 0.08
 param_mean <- apply(Mass_4param_mcmc2_probs, 2, mean)
 percentile95_low <- apply(Mass_4param_mcmc2_probs,2,quantile,.025)
 percentile95_up <- apply(Mass_4param_mcmc2_probs,2,quantile,.975)
+# (old values)
 #     log_prior log_likelihood  log_posterior        sigma_f         prop_f              m              v 
 #    0.00000000  -236.18187830  -236.18187830    -3.29342091     0.27971311    -4.31740603     0.08169713 
 #    0.00000000  -240.56908318  -240.56908318    -4.18698747     0.11780847    -4.80025991     0.06278332
@@ -149,8 +152,8 @@ percentile95_up <- apply(UK_3param_mcmc2_probs,2,quantile,.975)
 #     0.0000000   -640.2573559   -640.2573559     -4.2676913     -2.4375028      0.6825091
 rm(UK_3param_mcmc2)
 
-# 4-parameter model
-UK_4param_mcmc2 <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_12_05/ModelComparison_UK/UK_PPxSero_ggCaller_PopPUNK_4param_det_pmcmc_run2.rds")
+# 4-parameter model GPSC version
+UK_4param_mcmc2 <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2025_01_13/UK_GPSCs/UK_PPxSero_ggCaller_PopPUNK_4param_det_pmcmc_run2.rds")
 UK_4param_mcmc2_probs <- coda::as.mcmc(cbind(UK_4param_mcmc2$probabilities, UK_4param_mcmc2$pars))
 #coda::effectiveSize(UK_4param_mcmc2_probs)
 #summary(coda::as.mcmc(UK_4param_mcmc2_probs))
@@ -159,6 +162,7 @@ UK_likelihood_4param <- median(UK_4param_mcmc2_probs[,"log_likelihood"])
 param_mean <- apply(UK_4param_mcmc2_probs, 2, mean)
 percentile95_low <- apply(UK_4param_mcmc2_probs,2,quantile,.025)
 percentile95_up <- apply(UK_4param_mcmc2_probs,2,quantile,.975)
+# old
 #     log_prior log_likelihood  log_posterior        sigma_f         prop_f              m              v 
 #     0.0000000   -562.2620742   -562.2620742     -3.1745767      0.1432364     -3.9757905      0.0910330
 #    0.00000000  -566.34600127  -566.34600127    -3.62415671     0.10767921    -4.26552560     0.07626173
@@ -236,8 +240,8 @@ percentile95_up <- apply(Navajo_3param_mcmc2_probs,2,quantile,.975)
 #     0.0000000   -774.0645465   -774.0645465     -3.8534879     -2.2976970      0.5704883
 rm(Navajo_3param_mcmc2)
 
-# 4-parameter model
-Navajo_4param_mcmc2 <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2024_12_05/ModelComparison_Navajo/Navajo_PPxSero2vacc_ggCaller_PopPUNK_4param_det_pmcmc_run2.rds")
+# 4-parameter model GPSC
+Navajo_4param_mcmc2 <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2025_01_13/Navajo_GPSCs/Navajo_PPxSero2vacc_ggCaller_PopPUNK_4param_det_pmcmc_run2.rds")
 Navajo_4param_mcmc2_probs <- coda::as.mcmc(cbind(Navajo_4param_mcmc2$probabilities, Navajo_4param_mcmc2$pars))
 #coda::effectiveSize(Navajo_4param_mcmc2_probs)
 #summary(coda::as.mcmc(Navajo_4param_mcmc2_probs))
@@ -365,3 +369,20 @@ percentile95_up <- apply(Navajo_5param_mcmc2_probs,2,quantile,.975)
 rm(Navajo_5param_mcmc2)
 
 ```
+
+### Nepal
+```{r}
+# 4-parameter model GPSC
+Nepal_4param_mcmc2 <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2025_01_13/Nepal_GPSCs/Nepal_PPxSero_ggCaller_PopPUNK_4param_det_pmcmc_run2.rds")
+Nepal_4param_mcmc2_probs <- coda::as.mcmc(cbind(Nepal_4param_mcmc2$probabilities, Nepal_4param_mcmc2$pars))
+#coda::effectiveSize(Nepal_4param_mcmc2_probs)
+#summary(coda::as.mcmc(Nepal_4param_mcmc2_probs))
+Nepal_likelihood_4param <- median(Nepal_4param_mcmc2_probs[,"log_likelihood"])
+#mean(Nepal_4param_mcmc2_probs[,"log_likelihood"])
+param_mean <- apply(Nepal_4param_mcmc2_probs, 2, mean)
+percentile95_low <- apply(Nepal_4param_mcmc2_probs,2,quantile,.025)
+percentile95_up <- apply(Nepal_4param_mcmc2_probs,2,quantile,.975)
+
+rm(Nepal_4param_mcmc2)
+```
+

@@ -15,6 +15,17 @@ library(readxl)
 Navajo_meta_data <- read_excel(paste(path_to_data, "StrepPneumo_Navajo/metadata.xlsx", sep = ""))
 Navajo_time_points <- sort(unique(Navajo_meta_data$Year))
 
+split_beastYear <- function(beastYear){
+  month_vec <- rep("0", length(beastYear))
+  for (i in 1:length(beastYear)) {
+    month_vec[i] <- strsplit(as.character(beastYear[i]), split = ".", fixed = TRUE)[[1]][2]
+    month_vec[i] <- if(is.na(month_vec[i])){"0"} else{month_vec[i]}
+  }
+  month_vec
+}
+
+Navajo_winters <- Navajo_meta_data$Year
+
 Navajo_SeqYear_dict <- Navajo_meta_data$Year
 names(Navajo_SeqYear_dict) <- Navajo_meta_data$Accession
 
