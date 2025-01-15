@@ -401,7 +401,7 @@ recip_matching <- function(AinB_dict, BinA_dict, seq_id_vec, seq_identity = 0.95
     name <- names(AinB_dict)[i]
     val <- AinB_dict[name]
     return_val <- BinA_dict[val]
-    if(name != return_val){
+    if(is.na(return_val) | name != return_val){
       if(seq_id_vec[i]>=seq_identity){
         no_match_count <- no_match_count + 1 
       }
@@ -531,4 +531,242 @@ plot(UK_ggC_all_gene_freqs_dict[names(match_UKMassUnfiltered_95)], Mass_ggC_all_
 abline(0,1)
 plot(UK_ggC_all_gene_freqs_dict[names(match_UKMassUnfiltered_99)], Mass_ggC_all_gene_freqs_dict[match_UKMassUnfiltered_99[names(match_UKMassUnfiltered_99)]], xlab = "UK gene frequencies", ylab = "Mass gene frequencies",main="All Gene Frequencies, 99% sequence identity", col = colours_UKMassUnfiltered_99, pch = 19)
 abline(0,1)
+
+# 14.01.2025
+# map ggCaller results to COGs
+mmseq_results_FindMassInMassCOGs_unfiltered <- read.delim("/Users/llorenz/Documents/PhD_Project/Data/Mapping_ggCaller/MMseqs2_results/FindAllMassInMassCOGs/bestResultMassInMassCOGs.m8", header=FALSE)
+mmseq_results_FindMassCOGsInMass_unfiltered <- read.delim("/Users/llorenz/Documents/PhD_Project/Data/Mapping_ggCaller/MMseqs2_results/FindAllMassCOGsInMass/bestResultMassCOGsInMass.m8", header=FALSE)
+
+MassInMassCOGs_unfiltered_dict <- mmseq_results_FindMassInMassCOGs_unfiltered$V2
+names(MassInMassCOGs_unfiltered_dict) <- mmseq_results_FindMassInMassCOGs_unfiltered$V1
+
+FindMassCOGsInMass_unfiltered_dict <- mmseq_results_FindMassCOGsInMass_unfiltered$V2
+names(FindMassCOGsInMass_unfiltered_dict) <- mmseq_results_FindMassCOGsInMass_unfiltered$V1
+
+MassInMassCOGs_unfiltered_seq_id_vec <- mmseq_results_FindMassInMassCOGs_unfiltered$V3
+MassCOGsInMass_unfiltered_seq_id_vec <- mmseq_results_FindMassCOGsInMass_unfiltered$V3
+
+# make a plot that shows how frequent genes are with recip matches and those that do not have a recip match
+Mass_ggC_all_gene_freqs_dict <- readRDS("Mass_ggC_all_gene_freqs.rds")
+names(Mass_ggC_all_gene_freqs_dict) <- readRDS("Mass_ggC_all_gene_names.rds")
+
+Mass_cog_all_gene_freqs_dict <- readRDS("Mass_cog_all_gene_freqs.rds")
+names(Mass_cog_all_gene_freqs_dict) <- readRDS("Mass_cog_all_gene_names.rds")
+
+match_MassMassCOGsUnfiltered_90 <- recip_matching(MassInMassCOGs_unfiltered_dict, FindMassCOGsInMass_unfiltered_dict, MassInMassCOGs_unfiltered_seq_id_vec, 0.90)
+match_MassMassCOGsUnfiltered_95 <- recip_matching(MassInMassCOGs_unfiltered_dict, FindMassCOGsInMass_unfiltered_dict, MassInMassCOGs_unfiltered_seq_id_vec, 0.95)
+match_MassMassCOGsUnfiltered_99 <- recip_matching(MassInMassCOGs_unfiltered_dict, FindMassCOGsInMass_unfiltered_dict, MassInMassCOGs_unfiltered_seq_id_vec, 0.99)
+match_MassCOGsMassUnfiltered_90 <- recip_matching(FindMassCOGsInMass_unfiltered_dict, MassInMassCOGs_unfiltered_dict, MassCOGsInMass_unfiltered_seq_id_vec, 0.90)
+match_MassCOGsMassUnfiltered_95 <- recip_matching(FindMassCOGsInMass_unfiltered_dict, MassInMassCOGs_unfiltered_dict, MassCOGsInMass_unfiltered_seq_id_vec, 0.95)
+match_MassCOGsMassUnfiltered_99 <- recip_matching(FindMassCOGsInMass_unfiltered_dict, MassInMassCOGs_unfiltered_dict, MassCOGsInMass_unfiltered_seq_id_vec, 0.99)
+par(pty="s")
+plot(Mass_ggC_all_gene_freqs_dict[names(match_MassMassCOGsUnfiltered_90)], Mass_cog_all_gene_freqs_dict[match_MassMassCOGsUnfiltered_90[names(match_MassMassCOGsUnfiltered_90)]], xlab = "Mass ggCaller gene frequencies", ylab = "Mass COG gene frequencies",main="All Gene Frequencies, 90% sequence identity")
+abline(0,1)
+plot(Mass_ggC_all_gene_freqs_dict[names(match_MassMassCOGsUnfiltered_95)], Mass_cog_all_gene_freqs_dict[match_MassMassCOGsUnfiltered_95[names(match_MassMassCOGsUnfiltered_95)]], xlab = "Mass ggCaller gene frequencies", ylab = "Mass COG gene frequencies",main="All Gene Frequencies, 95% sequence identity")
+abline(0,1)
+plot(Mass_ggC_all_gene_freqs_dict[names(match_MassMassCOGsUnfiltered_99)], Mass_cog_all_gene_freqs_dict[match_MassMassCOGsUnfiltered_99[names(match_MassMassCOGsUnfiltered_99)]], xlab = "Mass ggCaller gene frequencies", ylab = "Mass COG gene frequencies",main="All Gene Frequencies, 99% sequence identity")
+abline(0,1)
+
+# colur by genes that are under NFDS in Mass ggCaller
+colours_MassUnfiltered_95 <- rep("grey", length(match_MassMassCOGsUnfiltered_95))
+names(colours_MassUnfiltered_95) <- names(match_MassMassCOGsUnfiltered_95)
+colours_MassUnfiltered_95[names(which(Mass_underNFDS[names(match_MassMassCOGsUnfiltered_95)]==1))] <- col_clb[3]
+
+plot(Mass_ggC_all_gene_freqs_dict[names(match_MassMassCOGsUnfiltered_95)], Mass_cog_all_gene_freqs_dict[match_MassMassCOGsUnfiltered_95[names(match_MassMassCOGsUnfiltered_95)]], xlab = "Mass ggCaller gene frequencies", ylab = "Mass COG gene frequencies",main="All Gene Frequencies, 95% sequence identity", col = colours_MassUnfiltered_95, pch = 19)
+abline(0,1)
+
+# e.g.
+# group_386 
+# 0.8947368 
+# from ggCaller mapped to COG
+# CLS03441 
+# 0 
+
+MassCOGs_seqlengths <- read.csv("/Users/llorenz/Documents/PhD_Project/Data/Mapping_ggCaller/Mass_COGs/sequence_lengths.csv", header=TRUE)
+MassCOGs_seqlengths_dict <- MassCOGs_seqlengths$Length
+names(MassCOGs_seqlengths_dict) <- MassCOGs_seqlengths$GeneCluster
+
+plot(MassCOGs_seqlengths_dict[match_MassMassCOGsUnfiltered_99[names(match_MassMassCOGsUnfiltered_99)]], Mass_ggC_all_gene_freqs_dict[names(match_MassMassCOGsUnfiltered_99)] - Mass_cog_all_gene_freqs_dict[match_MassMassCOGsUnfiltered_99[names(match_MassMassCOGsUnfiltered_99)]], xlab = "Mass ggCaller gene frequencies", ylab = "Mass COG gene frequencies",main="All Gene Frequencies, 99% sequence identity")
+
+MassggC_seqlengths <- read.csv("/Users/llorenz/Documents/PhD_Project/Data/Mapping_ggCaller/Massachusetts/sequence_lengths_AllMass.csv", header=TRUE)
+MassggC_seqlengths_dict <- MassggC_seqlengths$Length
+names(MassggC_seqlengths_dict) <- MassggC_seqlengths$GeneCluster
+
+plot(MassggC_seqlengths_dict[names(match_MassMassCOGsUnfiltered_99)], MassCOGs_seqlengths_dict[match_MassMassCOGsUnfiltered_99[names(match_MassMassCOGsUnfiltered_99)]], xlab = "Mass ggCaller gene length", ylab = "Mass COG gene length",main="All Gene Frequencies, 99% sequence identity")
+
+plot(MassggC_seqlengths_dict[names(match_MassMassCOGsUnfiltered_99)] - MassCOGs_seqlengths_dict[match_MassMassCOGsUnfiltered_99[names(match_MassMassCOGsUnfiltered_99)]], Mass_ggC_all_gene_freqs_dict[names(match_MassMassCOGsUnfiltered_99)] - Mass_cog_all_gene_freqs_dict[match_MassMassCOGsUnfiltered_99[names(match_MassMassCOGsUnfiltered_99)]], xlab = "Mass ggCaller gene length - Mass COG gene length", ylab = "Mass ggCaller gene freq - Mass COG gene freq",main="All Gene Frequencies, 99% sequence identity")
+
+plot(MassggC_seqlengths_dict[names(match_MassMassCOGsUnfiltered_99)], col = "#56B4E980", pch = 19)
+points(MassCOGs_seqlengths_dict[match_MassMassCOGsUnfiltered_99[names(match_MassMassCOGsUnfiltered_99)]], col = "#E69F0080", pch = 19)
+
+plot(sort(MassggC_seqlengths_dict[names(match_MassMassCOGsUnfiltered_99)]), col = "#56B4E980", pch = 19)
+points((MassCOGs_seqlengths_dict[match_MassMassCOGsUnfiltered_99[names(sort(MassggC_seqlengths_dict[names(match_MassMassCOGsUnfiltered_99)]))]]), col = "#E69F0080", pch = 19)
+
+plot(abs(MassggC_seqlengths_dict[names(match_MassMassCOGsUnfiltered_99)] - MassCOGs_seqlengths_dict[match_MassMassCOGsUnfiltered_99[names(match_MassMassCOGsUnfiltered_99)]])/MassggC_seqlengths_dict[names(match_MassMassCOGsUnfiltered_99)])
+
+# maybe filter matches by length difference?
+plot(Mass_ggC_all_gene_freqs_dict[names(match_MassMassCOGsUnfiltered_99)], Mass_cog_all_gene_freqs_dict[match_MassMassCOGsUnfiltered_99[names(match_MassMassCOGsUnfiltered_99)]], xlab = "Mass ggCaller gene frequencies", ylab = "Mass COG gene frequencies",main="All Gene Frequencies, 99% sequence identity")
+points(Mass_ggC_all_gene_freqs_dict[names(which(abs(MassggC_seqlengths_dict[names(match_MassMassCOGsUnfiltered_99)] - MassCOGs_seqlengths_dict[match_MassMassCOGsUnfiltered_99[names(match_MassMassCOGsUnfiltered_99)]])/MassggC_seqlengths_dict[names(match_MassMassCOGsUnfiltered_99)] > 0.2))], Mass_cog_all_gene_freqs_dict[match_MassMassCOGsUnfiltered_99[names(which(abs(MassggC_seqlengths_dict[names(match_MassMassCOGsUnfiltered_99)] - MassCOGs_seqlengths_dict[match_MassMassCOGsUnfiltered_99[names(match_MassMassCOGsUnfiltered_99)]])/MassggC_seqlengths_dict[names(match_MassMassCOGsUnfiltered_99)] > 0.2))]], col = "red")
+# hm, does not look very successful.
+# maybe better change what mmseqs considers a good fit
+# also, check whether you have the same issues btw ggCaller Mass and ggCaller UK (or whether this is just an issue with how I selected the COG reps)
+
+# 15.01.2025
+# using reciprocal match function of mmseqs
+mmseq_results_RecipMassggCMassCOGs_unfiltered <- read.delim("/Users/llorenz/Documents/PhD_Project/Data/Mapping_ggCaller/MMseqs2_results/RecipBestHit_ggCMassCOGMass/MassCOGggC_recipBestHit", header=TRUE)
+autRecipMatch_MassCOGggC <- mmseq_results_RecipMassggCMassCOGs_unfiltered$target
+names(autRecipMatch_MassCOGggC) <- mmseq_results_RecipMassggCMassCOGs_unfiltered$query
+
+plot(sort(abs(mmseq_results_RecipMassggCMassCOGs_unfiltered$qlen - mmseq_results_RecipMassggCMassCOGs_unfiltered$tlen)/mmseq_results_RecipMassggCMassCOGs_unfiltered$qlen))
+plot(mmseq_results_RecipMassggCMassCOGs_unfiltered$qlen, mmseq_results_RecipMassggCMassCOGs_unfiltered$tlen)
+abline(0,1)
+
+par(pty="s")
+plot(Mass_ggC_all_gene_freqs_dict[mmseq_results_RecipMassggCMassCOGs_unfiltered$query], Mass_cog_all_gene_freqs_dict[mmseq_results_RecipMassggCMassCOGs_unfiltered$target], xlab = "Mass ggCaller gene frequencies", ylab = "Mass COG gene frequencies",main="All Gene Frequencies, 90% sequence identity")
+abline(0,1)
+plot(Mass_ggC_all_gene_freqs_dict[mmseq_results_RecipMassggCMassCOGs_unfiltered$query[which(mmseq_results_RecipMassggCMassCOGs_unfiltered$fident >= 0.9)]], Mass_cog_all_gene_freqs_dict[mmseq_results_RecipMassggCMassCOGs_unfiltered$target[which(mmseq_results_RecipMassggCMassCOGs_unfiltered$fident >= 0.9)]], xlab = "Mass ggCaller gene frequencies", ylab = "Mass COG gene frequencies",main="All Gene Frequencies, 90% sequence identity", pch = 19)
+abline(0,1)
+plot(Mass_ggC_all_gene_freqs_dict[mmseq_results_RecipMassggCMassCOGs_unfiltered$query[which(mmseq_results_RecipMassggCMassCOGs_unfiltered$fident >= 0.95)]], Mass_cog_all_gene_freqs_dict[mmseq_results_RecipMassggCMassCOGs_unfiltered$target[which(mmseq_results_RecipMassggCMassCOGs_unfiltered$fident >= 0.95)]], xlab = "Mass ggCaller gene frequencies", ylab = "Mass COG gene frequencies",main="All Gene Frequencies, 95% sequence identity", pch = 19)
+abline(0,1)
+plot(Mass_ggC_all_gene_freqs_dict[mmseq_results_RecipMassggCMassCOGs_unfiltered$query[which(mmseq_results_RecipMassggCMassCOGs_unfiltered$fident >= 0.99)]], Mass_cog_all_gene_freqs_dict[mmseq_results_RecipMassggCMassCOGs_unfiltered$target[which(mmseq_results_RecipMassggCMassCOGs_unfiltered$fident >= 0.99)]], xlab = "Mass ggCaller gene frequencies", ylab = "Mass COG gene frequencies",main="All Gene Frequencies, 90% sequence identity", pch = 19)
+abline(0,1)
+
+#library("viridis")
+
+heat_col_vec <- heat.colors(150)
+heat_col_vec_plt <- heat_col_vec[round((abs(mmseq_results_RecipMassggCMassCOGs_unfiltered$qlen - mmseq_results_RecipMassggCMassCOGs_unfiltered$tlen)/mmseq_results_RecipMassggCMassCOGs_unfiltered$qlen)*100)]
+
+plot(Mass_ggC_all_gene_freqs_dict[mmseq_results_RecipMassggCMassCOGs_unfiltered$query], Mass_cog_all_gene_freqs_dict[mmseq_results_RecipMassggCMassCOGs_unfiltered$target], xlab = "Mass ggCaller gene frequencies", ylab = "Mass COG gene frequencies",main="All Gene Frequencies, 90% sequence identity", col = heat_col_vec_plt, pch = 19)
+abline(0,1)
+plot(Mass_ggC_all_gene_freqs_dict[mmseq_results_RecipMassggCMassCOGs_unfiltered$query[which(mmseq_results_RecipMassggCMassCOGs_unfiltered$fident >= 0.9)]], Mass_cog_all_gene_freqs_dict[mmseq_results_RecipMassggCMassCOGs_unfiltered$target[which(mmseq_results_RecipMassggCMassCOGs_unfiltered$fident >= 0.9)]], xlab = "Mass ggCaller gene frequencies", ylab = "Mass COG gene frequencies",main="All Gene Frequencies, 90% sequence identity", col = heat_col_vec_plt[which(mmseq_results_RecipMassggCMassCOGs_unfiltered$fident >= 0.9)])
+abline(0,1)
+plot(Mass_ggC_all_gene_freqs_dict[mmseq_results_RecipMassggCMassCOGs_unfiltered$query[which(mmseq_results_RecipMassggCMassCOGs_unfiltered$fident >= 0.95)]], Mass_cog_all_gene_freqs_dict[mmseq_results_RecipMassggCMassCOGs_unfiltered$target[which(mmseq_results_RecipMassggCMassCOGs_unfiltered$fident >= 0.95)]], xlab = "Mass ggCaller gene frequencies", ylab = "Mass COG gene frequencies",main="All Gene Frequencies, 90% sequence identity")
+abline(0,1)
+plot(Mass_ggC_all_gene_freqs_dict[mmseq_results_RecipMassggCMassCOGs_unfiltered$query[which(mmseq_results_RecipMassggCMassCOGs_unfiltered$fident >= 0.99)]], Mass_cog_all_gene_freqs_dict[mmseq_results_RecipMassggCMassCOGs_unfiltered$target[which(mmseq_results_RecipMassggCMassCOGs_unfiltered$fident >= 0.99)]], xlab = "Mass ggCaller gene frequencies", ylab = "Mass COG gene frequencies",main="All Gene Frequencies, 90% sequence identity")
+abline(0,1)
+
+plot(Mass_ggC_all_gene_freqs_dict[mmseq_results_RecipMassggCMassCOGs_unfiltered$query[which(abs(mmseq_results_RecipMassggCMassCOGs_unfiltered$qlen - mmseq_results_RecipMassggCMassCOGs_unfiltered$tlen)/mmseq_results_RecipMassggCMassCOGs_unfiltered$qlen < 0.01)]], Mass_cog_all_gene_freqs_dict[mmseq_results_RecipMassggCMassCOGs_unfiltered$target[which(abs(mmseq_results_RecipMassggCMassCOGs_unfiltered$qlen - mmseq_results_RecipMassggCMassCOGs_unfiltered$tlen)/mmseq_results_RecipMassggCMassCOGs_unfiltered$qlen < 0.01)]], xlab = "Mass ggCaller gene frequencies", ylab = "Mass COG gene frequencies",main="All Gene Frequencies, 90% sequence identity", pch = 19)
+abline(0,1)
+# hm, no filtering for length does not seem to solve the problem
+
+autRecipMatch_MassCOGggC[names(which(Mass_ggC_all_gene_freqs_dict[mmseq_results_RecipMassggCMassCOGs_unfiltered$query] > 0.95))]
+# find genes that have freq of >0.95 in ggC and <0.05 in COG:
+which (Mass_cog_all_gene_freqs_dict[autRecipMatch_MassCOGggC[names(which(Mass_ggC_all_gene_freqs_dict[mmseq_results_RecipMassggCMassCOGs_unfiltered$query] > 0.95))]] < 0.05 )
+# seven
+# e.g. mmseq_results_RecipMassggCMassCOGs_unfiltered[which(mmseq_results_RecipMassggCMassCOGs_unfiltered$target == "CLS03500"),]
+#   target fident alnlen qlen tlen    evalue
+# CLS01535  0.964    252  255  255 2.425e-41
+# CLS339898  0.978    138 1362  153 1.517e-19
+# CLS06224  0.888    108  111  111 9.059e-13 (query is group_33)
+# CLS03742   0.98    150  153  153 2.214e-21
+# CLS04709      1    177 1095  180 5.454e-29
+# CLS02134  0.999   4827 4845 4830      0
+# CLS03500  0.897    234  234  234 1.103e-38
+# 
+# top left corner
+which (Mass_cog_all_gene_freqs_dict[autRecipMatch_MassCOGggC[names(which(Mass_ggC_all_gene_freqs_dict[mmseq_results_RecipMassggCMassCOGs_unfiltered$query] < 0.1))]] > 0.95 )
+# two
+#   target fident alnlen qlen tlen    evalue
+# CLS03675  0.879    174  177  177 1.911e-26
+# CLS03660  0.756    111  114  111 1.61e-11
+
+plot(Mass_ggC_all_gene_freqs_dict[mmseq_results_RecipMassggCMassCOGs_unfiltered$query[which(mmseq_results_RecipMassggCMassCOGs_unfiltered$evalue < 1.1e-40)]], Mass_cog_all_gene_freqs_dict[mmseq_results_RecipMassggCMassCOGs_unfiltered$target[which(mmseq_results_RecipMassggCMassCOGs_unfiltered$evalue < 1.1e-40)]], xlab = "Mass ggCaller gene frequencies", ylab = "Mass COG gene frequencies",main="All Gene Frequencies, 90% sequence identity", pch = 19)
+abline(0,1)
+#abline(v=0.95)
+#abline(h=0.2)
+names(which(Mass_cog_all_gene_freqs_dict[autRecipMatch_MassCOGggC[names(which(Mass_ggC_all_gene_freqs_dict[mmseq_results_RecipMassggCMassCOGs_unfiltered$query] > 0.95))]] < 0.2 ))
+# 13 (only looking at those that I didn't with the seven)
+#                                               query   target fident alnlen qlen tlen    evalue
+#                                     ERS070118_02504 CLS04644      1    267  270  270 2.792e-48
+#                                     ERS069964_02041 CLS04346  0.982    174  177  177 6.881e-29
+#                                           group_120 CLS04219   0.98    153  180  213 3.286e-25 (query is group_120)
+# ERS070168_01801~~~ERS044041_01743~~~ERS069947_01849 CLS00638  0.921    192  309  198 1.137e-29
+#                                            group_69 CLS03161      1    243  309  246 3.259e-44 (query is group_69)
+#                                                 ... CLS01052      1    234  396  240 1.612e-42
+
+which (Mass_cog_all_gene_freqs_dict[autRecipMatch_MassCOGggC[names(which(Mass_ggC_all_gene_freqs_dict[mmseq_results_RecipMassggCMassCOGs_unfiltered$query] < 0.4))]] > 0.9 )
+#                                                                 query   target fident alnlen qlen tlen     evalue
+# ERS044061_00151~~~ERS044046_02303~~~ERS043891_02198~~~ERS070194_02271 CLS00178  0.986    900  903  903 1.416e-173
+#                                     ERS070176_02395~~~ERS044033_02244 CLS01049  0.994    516  519  846 1.676e-102
+#                                                       ERS070206_00208 CLS02387  0.998   1677 1842 1680      0
+#                             ERS043950_00161~~~ERS043873_02260~~~(...) CLS02387  0.998   1677 1914 1680      0
+#                   ERS044058_01722~~~ERS070061_01847~~~ERS070031_01836 CLS01448      1   1101 1104 1152 2.779e-206
+#                               ERS043904_00576~~~ERS044064_00746 (...) CLS00675  0.953   1035 1266 1038 4.073e-197
+#                               ERS070030_00907~~~ERS069998_00570 (...) CLS04068  0.916    432  666  429 1.419e-70
+#                               ERS044147_02707~~~ERS043873_01127 (...) CLS02742  0.955    951 1173  954 7.086e-178
+
+plot(Mass_ggC_all_gene_freqs_dict[mmseq_results_RecipMassggCMassCOGs_unfiltered$query[intersect(intersect(which(mmseq_results_RecipMassggCMassCOGs_unfiltered$alnlen/mmseq_results_RecipMassggCMassCOGs_unfiltered$qlen > 0.9), which(mmseq_results_RecipMassggCMassCOGs_unfiltered$alnlen/mmseq_results_RecipMassggCMassCOGs_unfiltered$tlen > 0.9)), which(mmseq_results_RecipMassggCMassCOGs_unfiltered$fident >= 0.95))]], Mass_cog_all_gene_freqs_dict[mmseq_results_RecipMassggCMassCOGs_unfiltered$target[intersect(intersect(which(mmseq_results_RecipMassggCMassCOGs_unfiltered$alnlen/mmseq_results_RecipMassggCMassCOGs_unfiltered$qlen > 0.9), which(mmseq_results_RecipMassggCMassCOGs_unfiltered$alnlen/mmseq_results_RecipMassggCMassCOGs_unfiltered$tlen > 0.9)), which(mmseq_results_RecipMassggCMassCOGs_unfiltered$fident >= 0.95))]], xlab = "Mass ggCaller gene frequencies", ylab = "Mass COG gene frequencies",main="All Gene Frequencies, 90% sequence identity", pch = 19)
+abline(0,1)
+
+plot(Mass_ggC_all_gene_freqs_dict[mmseq_results_RecipMassggCMassCOGs_unfiltered$query[intersect(intersect(which(mmseq_results_RecipMassggCMassCOGs_unfiltered$qlen/mmseq_results_RecipMassggCMassCOGs_unfiltered$tlen >= 0.8), which(mmseq_results_RecipMassggCMassCOGs_unfiltered$tlen/mmseq_results_RecipMassggCMassCOGs_unfiltered$qlen >= 0.8)), which(mmseq_results_RecipMassggCMassCOGs_unfiltered$fident >= 0.95))]], Mass_cog_all_gene_freqs_dict[mmseq_results_RecipMassggCMassCOGs_unfiltered$target[intersect(intersect(which(mmseq_results_RecipMassggCMassCOGs_unfiltered$qlen/mmseq_results_RecipMassggCMassCOGs_unfiltered$tlen >= 0.8), which(mmseq_results_RecipMassggCMassCOGs_unfiltered$tlen/mmseq_results_RecipMassggCMassCOGs_unfiltered$qlen >= 0.8)), which(mmseq_results_RecipMassggCMassCOGs_unfiltered$fident >= 0.95))]], xlab = "Mass ggCaller gene frequencies", ylab = "Mass COG gene frequencies",main="All Gene Frequencies, 90% sequence identity", pch = 19)
+abline(0,1)
+
+# new try: take all matches and filter them for at least 80% sequence length of one another and at least 95% quality match. Afterwards try to find the best reciprocal match.
+AllMatches_MassggCinCOG <- read.delim("/Users/llorenz/Documents/PhD_Project/Data/Mapping_ggCaller/MMseqs2_results/AllMatches_ggCMassinCOGMass/MassggCinCOG_AllMatches", header=TRUE)
+AllMatches_MassCOGinggC <- read.delim("/Users/llorenz/Documents/PhD_Project/Data/Mapping_ggCaller/MMseqs2_results/AllMatches_COGMassInggCMass/MassCOGinggC_AllMatches", header=TRUE)
+# filter for fident>=0.95
+AllMatches_MassggCinCOG_hq <- AllMatches_MassggCinCOG[which(AllMatches_MassggCinCOG$fident >= 0.95),]
+AllMatches_MassCOGinggC_hq <- AllMatches_MassCOGinggC[which(AllMatches_MassCOGinggC$fident >= 0.95),]
+# filter for sequence length matches
+AllMatches_MassggCinCOG_hq_seqlen <- AllMatches_MassggCinCOG_hq[intersect(which(AllMatches_MassggCinCOG_hq$qlen/AllMatches_MassggCinCOG_hq$tlen >= 0.8), which(AllMatches_MassggCinCOG_hq$tlen/AllMatches_MassggCinCOG_hq$qlen >= 0.8)),]
+AllMatches_MassCOGinggC_hq_seqlen <- AllMatches_MassCOGinggC_hq[intersect(which(AllMatches_MassCOGinggC_hq$qlen/AllMatches_MassCOGinggC_hq$tlen >= 0.8), which(AllMatches_MassCOGinggC_hq$tlen/AllMatches_MassCOGinggC_hq$qlen >= 0.8)),]
+# filter for alignment length
+# the same sequence seems to be aligned multiple times, just for shorter alignments
+AllMatches_MassggCinCOG_hq_seqlen_alnlen <- AllMatches_MassggCinCOG_hq_seqlen[intersect(which(AllMatches_MassggCinCOG_hq_seqlen$alnlen/AllMatches_MassggCinCOG_hq_seqlen$qlen >= 0.8), which(AllMatches_MassggCinCOG_hq_seqlen$alnlen/AllMatches_MassggCinCOG_hq_seqlen$tlen >= 0.8)),]
+AllMatches_MassCOGinggC_hq_seqlen_alnlen <- AllMatches_MassCOGinggC_hq_seqlen[intersect(which(AllMatches_MassCOGinggC_hq_seqlen$alnlen/AllMatches_MassCOGinggC_hq_seqlen$qlen >= 0.8), which(AllMatches_MassCOGinggC_hq_seqlen$alnlen/AllMatches_MassCOGinggC_hq_seqlen$tlen >= 0.8)),]
+
+# now, check whether forward and backward match is the same
+AllMatches_MassggCinCOG_dict <- AllMatches_MassggCinCOG_hq_seqlen_alnlen$target
+names(AllMatches_MassggCinCOG_dict) <- AllMatches_MassggCinCOG_hq_seqlen_alnlen$query
+
+AllMatches_MassCOGinggC_dict <- AllMatches_MassCOGinggC_hq_seqlen_alnlen$target
+names(AllMatches_MassCOGinggC_dict) <- AllMatches_MassCOGinggC_hq_seqlen_alnlen$query
+
+fake_seq_id <- rep(0.96, length(names(AllMatches_MassggCinCOG_dict)))
+names(fake_seq_id) <- names(AllMatches_MassggCinCOG_dict)
+recip_matches_MassggCCOG <- recip_matching(AllMatches_MassggCinCOG_dict, AllMatches_MassCOGinggC_dict, fake_seq_id, 0.95)
+recip_matches_MassCOGggC <- recip_matching(AllMatches_MassCOGinggC_dict, AllMatches_MassggCinCOG_dict, fake_seq_id, 0.95)
+
+par(pty="s")
+plot(Mass_ggC_all_gene_freqs_dict[names(recip_matches_MassggCCOG)], Mass_cog_all_gene_freqs_dict[recip_matches_MassggCCOG[names(recip_matches_MassggCCOG)]], xlab = "Mass ggCaller gene frequencies", ylab = "Mass COG gene frequencies",main="All Gene Frequencies, 95% sequence identity", pch = 19)
+abline(0,1)
+#basically looks like before
+# the alignments are longer, i.e. better, but usually the same clusters are still matched
+
+# now look at non-recip matches
+# I have 2171 rows in AllMatches_MassggCinCOG_hq_seqlen_alnlen, 2171 unique query sequences, 2136 unique target sequences
+# I have 2278 rows in AllMatches_MassCOGinggC_hq_seqlen_alnlen, 2134 unique query seqs (which are the target seqs in AllMatches_MassggCinCOG_hq_seqlen_alnlen), 2168 unique target sequences (which are the query seqs in AllMatches_MassggCinCOG_hq_seqlen_alnlen)
+# that matches almost perfectly.
+# So I think I want to cluster based on that.
+
+# I will just add the gene freqs together based on the mapping and then see how the correlation is
+# will do it one direction first
+Mass_ggC_all_gene_freqs_dict_with_matches <- Mass_ggC_all_gene_freqs_dict[unique(AllMatches_MassggCinCOG_hq_seqlen_alnlen$query)]
+Mass_ggC_all_gene_freqs_dict_with_matches_matchfreqs <- rep(0, length(unique(AllMatches_MassggCinCOG_hq_seqlen_alnlen$query)))
+names(Mass_ggC_all_gene_freqs_dict_with_matches_matchfreqs) <- unique(AllMatches_MassggCinCOG_hq_seqlen_alnlen$query)
+
+match_vec <- c()
+once <- c()
+more_than_once <- c()
+
+for (i in 1:length(AllMatches_MassggCinCOG_hq_seqlen_alnlen$query)) {
+  query_name <- AllMatches_MassggCinCOG_hq_seqlen_alnlen$query[i]
+  target_name <- AllMatches_MassggCinCOG_hq_seqlen_alnlen$target[i]
+  match_name <- paste(query_name, target_name)
+  if(!is.element(match_name,match_vec)){
+    Mass_ggC_all_gene_freqs_dict_with_matches_matchfreqs[query_name] <- Mass_ggC_all_gene_freqs_dict_with_matches_matchfreqs[query_name] + Mass_cog_all_gene_freqs_dict[target_name]
+    match_vec <- append(match_vec, match_name)
+    if(is.element(query_name,once)){
+      more_than_once <- append(query_name, more_than_once)
+    }
+    if(is.element(target_name,once)){
+      more_than_once <- append(target_name, more_than_once)
+    }
+    once <- append(query_name, once)
+    once <- append(target_name, once)
+  }
+  
+}
+plot(Mass_ggC_all_gene_freqs_dict_with_matches, Mass_ggC_all_gene_freqs_dict_with_matches_matchfreqs, pch = 19)
+
 

@@ -127,6 +127,12 @@ gene_freq_2001 <- gene_freq_2001 / (length(gene_presence_absence_2001[1,-1]))
 
 cog_filter <- as.integer(gene_freq_2001<=0.95 & gene_freq_2001>=0.05)
 
+cog_all_gene_freqs <- gene_freq_2001
+saveRDS(cog_all_gene_freqs, file = "Mass_cog_all_gene_freqs.rds")
+
+cog_all_gene_names <- gene_presence_absence_2001[-1,1]
+saveRDS(cog_all_gene_names, file = "Mass_cog_all_gene_names.rds")
+
 # intermediate gene presence absence matrices filtered by genes that are present at 5-95% frequency in 2001
 intermed_gene_presence_absence_2001 <- data.frame(matrix(0, nrow = sum(cog_filter)+1, ncol = length(Mass_Samples_accCodes[Mass_Samples_accCodes$`Year of Isolation`==2001,]$`Isolate Name`)+1))
 intermed_gene_presence_absence_2001 <- gene_presence_absence_2001[c(1,which(cog_filter==1)+1),]
