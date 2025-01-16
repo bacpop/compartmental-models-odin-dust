@@ -767,6 +767,142 @@ for (i in 1:length(AllMatches_MassggCinCOG_hq_seqlen_alnlen$query)) {
   }
   
 }
-plot(Mass_ggC_all_gene_freqs_dict_with_matches, Mass_ggC_all_gene_freqs_dict_with_matches_matchfreqs, pch = 19)
+
+length(which(abs(Mass_ggC_all_gene_freqs_dict_with_matches - Mass_ggC_all_gene_freqs_dict_with_matches_matchfreqs)>0.05))
+# 106
+length(which(abs(Mass_ggC_all_gene_freqs_dict_with_matches - Mass_ggC_all_gene_freqs_dict_with_matches_matchfreqs)<=0.05))
+# 2065
+# so most of them are actually within +-5%
+# most of them ~ >95%
+# this might be good enough?
+plot(Mass_ggC_all_gene_freqs_dict_with_matches, Mass_ggC_all_gene_freqs_dict_with_matches_matchfreqs, pch = 19, col = "#00000030")
+# overplotting!
+
+# try mapping back and forth to form new clusters
+AllGenesMass_COGggC <- c(unique(AllMatches_MassggCinCOG_hq_seqlen_alnlen$query))
+removed_items <- c()
+i_help <- 1
+global_gene_clusters <- list()
+global_gene_clusters_ggC <- list()
+global_gene_clusters_COG <- list()
+
+for (i in 1:length(AllGenesMass_COGggC)) {
+  curr_gene <- AllGenesMass_COGggC[i]
+  if(!is.element(curr_gene, removed_items)){
+    local_genes <- c()
+    local_matches <- AllMatches_MassggCinCOG_hq_seqlen_alnlen$target[which(AllMatches_MassggCinCOG_hq_seqlen_alnlen$query == curr_gene)]
+    #local_re_matches <- AllMatches_MassggCinCOG_hq_seqlen_alnlen$query[which(AllMatches_MassggCinCOG_hq_seqlen_alnlen$target == local_matches)]
+    local_re_matches <- c()
+    for (j in 1:length(local_matches)) {
+      match_gene <-local_matches[j]
+    #  local_genes <- c(local_genes, match_gene)
+      local_re_matches <- c(local_re_matches,AllMatches_MassggCinCOG_hq_seqlen_alnlen$query[which(AllMatches_MassggCinCOG_hq_seqlen_alnlen$target == match_gene)])
+    }
+    local_genes <- c(curr_gene, local_matches, local_re_matches)
+    local_genes <- unique(local_genes)
+    global_gene_clusters[[i_help]] <- local_genes
+    global_gene_clusters_ggC[[i_help]] <- unique(c(curr_gene, local_re_matches))
+    global_gene_clusters_COG[[i_help]] <- unique(c(local_matches))
+    removed_items <- append(removed_items, c(curr_gene, local_re_matches))
+    i_help <- i_help +1
+  }
+}
+
+# print cluster sizes
+cluster_sizes <- rep(0, length(global_gene_clusters))
+for (i in 1:length(global_gene_clusters)) {
+  cluster_sizes[i] <- length(global_gene_clusters[[i]])
+}
+# okay, now I have the global clusters
+# now I can properly sum them and re-plot the correlation plot
+
+#compute gene freqs
+global_gene_clusters_ggC_freqs <- rep(0, length(cluster_sizes))
+global_gene_clusters_COG_freqs <- rep(0, length(cluster_sizes))
+for (i in 1:length(cluster_sizes)) {
+  global_gene_clusters_ggC_freqs[i] <- min(1, sum(Mass_ggC_all_gene_freqs_dict[global_gene_clusters_ggC[[i]]])) # there were a couple >1 which should be split up paralogs?
+  global_gene_clusters_COG_freqs[i] <- min(1,sum(Mass_cog_all_gene_freqs_dict[global_gene_clusters_COG[[i]]]))
+}
 
 
+#plot them!
+plot(global_gene_clusters_ggC_freqs, global_gene_clusters_COG_freqs, xlab = "Mass ggCaller gene frequencies", ylab = "Mass COG gene frequencies",main="All Gene Frequencies, 95% sequence identity")
+abline(0,1)
+
+plot(global_gene_clusters_ggC_freqs, global_gene_clusters_COG_freqs, pch = 19, col = "#00000030")
+length(which(abs(global_gene_clusters_ggC_freqs - global_gene_clusters_COG_freqs)>0.05))
+# 85
+length(which(abs(global_gene_clusters_ggC_freqs - global_gene_clusters_COG_freqs)<=0.05))
+# 2050
+# again, more than 95% are less than 0.05 different.
+# I think that's fine.
+
+# Let's compare this across datasets!
+filter_matches <- function(AllMatches_data){
+  AllMatches_data_hq <- AllMatches_data[which(AllMatches_data$fident >= 0.95),] 
+  # keep only matches that have a squence identity of at least 0.95
+  AllMatches_data_hq_seqlen <- AllMatches_data_hq[intersect(which(AllMatches_data_hq$qlen/AllMatches_data_hq$tlen >= 0.8), which(AllMatches_data_hq$tlen/AllMatches_data_hq$qlen >= 0.8)),]
+  # keep only matches that are within 80% of each others sequence length
+  AllMatches_data_hq_seqlen_alnlen <- AllMatches_data_hq_seqlen[intersect(which(AllMatches_data_hq_seqlen$alnlen/AllMatches_data_hq_seqlen$qlen >= 0.8), which(AllMatches_data_hq_seqlen$alnlen/AllMatches_data_hq_seqlen$tlen >= 0.8)),]
+  # keep only matches of which at least 80% of the sequences are matched (this removes the high-quality but really short matches)
+  AllMatches_data_hq_seqlen_alnlen
+}
+
+# Mass vs UK
+AllMatches_MassInUK <- read.delim("/Users/llorenz/Documents/PhD_Project/Data/Mapping_ggCaller/MMseqs2_results/AllMatches_MassInUK/MassInUK_AllMatches", header=TRUE)
+AllMatches_UKinMass <- read.delim("/Users/llorenz/Documents/PhD_Project/Data/Mapping_ggCaller/MMseqs2_results/AllMatches_UKinMass/UKinMass_AllMatches", header=TRUE)
+# filter them:
+AllMatches_MassInUK_filtered <- filter_matches(AllMatches_MassInUK)
+AllMatches_UKinMass_filtered <- filter_matches(AllMatches_UKinMass)
+
+create_global_clusters <- function(AllMatches_data){
+  AllGenesMass <- c(unique(AllMatches_data$query))
+  removed_items <- c()
+  i_help <- 1
+  global_gene_clusters_both <- list()
+  global_gene_clusters_a <- list()
+  global_gene_clusters_b <- list()
+  
+  for (i in 1:length(AllGenesMass)) {
+    curr_gene <- AllGenesMass[i]
+    if(!is.element(curr_gene, removed_items)){
+      local_genes <- c()
+      local_matches <- AllMatches_data$target[which(AllMatches_data$query == curr_gene)]
+      #local_re_matches <- AllMatches_MassggCinCOG_hq_seqlen_alnlen$query[which(AllMatches_MassggCinCOG_hq_seqlen_alnlen$target == local_matches)]
+      local_re_matches <- c()
+      for (j in 1:length(local_matches)) {
+        match_gene <-local_matches[j]
+        #  local_genes <- c(local_genes, match_gene)
+        local_re_matches <- c(local_re_matches,AllMatches_data$query[which(AllMatches_data$target == match_gene)])
+      }
+      local_genes <- c(curr_gene, local_matches, local_re_matches)
+      local_genes <- unique(local_genes)
+      global_gene_clusters_both[[i_help]] <- local_genes
+      global_gene_clusters_a[[i_help]] <- unique(c(curr_gene, local_re_matches))
+      global_gene_clusters_b[[i_help]] <- unique(c(local_matches))
+      removed_items <- append(removed_items, c(curr_gene, local_re_matches))
+      i_help <- i_help +1
+    }
+  }
+  return(list(global_gene_clusters_both, global_gene_clusters_a, global_gene_clusters_b))
+}
+
+# create cluster for Mass-UK
+global_clusters_return_Mass_UK <- create_global_clusters(AllMatches_MassInUK_filtered)
+global_gene_clusters_Mass_UK <- global_clusters_return_Mass_UK[[1]]
+global_gene_clusters_Mass <- global_clusters_return_Mass_UK[[2]]
+global_gene_clusters_UK <- global_clusters_return_Mass_UK[[3]]
+
+#compute gene freqs
+global_gene_clusters_Mass_freqs <- rep(0, length(global_gene_clusters_Mass_UK))
+global_gene_clusters_UK_freqs <- rep(0, length(global_gene_clusters_Mass_UK))
+for (i in 1:length(global_gene_clusters_Mass_UK)) {
+  global_gene_clusters_Mass_freqs[i] <- min(1, sum(Mass_ggC_all_gene_freqs_dict[global_gene_clusters_Mass[[i]]])) # there were a couple >1 which should be split up paralogs?
+  global_gene_clusters_UK_freqs[i] <- min(1,sum(UK_ggC_all_gene_freqs_dict[global_gene_clusters_UK[[i]]]))
+}
+plot(global_gene_clusters_Mass_freqs, global_gene_clusters_UK_freqs, pch = 19, col = "#00000030")
+length(which(abs(global_gene_clusters_Mass_freqs - global_gene_clusters_UK_freqs)>0.05))
+# 760
+length(which(abs(global_gene_clusters_Mass_freqs - global_gene_clusters_UK_freqs)<=0.05))
+# 2381
+# >75% are within 0.05 of another
