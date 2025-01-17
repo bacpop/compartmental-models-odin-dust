@@ -13,20 +13,30 @@ path_to_data <- "~/Documents/PhD_Project/Data/"
 ```{r}
 library(readxl)
 Navajo_meta_data <- read_excel(paste(path_to_data, "StrepPneumo_Navajo/metadata.xlsx", sep = ""))
-Navajo_time_points <- sort(unique(Navajo_meta_data$Year))
+# replace year by winter categorization (second half of year gets assigned to the next year)
+#Navajo_time_points <- sort(unique(Navajo_meta_data$Year))
+# I am pretty sure that the four time points of BEAST that are assigned to 2002 are incorrect
+# also in the original publication (https://journals.plos.org/plospathogens/article?id=10.1371/journal.ppat.1006966) are no sequences from 2002
+# So I will correct this.
+Navajo_meta_data$BEASTdate[which(Navajo_meta_data$BEASTdate == 2002.0)] <- 2001.0 
+Navajo_meta_data$BEASTdate[which(Navajo_meta_data$BEASTdate == 2002.1)] <- 2001.1 
+Navajo_meta_data$BEASTdate[which(Navajo_meta_data$BEASTdate == 2002.2)] <- 2001.2 
+Navajo_meta_data$BEASTdate[which(Navajo_meta_data$BEASTdate == 2002.3)] <- 2001.3 
+Navajo_time_points <- sort(unique(round(Navajo_meta_data$BEASTdate)))
 
-split_beastYear <- function(beastYear){
-  month_vec <- rep("0", length(beastYear))
-  for (i in 1:length(beastYear)) {
-    month_vec[i] <- strsplit(as.character(beastYear[i]), split = ".", fixed = TRUE)[[1]][2]
-    month_vec[i] <- if(is.na(month_vec[i])){"0"} else{month_vec[i]}
-  }
-  month_vec
-}
+#split_beastYear <- function(beastYear){
+#  month_vec <- rep("0", length(beastYear))
+#  for (i in 1:length(beastYear)) {
+#    month_vec[i] <- strsplit(as.character(beastYear[i]), split = ".", fixed = TRUE)[[1]][2]
+#    month_vec[i] <- if(is.na(month_vec[i])){"0"} else{month_vec[i]}
+#  }
+#  month_vec
+#}
 
-Navajo_winters <- Navajo_meta_data$Year
+#Navajo_winters <- Navajo_meta_data$Year
 
-Navajo_SeqYear_dict <- Navajo_meta_data$Year
+#Navajo_SeqYear_dict <- Navajo_meta_data$Year
+Navajo_SeqYear_dict <- round(Navajo_meta_data$BEASTdate)
 names(Navajo_SeqYear_dict) <- Navajo_meta_data$Accession
 
 Navajo_meta_IDtoInd <- 1:nrow(Navajo_meta_data)
@@ -39,10 +49,11 @@ Navajo_time_seq <- Navajo_time_points[1]:Navajo_time_points[length(Navajo_time_p
 seq_no_per_year <- rep(0, length(Navajo_time_seq))
 names(seq_no_per_year) <- Navajo_time_seq
 for (i in 1:length(Navajo_time_seq)) {
-  seq_no_per_year[i] <- length(which(Navajo_meta_data$Year==Navajo_time_seq[i]))
+  #seq_no_per_year[i] <- length(which(Navajo_meta_data$Year==Navajo_time_seq[i]))
+  seq_no_per_year[i] <- length(which(round(Navajo_meta_data$BEASTdate)==Navajo_time_seq[i]))
 }
-barplot(seq_no_per_year, xlab = "Sequencing Years", ylab = "Sequence Counts", col = rainbow(15))
-# PCV7 was introduced in 2000
+barplot(seq_no_per_year, xlab = "Sequencing Years", ylab = "Sequence Counts", col = rainbow(15), ylim = c(0, 315))
+# PCV7 was introduced in 2000 (but Azarian et al argue that it did not have an effect in 2000 and 2001) - I think I would say introduction 2001
 # PCV13 was introduced in 2010
 # according to Azarian et al. (2018) https://doi.org/10.1371/journal.ppat.1006966
 # 
@@ -79,8 +90,10 @@ names(Navajo_seq_clusters_dict) <- Navajo_PP$Taxon
 
 # filter meta data by PopPUNK sequences (PopPUNK qc removed some of the sequences)
 ```{r}
-Navajo_meta_dataPP <- Navajo_meta_data[sort(Navajo_meta_IDtoInd[Navajo_PP$Taxon]),c("Accession", "Year", "Sero")]
+Navajo_meta_dataPP <- as.data.frame(Navajo_meta_data[sort(Navajo_meta_IDtoInd[Navajo_PP$Taxon]),c("Accession", "BEASTdate", "Sero")])
 
+Navajo_meta_dataPP$BEASTdate <- round(Navajo_meta_dataPP$BEASTdate)
+colnames(Navajo_meta_dataPP) <- c("Accession", "Year", "Sero")
 rownames(Navajo_meta_dataPP) <- 1:nrow(Navajo_meta_dataPP)
 
 Navajo_meta_IDtoIndPP <- 1:nrow(Navajo_meta_dataPP)

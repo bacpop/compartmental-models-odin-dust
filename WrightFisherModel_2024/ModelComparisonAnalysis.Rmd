@@ -379,6 +379,7 @@ Nepal_4param_mcmc2_probs <- coda::as.mcmc(cbind(Nepal_4param_mcmc2$probabilities
 #summary(coda::as.mcmc(Nepal_4param_mcmc2_probs))
 Nepal_likelihood_4param <- median(Nepal_4param_mcmc2_probs[,"log_likelihood"])
 #mean(Nepal_4param_mcmc2_probs[,"log_likelihood"])
+param_estimates <- map_estimate(Nepal_4param_mcmc2$pars)
 param_mean <- apply(Nepal_4param_mcmc2_probs, 2, mean)
 percentile95_low <- apply(Nepal_4param_mcmc2_probs,2,quantile,.025)
 percentile95_up <- apply(Nepal_4param_mcmc2_probs,2,quantile,.975)

@@ -715,6 +715,14 @@ AllMatches_MassCOGinggC_hq_seqlen <- AllMatches_MassCOGinggC_hq[intersect(which(
 AllMatches_MassggCinCOG_hq_seqlen_alnlen <- AllMatches_MassggCinCOG_hq_seqlen[intersect(which(AllMatches_MassggCinCOG_hq_seqlen$alnlen/AllMatches_MassggCinCOG_hq_seqlen$qlen >= 0.8), which(AllMatches_MassggCinCOG_hq_seqlen$alnlen/AllMatches_MassggCinCOG_hq_seqlen$tlen >= 0.8)),]
 AllMatches_MassCOGinggC_hq_seqlen_alnlen <- AllMatches_MassCOGinggC_hq_seqlen[intersect(which(AllMatches_MassCOGinggC_hq_seqlen$alnlen/AllMatches_MassCOGinggC_hq_seqlen$qlen >= 0.8), which(AllMatches_MassCOGinggC_hq_seqlen$alnlen/AllMatches_MassCOGinggC_hq_seqlen$tlen >= 0.8)),]
 
+# investigate the correlation between fident and the difference in gene frequence
+# filtered
+plot(abs(Mass_ggC_all_gene_freqs_dict[AllMatches_MassggCinCOG_hq_seqlen_alnlen$query] - Mass_cog_all_gene_freqs_dict[AllMatches_MassggCinCOG_hq_seqlen_alnlen$target]),AllMatches_MassggCinCOG_hq_seqlen_alnlen$fident, col = "#00000030")
+# unfiltered
+plot(abs(Mass_ggC_all_gene_freqs_dict[AllMatches_MassggCinCOG$query] - Mass_cog_all_gene_freqs_dict[AllMatches_MassggCinCOG$target]),AllMatches_MassggCinCOG$fident, col = "#00000030")
+# there is definitively some trend but it is not very clear at all.
+
+
 # now, check whether forward and backward match is the same
 AllMatches_MassggCinCOG_dict <- AllMatches_MassggCinCOG_hq_seqlen_alnlen$target
 names(AllMatches_MassggCinCOG_dict) <- AllMatches_MassggCinCOG_hq_seqlen_alnlen$query
@@ -775,6 +783,7 @@ length(which(abs(Mass_ggC_all_gene_freqs_dict_with_matches - Mass_ggC_all_gene_f
 # so most of them are actually within +-5%
 # most of them ~ >95%
 # this might be good enough?
+par(pty="s")
 plot(Mass_ggC_all_gene_freqs_dict_with_matches, Mass_ggC_all_gene_freqs_dict_with_matches_matchfreqs, pch = 19, col = "#00000030")
 # overplotting!
 
@@ -837,13 +846,19 @@ length(which(abs(global_gene_clusters_ggC_freqs - global_gene_clusters_COG_freqs
 # again, more than 95% are less than 0.05 different.
 # I think that's fine.
 
+
+### find best filtering values
+# tradeoff btw high quality matches vs having genes that do not match at all
+# 1) 0.95, 0.8, 0.8
+# 2) 0.9, 0.75, 0.75
+# 3) 0.95, 0.25
 # Let's compare this across datasets!
 filter_matches <- function(AllMatches_data){
   AllMatches_data_hq <- AllMatches_data[which(AllMatches_data$fident >= 0.95),] 
   # keep only matches that have a squence identity of at least 0.95
-  AllMatches_data_hq_seqlen <- AllMatches_data_hq[intersect(which(AllMatches_data_hq$qlen/AllMatches_data_hq$tlen >= 0.8), which(AllMatches_data_hq$tlen/AllMatches_data_hq$qlen >= 0.8)),]
+  AllMatches_data_hq_seqlen <- AllMatches_data_hq[intersect(which(AllMatches_data_hq$qlen/AllMatches_data_hq$tlen >= 0.25), which(AllMatches_data_hq$tlen/AllMatches_data_hq$qlen >= 0.25)),]
   # keep only matches that are within 80% of each others sequence length
-  AllMatches_data_hq_seqlen_alnlen <- AllMatches_data_hq_seqlen[intersect(which(AllMatches_data_hq_seqlen$alnlen/AllMatches_data_hq_seqlen$qlen >= 0.8), which(AllMatches_data_hq_seqlen$alnlen/AllMatches_data_hq_seqlen$tlen >= 0.8)),]
+  AllMatches_data_hq_seqlen_alnlen <- AllMatches_data_hq_seqlen[intersect(which(AllMatches_data_hq_seqlen$alnlen/AllMatches_data_hq_seqlen$qlen >= 0.25), which(AllMatches_data_hq_seqlen$alnlen/AllMatches_data_hq_seqlen$tlen >= 0.25)),]
   # keep only matches of which at least 80% of the sequences are matched (this removes the high-quality but really short matches)
   AllMatches_data_hq_seqlen_alnlen
 }
@@ -905,4 +920,45 @@ length(which(abs(global_gene_clusters_Mass_freqs - global_gene_clusters_UK_freqs
 # 760
 length(which(abs(global_gene_clusters_Mass_freqs - global_gene_clusters_UK_freqs)<=0.05))
 # 2381
-# >75% are within 0.05 of another
+# >75% are within 0.05 of one another
+
+# colour them in by NFDS
+global_gene_clusters_Mass_NFDS <- rep(0, length(global_gene_clusters_Mass_UK))
+global_gene_clusters_UK_NFDS <- rep(0, length(global_gene_clusters_Mass_UK))
+for (i in 1:length(global_gene_clusters_Mass_UK)) {
+  global_gene_clusters_Mass_NFDS[i] <- min(1, sum(Mass_underNFDS[global_gene_clusters_Mass[[i]]]))
+  global_gene_clusters_UK_NFDS[i] <- min(1, sum(UK_underNFDS[global_gene_clusters_UK[[i]]]))
+}
+
+colours_global_gene_UKMass_95 <- rep("grey", length(global_gene_clusters_Mass_freqs))
+
+colours_global_gene_UKMass_95[which(global_gene_clusters_UK_NFDS==1)] <- col_clb[2]
+colours_global_gene_UKMass_95[which(global_gene_clusters_Mass_NFDS==1)] <- col_clb[3]
+colours_global_gene_UKMass_95[intersect(which(global_gene_clusters_UK_NFDS==1),which(global_gene_clusters_Mass_NFDS==1))] <- col_clb[8]
+par(pty="s")
+plot(global_gene_clusters_Mass_freqs, global_gene_clusters_UK_freqs, pch = 19, col = colours_global_gene_UKMass_95)
+
+length(which(colours_global_gene_UKMass_95 == col_clb[2]))
+# 161
+length(which(colours_global_gene_UKMass_95 == col_clb[3]))
+# 218
+length(which(colours_global_gene_UKMass_95 == col_clb[8]))
+# 53
+
+# save global cluster assignment in dictionary
+Mass_ggC_intermed_gene_names <- readRDS(file = "Mass_ggC_intermed_gene_names.rds")
+local_to_global_Mass <- rep(NA, length(Mass_ggC_intermed_gene_names))
+names(local_to_global_Mass) <- Mass_ggC_intermed_gene_names
+for (i in 1:length(global_gene_clusters_Mass_UK)) {
+  for (mass_gene in global_gene_clusters_Mass[[i]]) {
+    #print(mass_gene)
+    if(is.element(mass_gene, Mass_ggC_intermed_gene_names)){
+      local_to_global_Mass[mass_gene] <- i
+    }
+  }
+}
+
+length(which(!is.na(local_to_global_Mass)))
+#[1] 1034
+length(which(is.na(local_to_global_Mass)))
+#[1] 736

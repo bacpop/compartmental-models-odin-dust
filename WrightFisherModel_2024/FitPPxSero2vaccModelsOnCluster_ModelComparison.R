@@ -155,7 +155,7 @@ if(args[1] == "Navajo" & args[2] == "PopPUNK"){
   dt <- 1/12
   peripost_mass_cluster_freq <- data.frame("year" = 1:14, rbind(mass_cluster_freq_2,mass_cluster_freq_3,mass_cluster_freq_4,mass_cluster_freq_5,mass_cluster_freq_6, mass_cluster_freq_7,mass_cluster_freq_8,mass_cluster_freq_9, mass_cluster_freq_10, mass_cluster_freq_11,mass_cluster_freq_12, mass_cluster_freq_13, mass_cluster_freq_14,mass_cluster_freq_15))
   names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
-  vacc_time1 <- 2
+  vacc_time1 <- 3 # setting this to 3, 2001 (this would mean at some point in 2nd half of 2000 or first half of 2001)
   vacc_time2 <- 12
   output_filename <- "Navajo_PPxSero2vacc_ggCaller_PopPUNK"
 } else if(args[1] == "UK" & args[2] == "PopPUNK"){
