@@ -241,7 +241,8 @@ percentile95_up <- apply(Navajo_3param_mcmc2_probs,2,quantile,.975)
 rm(Navajo_3param_mcmc2)
 
 # 4-parameter model GPSC
-Navajo_4param_mcmc2 <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2025_01_13/Navajo_GPSCs/Navajo_PPxSero2vacc_ggCaller_PopPUNK_4param_det_pmcmc_run2.rds")
+# and now with winter assignment
+Navajo_4param_mcmc2 <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2025_01_21/Navajo_winter/Navajo_PPxSero2vacc_ggCaller_PopPUNK_4param_det_pmcmc_run2.rds")
 Navajo_4param_mcmc2_probs <- coda::as.mcmc(cbind(Navajo_4param_mcmc2$probabilities, Navajo_4param_mcmc2$pars))
 #coda::effectiveSize(Navajo_4param_mcmc2_probs)
 #summary(coda::as.mcmc(Navajo_4param_mcmc2_probs))
@@ -251,9 +252,9 @@ param_mean <- apply(Navajo_4param_mcmc2_probs, 2, mean)
 percentile95_low <- apply(Navajo_4param_mcmc2_probs,2,quantile,.025)
 percentile95_up <- apply(Navajo_4param_mcmc2_probs,2,quantile,.975)
 #     log_prior log_likelihood  log_posterior        sigma_f         prop_f              m              v 
-#     0.0000000   -775.4195261   -775.4195261     -4.3750991      0.9006583     -2.8662851      0.2635598
-#     0.0000000   -779.1645089   -779.1645089     -5.0194125      0.7804437     -3.3327171      0.1113736
-#     0.0000000   -773.3687772   -773.3687772     -3.6963467      0.9960815     -2.3210855      0.5919767
+#     0.0000000   -862.1327737   -862.1327737     -4.9293875      0.9293230     -2.7939285      0.1896163
+#     0.00000000  -866.25290628  -866.25290628    -5.48570053     0.72694992    -3.13584575     0.09774486
+#     0.0000000   -860.0060398   -860.0060398     -4.3237886      0.9975610     -2.4308551      0.3520862
 rm(Navajo_4param_mcmc2)
 ### this does not look good
 # I had −611.0528 in TAC report, not -775.1046
@@ -373,7 +374,8 @@ rm(Navajo_5param_mcmc2)
 ### Nepal
 ```{r}
 # 4-parameter model GPSC
-Nepal_4param_mcmc2 <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2025_01_13/Nepal_GPSCs/Nepal_PPxSero_ggCaller_PopPUNK_4param_det_pmcmc_run2.rds")
+# and winter
+Nepal_4param_mcmc2 <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2025_01_21/Nepal_winter/Nepal_PPxSero_ggCaller_PopPUNK_4param_det_pmcmc_run2.rds")
 Nepal_4param_mcmc2_probs <- coda::as.mcmc(cbind(Nepal_4param_mcmc2$probabilities, Nepal_4param_mcmc2$pars))
 #coda::effectiveSize(Nepal_4param_mcmc2_probs)
 #summary(coda::as.mcmc(Nepal_4param_mcmc2_probs))
@@ -383,7 +385,10 @@ param_estimates <- map_estimate(Nepal_4param_mcmc2$pars)
 param_mean <- apply(Nepal_4param_mcmc2_probs, 2, mean)
 percentile95_low <- apply(Nepal_4param_mcmc2_probs,2,quantile,.025)
 percentile95_up <- apply(Nepal_4param_mcmc2_probs,2,quantile,.975)
-
+#     log_prior log_likelihood  log_posterior        sigma_f         prop_f              m              v 
+#  0.000000e+00  -2.794504e+03  -2.794504e+03  -2.381981e+00   3.565618e-01  -2.525765e+00   2.693263e-02 
+#  0.000000e+00  -2.801638e+03  -2.801638e+03  -2.922157e+00   3.495622e-01  -3.000324e+00   2.244008e-03
+#  0.000000e+00  -2.791667e+03  -2.791667e+03  -1.639195e+00   4.343989e-01  -1.903038e+00   7.172079e-02
 rm(Nepal_4param_mcmc2)
 ```
 

@@ -853,22 +853,49 @@ length(which(abs(global_gene_clusters_ggC_freqs - global_gene_clusters_COG_freqs
 # 2) 0.9, 0.75, 0.75
 # 3) 0.95, 0.25
 # Let's compare this across datasets!
-filter_matches <- function(AllMatches_data){
-  AllMatches_data_hq <- AllMatches_data[which(AllMatches_data$fident >= 0.95),] 
+filter_matches <- function(AllMatches_data, fident_filter = 0.95, len_filter = 0.8){
+  AllMatches_data_hq <- AllMatches_data[which(AllMatches_data$fident >= fident_filter),] 
   # keep only matches that have a squence identity of at least 0.95
-  AllMatches_data_hq_seqlen <- AllMatches_data_hq[intersect(which(AllMatches_data_hq$qlen/AllMatches_data_hq$tlen >= 0.25), which(AllMatches_data_hq$tlen/AllMatches_data_hq$qlen >= 0.25)),]
+  AllMatches_data_hq_seqlen <- AllMatches_data_hq[intersect(which(AllMatches_data_hq$qlen/AllMatches_data_hq$tlen >= len_filter), which(AllMatches_data_hq$tlen/AllMatches_data_hq$qlen >= len_filter)),]
   # keep only matches that are within 80% of each others sequence length
-  AllMatches_data_hq_seqlen_alnlen <- AllMatches_data_hq_seqlen[intersect(which(AllMatches_data_hq_seqlen$alnlen/AllMatches_data_hq_seqlen$qlen >= 0.25), which(AllMatches_data_hq_seqlen$alnlen/AllMatches_data_hq_seqlen$tlen >= 0.25)),]
+  AllMatches_data_hq_seqlen_alnlen <- AllMatches_data_hq_seqlen[intersect(which(AllMatches_data_hq_seqlen$alnlen/AllMatches_data_hq_seqlen$qlen >= len_filter), which(AllMatches_data_hq_seqlen$alnlen/AllMatches_data_hq_seqlen$tlen >= len_filter)),]
   # keep only matches of which at least 80% of the sequences are matched (this removes the high-quality but really short matches)
   AllMatches_data_hq_seqlen_alnlen
+}
+
+# filter matches just by best (which is the first match)
+filter_matches_v2 <- function(AllMatches_data){
+  Best1on1Matches <- as.data.frame(AllMatches_data[1,])
+  old_query <- AllMatches_data$query[1]
+  old_target <- AllMatches_data$target[1]
+  new_idx <- 1
+  for (i in 1:nrow(AllMatches_data)) {
+    curr_query <- AllMatches_data$query[i]
+    curr_target <- AllMatches_data$target[i]
+    if(curr_query != old_query | curr_target != old_target){
+      new_idx <- new_idx + 1
+      Best1on1Matches[new_idx,] <- AllMatches_data[i,]
+    }
+    old_query <- AllMatches_data$query[i]
+    old_target <- AllMatches_data$target[i]
+  }
+  Best1on1Matches
 }
 
 # Mass vs UK
 AllMatches_MassInUK <- read.delim("/Users/llorenz/Documents/PhD_Project/Data/Mapping_ggCaller/MMseqs2_results/AllMatches_MassInUK/MassInUK_AllMatches", header=TRUE)
 AllMatches_UKinMass <- read.delim("/Users/llorenz/Documents/PhD_Project/Data/Mapping_ggCaller/MMseqs2_results/AllMatches_UKinMass/UKinMass_AllMatches", header=TRUE)
+# new with cov-mode 1
+AllMatches_MassInUK_covmode1 <- read.delim("/Users/llorenz/Documents/PhD_Project/Data/Mapping_ggCaller/MMseqs2_results/AllMatches_MassInUK_covmode1/MassInUK_AllMatches", header=TRUE)
+AllMatches_MassInUK_covmode1_fident70 <- AllMatches_MassInUK_covmode1[which(AllMatches_MassInUK_covmode1$fident >= 0.7),]
+AllMatches_MassInUK_covmode1_Best1on1 <- filter_matches_v2(AllMatches_MassInUK_covmode1_fident70)
+
 # filter them:
 AllMatches_MassInUK_filtered <- filter_matches(AllMatches_MassInUK)
 AllMatches_UKinMass_filtered <- filter_matches(AllMatches_UKinMass)
+
+AllMatches_MassInUK_filtered <- filter_matches(AllMatches_MassInUK, fident_filter = 0.95, len_filter = 0.2)
+AllMatches_UKinMass_filtered <- filter_matches(AllMatches_UKinMass, fident_filter = 0.95, len_filter = 0.2)
 
 create_global_clusters <- function(AllMatches_data){
   AllGenesMass <- c(unique(AllMatches_data$query))
@@ -902,6 +929,9 @@ create_global_clusters <- function(AllMatches_data){
   return(list(global_gene_clusters_both, global_gene_clusters_a, global_gene_clusters_b))
 }
 
+# try this for new approach
+#AllMatches_MassInUK_covmode1_Best1on1
+global_clusters_return_Mass_UK <- create_global_clusters(AllMatches_MassInUK_covmode1_Best1on1)
 # create cluster for Mass-UK
 global_clusters_return_Mass_UK <- create_global_clusters(AllMatches_MassInUK_filtered)
 global_gene_clusters_Mass_UK <- global_clusters_return_Mass_UK[[1]]
@@ -962,3 +992,6 @@ length(which(!is.na(local_to_global_Mass)))
 #[1] 1034
 length(which(is.na(local_to_global_Mass)))
 #[1] 736
+
+### investigate hits that are very frequent in ggCaller and very rare in COGs
+intersect(which(global_gene_clusters_ggC_freqs > 0.99), which(global_gene_clusters_COG_freqs < 0.05))

@@ -51,9 +51,13 @@ Nepal_meta_data_gps2_selection$"In_silico_serotype" <- gps2_serotype_dict[Nepal_
 
 Nepal_meta_data_gps_joined <- rbind(Nepal_meta_data_gps1_selection, Nepal_meta_data_gps2_selection)
 
-Nepal_time_points <- sort(unique(Nepal_meta_data_gps_joined$Year))
+# if sequence is from second half of the year, assign it to the next year (winter)
+Nepal_meta_data_gps_joined$Winter <- Nepal_meta_data_gps_joined$Year +as.integer(sapply(Nepal_meta_data_gps_joined$Month[1:10], is.element, c("JUL","AUG","SEP","OCT","NOV","DEC")))
 
-Nepal_SeqYear_dict <- Nepal_meta_data_gps_joined$Year
+#Nepal_time_points <- sort(unique(Nepal_meta_data_gps_joined$Year))
+Nepal_time_points <- sort(unique(Nepal_meta_data_gps_joined$Winter))
+
+Nepal_SeqYear_dict <- Nepal_meta_data_gps_joined$Winter
 names(Nepal_SeqYear_dict) <- Nepal_meta_data_gps_joined$Lane_id
 
 Nepal_meta_IDtoInd <- 1:nrow(Nepal_meta_data_gps_joined)
@@ -64,7 +68,8 @@ names(Nepal_meta_IDtoInd) <- Nepal_meta_data_gps_joined$Lane_id
 seq_no_per_year <- rep(0, length(Nepal_time_points))
 names(seq_no_per_year) <- Nepal_time_points
 for (i in 1:length(Nepal_time_points)) {
-  seq_no_per_year[i] <- length(which(Nepal_meta_data_gps_joined$Year==Nepal_time_points[i]))
+  #seq_no_per_year[i] <- length(which(Nepal_meta_data_gps_joined$Year==Nepal_time_points[i]))
+  seq_no_per_year[i] <- length(which(Nepal_meta_data_gps_joined$Winter==Nepal_time_points[i]))
 }
 barplot(seq_no_per_year, xlab = "Sequencing Years", ylim = c(0, 1200), ylab = "Sequence Counts")
 # PCV10 was introduced in 2015
@@ -245,8 +250,10 @@ names(Nepal_seq_clusters_dict) <- Nepal_PP$sample
 
 # filter meta data by PopPUNK sequences (PopPUNK qc removed some of the sequences)
 ```{r}
-Nepal_meta_dataPP <- Nepal_meta_data_gps_joined[sort(Nepal_meta_IDtoInd[Nepal_PP$sample]),c("Lane_id", "Year")]
+#Nepal_meta_dataPP <- Nepal_meta_data_gps_joined[sort(Nepal_meta_IDtoInd[Nepal_PP$sample]),c("Lane_id", "Year")]
+Nepal_meta_dataPP <- Nepal_meta_data_gps_joined[sort(Nepal_meta_IDtoInd[Nepal_PP$sample]),c("Lane_id", "Winter")]
 Nepal_meta_dataPP$Serotype <- Nepal_Serotype_dict[Nepal_meta_dataPP$Lane_id]
+colnames(Nepal_meta_dataPP) <- c("Lane_id", "Year", "Serotype")
 
 # length(which(Nepal_meta_dataPP$Serotype == "SEROGROUP 24"))
 #[1] 19

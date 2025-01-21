@@ -39,5 +39,6 @@ WrightFisherModel_2024/ggC_intermed_gene_presence_absence_2004.rds
 WrightFisherModel_2024/ggC_intermed_gene_presence_absence_2007.rds
 WrightFisherModel_2024/*.rds
 WrightFisherModel_2024/*.pdf
+WrightFisherModel_2024/ModelSimulation.nb.html
 WrightFisherModel_2024/ModelSimulation.Rmd
 WrightFisherModel_2024/*.png
