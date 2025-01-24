@@ -995,3 +995,238 @@ length(which(is.na(local_to_global_Mass)))
 
 ### investigate hits that are very frequent in ggCaller and very rare in COGs
 intersect(which(global_gene_clusters_ggC_freqs > 0.99), which(global_gene_clusters_COG_freqs < 0.05))
+# [1]   27 1444
+global_gene_clusters_ggC[27]
+# "ERS044043_02758~~~ERS044119_02218"
+View(AllMatches_MassggCinCOG_hq_seqlen_alnlen)
+# match in COGs: CLS01535
+
+# new approach: 24.01.2025
+# sub-cluster clusters and then take the best reciprocal hits
+BestHits_Mass_ggC_gCOG <- read.delim("/Users/llorenz/Documents/PhD_Project/Data/Mapping_ggCaller/Map_SubClusterReps/Mass_BestRecipHit_SubclusterReps/MassCOGggC_recipBestHit", header=TRUE)
+# try this with easy search. 
+BestHits_Mass_ggC_gCOG <- read.delim("/Users/llorenz/Documents/PhD_Project/Data/Mapping_ggCaller/Map_SubClusterReps/Mass_easysearch_SubclusterReps/MassCOGggC_AllHits", header=TRUE)
+
+BestHits_Mass_ggC_gCOG_filterfident <- BestHits_Mass_ggC_gCOG[which(BestHits_Mass_ggC_gCOG$fident >= 0.7),]
+BestHits_Mass_ggC_gCOG_filterfident_len1 <- BestHits_Mass_ggC_gCOG_filterfident[which(BestHits_Mass_ggC_gCOG_filterfident$qlen/BestHits_Mass_ggC_gCOG_filterfident$tlen  >= 0.5),]
+BestHits_Mass_ggC_gCOG_filterfident_len <- BestHits_Mass_ggC_gCOG_filterfident_len1[which(BestHits_Mass_ggC_gCOG_filterfident_len1$tlen/BestHits_Mass_ggC_gCOG_filterfident_len1$qlen  >= 0.5),]
+# only keep the first hit for each query (i.e. the best)
+
+besthit_Mass_ggC_gCOG_dict <- BestHits_Mass_ggC_gCOG_filterfident$target
+names(besthit_Mass_ggC_gCOG_dict) <- BestHits_Mass_ggC_gCOG_filterfident$query
+besthit_Mass_gCOG_ggC_dict <- BestHits_Mass_ggC_gCOG_filterfident$query
+names(besthit_Mass_gCOG_ggC_dict) <- BestHits_Mass_ggC_gCOG_filterfident$target
+# 6000 of 6516 have fident >= 0.7
+# create dictionary that maps each sequence to the cluster it belongs to
+# ggCaller
+SeqsClust_Mass_ggC <- read.delim("/Users/llorenz/Documents/PhD_Project/Data/Mapping_ggCaller/Map_SubClusterReps/Mass_BestRecipHit_SubclusterReps/Mass_ggCaller_SeqsAndClusters.tsv", header=FALSE)
+SeqsClust_Mass_ggC_dict <- SeqsClust_Mass_ggC$V2
+names(SeqsClust_Mass_ggC_dict) <- SeqsClust_Mass_ggC$V1
+names_which <- function(search_val, target_vec){
+  names(which(target_vec == search_val))
+}
+Clust_Mass_ggC_list <- lapply(SeqsClust_Mass_ggC$V2, names_which, SeqsClust_Mass_ggC_dict)
+names(Clust_Mass_ggC_list) <- SeqsClust_Mass_ggC$V2
+# gCOG
+SeqsClust_Mass_gCOG <- read.delim("/Users/llorenz/Documents/PhD_Project/Data/Mapping_ggCaller/Map_SubClusterReps/Mass_BestRecipHit_SubclusterReps/Mass_gCOG_SeqsAndClusters.tsv", header=FALSE)
+SeqsClust_Mass_gCOG_dict <- SeqsClust_Mass_gCOG$V2
+names(SeqsClust_Mass_gCOG_dict) <- SeqsClust_Mass_gCOG$V1
+Clust_Mass_gCOG_list <- lapply(SeqsClust_Mass_gCOG$V2, names_which, SeqsClust_Mass_gCOG_dict)
+names(Clust_Mass_gCOG_list) <- SeqsClust_Mass_gCOG$V2
+# iterate over best hits
+#
+
+
+CreateConsensusClusters <- function(local_clust_a_list, local_clust_b_list, seq_clust_dict_a, seq_clust_dict_b, besthit_a_to_b_dict, besthit_b_to_a_dict){
+  # create empty list of consensus gene clusters
+  consensus_gene_clusters_both <- list()
+  consensus_gene_clusters_a <- list()
+  consensus_gene_clusters_b <- list()
+  # save which clusters have already been clustered
+  Clust_a_used <- rep(FALSE, length(local_clust_a_list))
+  names(Clust_a_used) <- names(local_clust_a_list)
+  #Clust_b_used <- rep(FALSE, length(local_clust_b_list))
+  #names(Clust_b_used) <- names(local_clust_b_list)
+  #
+  #local_genes <- list()
+  #local_clusters <- c()
+  i_help <- 1 # keeps track of number of consensus clusters
+  for (cluster_id in names(local_clust_a_list)) {
+    if(!Clust_a_used[cluster_id]){
+      local_clusters <- "a" # saves info that this cluster is from dataset a
+      names(local_clusters) <- cluster_id # saves cluster name
+      local_genes <- list(cluster_id = "") # creates empty entry for all genes in the cluster
+      i <- 1
+      while(i <= length(local_clusters)){
+        curr_clust <- names(local_clusters)[i]
+        if(local_clusters[i] == "a"){
+          curr_genes <- c(setdiff(c(local_clust_a_list[[curr_clust]]), local_genes[[curr_clust]])) # genes that are in the cluster but have not been looked at yet
+          #print(curr_genes)
+          for (j in 1:length(curr_genes)) {
+            now_gene <- curr_genes[j]
+            #print(now_gene)
+            if(!is.na(besthit_a_to_b_dict[now_gene])){
+              new_gene <- besthit_a_to_b_dict[now_gene]
+              #print(new_gene)
+              new_clust <- seq_clust_dict_b[new_gene]
+              #print(new_clust)
+              local_clusters[new_clust] <- "b"
+              local_genes[[new_clust]] <- c(local_genes[[new_clust]], new_gene)
+            }
+          }
+        }
+        else{ # is from dataset b
+          curr_genes <- setdiff(local_clust_b_list[[curr_clust]], local_genes[[curr_clust]]) # genes that are in the cluster but have not been looked at yet
+          for (j in curr_genes) {
+            new_gene <- curr_genes[j]
+            if(!is.na(besthit_b_to_a_dict[now_gene])){
+              new_clust <- seq_clust_dict_a[new_gene]
+              local_clusters[new_clust] <- "a"
+              local_genes[[new_clust]] <- c(local_genes[[new_clust]], new_gene)
+            }
+          }
+        }
+        i <- i + 1
+      }
+      Clust_a_used[names(local_clusters[which(local_clusters == "a")])] <- TRUE # makes sure to not iterate over clusters later that have already been assigned to global clusters
+      consensus_gene_clusters_both[[i_help]] <- names(local_clusters) # saves all clusters (from a and b) to consensus cluster
+      consensus_gene_clusters_a[[i_help]] <- names(local_clusters[which(local_clusters == "a")])
+      consensus_gene_clusters_b[[i_help]] <- names(local_clusters[which(local_clusters == "b")])
+      i_help <- i_help + 1
+    }
+  }
+  return(list(consensus_gene_clusters_both, consensus_gene_clusters_a, consensus_gene_clusters_b))
+}
+
+consensus_clusters_Mass_ggC_gCOG_return <- CreateConsensusClusters(local_clust_a_list = Clust_Mass_ggC_list, local_clust_b_list = Clust_Mass_gCOG_list, seq_clust_dict_a = SeqsClust_Mass_ggC_dict, seq_clust_dict_b = SeqsClust_Mass_gCOG_dict, besthit_a_to_b_dict = besthit_Mass_ggC_gCOG_dict, besthit_b_to_a_dict = besthit_Mass_gCOG_ggC_dict)
+
+consensus_clusters_Mass_ggC_gCOG_both <- consensus_clusters_Mass_ggC_gCOG_return[[1]]
+consensus_clusters_Mass_ggC <- consensus_clusters_Mass_ggC_gCOG_return[[2]]
+consensus_clusters_Mass_gCOG <- consensus_clusters_Mass_ggC_gCOG_return[[3]]
+
+# there are 1776 without any match
+# 2789 with at least two clusters in one
+# filter for real matches
+consensus_clusters_Mass_ggC_gCOG_both_match <- consensus_clusters_Mass_ggC_gCOG_both[which(lengths(consensus_clusters_Mass_ggC_gCOG_both)>1)]
+consensus_clusters_Mass_ggC_match <- consensus_clusters_Mass_ggC[which(lengths(consensus_clusters_Mass_ggC_gCOG_both)>1)]
+consensus_clusters_Mass_gCOG_match <- consensus_clusters_Mass_gCOG[which(lengths(consensus_clusters_Mass_ggC_gCOG_both)>1)]
+
+# replace "-" by "~~~"
+replace_minus <- function(orig_str){
+  gsub("-","~~~",orig_str, fixed = TRUE)
+}
+
+#compute gene freqs
+consensus_gene_clusters_ggC_freqs <- rep(0, length(consensus_clusters_Mass_ggC_gCOG_both_match))
+consensus_gene_clusters_COG_freqs <- rep(0, length(consensus_clusters_Mass_ggC_gCOG_both_match))
+for (i in 1:length(consensus_clusters_Mass_ggC_gCOG_both_match)) {
+  consensus_gene_clusters_ggC_freqs[i] <- sum(Mass_ggC_all_gene_freqs_dict[sapply(consensus_clusters_Mass_ggC_match[[i]], replace_minus)])
+  consensus_gene_clusters_COG_freqs[i] <- sum(Mass_cog_all_gene_freqs_dict[consensus_clusters_Mass_gCOG_match[[i]]])
+}
+
+
+#plot them!
+plot(consensus_gene_clusters_ggC_freqs, consensus_gene_clusters_COG_freqs, xlab = "Mass ggCaller gene frequencies", ylab = "Mass COG gene frequencies",main="All Gene Frequencies, 95% sequence identity")
+abline(0,1)
+
+plot(consensus_gene_clusters_ggC_freqs, consensus_gene_clusters_COG_freqs, pch = 19, col = "#00000030")
+length(which(abs(consensus_gene_clusters_ggC_freqs - consensus_gene_clusters_COG_freqs)>0.05))
+# 434
+length(which(abs(consensus_gene_clusters_ggC_freqs - consensus_gene_clusters_COG_freqs)<=0.05))
+# 2355
+
+CreateConsensusClusters_multipleMatches <- function(local_clust_a_list, local_clust_b_list, seq_clust_dict_a, seq_clust_dict_b, match_df){
+  # create empty list of consensus gene clusters
+  consensus_gene_clusters_both <- list()
+  consensus_gene_clusters_a <- list()
+  consensus_gene_clusters_b <- list()
+  # save which clusters have already been clustered
+  Clust_a_used <- rep(FALSE, length(local_clust_a_list))
+  names(Clust_a_used) <- names(local_clust_a_list)
+  #Clust_b_used <- rep(FALSE, length(local_clust_b_list))
+  #names(Clust_b_used) <- names(local_clust_b_list)
+  #
+  #local_genes <- list()
+  #local_clusters <- c()
+  i_help <- 1 # keeps track of number of consensus clusters
+  for (cluster_id in names(local_clust_a_list)) {
+    if(!Clust_a_used[cluster_id]){
+      local_clusters <- "a" # saves info that this cluster is from dataset a
+      names(local_clusters) <- cluster_id # saves cluster name
+      local_genes <- list(cluster_id = "") # creates empty entry for all genes in the cluster
+      i <- 1
+      while(i <= length(local_clusters)){
+        curr_clust <- names(local_clusters)[i]
+        if(local_clusters[i] == "a"){
+          curr_genes <- c(setdiff(c(local_clust_a_list[[curr_clust]]), local_genes[[curr_clust]])) # genes that are in the cluster but have not been looked at yet
+          #print(curr_genes)
+          for (j in 1:length(curr_genes)) {
+            now_gene <- curr_genes[j]
+            #print(now_gene)
+            if(length(which(match_df$query == now_gene)) != 0){
+              new_genes <- match_df$target[which(match_df$query == now_gene)]
+              for (k in 1:length(new_genes)) {
+                new_gene <- new_genes[k]
+                #print(new_gene)
+                new_clust <- seq_clust_dict_b[new_gene]
+                #print(new_clust)
+                local_clusters[new_clust] <- "b"
+                local_genes[[new_clust]] <- c(local_genes[[new_clust]], new_gene)
+              }
+            }
+          }
+        }
+        else{ # is from dataset b
+          curr_genes <- setdiff(local_clust_b_list[[curr_clust]], local_genes[[curr_clust]]) # genes that are in the cluster but have not been looked at yet
+          for (j in curr_genes) {
+            now_gene <- curr_genes[j]
+            if(length(which(match_df$target == now_gene)) != 0){
+              new_genes <- match_df$query[which(match_df$target == now_gene)]
+              for (k in 1:length(new_genes)) {
+                new_gene <- new_genes[k]
+                new_clust <- seq_clust_dict_a[new_gene]
+                local_clusters[new_clust] <- "a"
+                local_genes[[new_clust]] <- c(local_genes[[new_clust]], new_gene)
+              }
+            }
+          }
+        }
+        i <- i + 1
+      }
+      Clust_a_used[names(local_clusters[which(local_clusters == "a")])] <- TRUE # makes sure to not iterate over clusters later that have already been assigned to global clusters
+      consensus_gene_clusters_both[[i_help]] <- names(local_clusters) # saves all clusters (from a and b) to consensus cluster
+      consensus_gene_clusters_a[[i_help]] <- names(local_clusters[which(local_clusters == "a")])
+      consensus_gene_clusters_b[[i_help]] <- names(local_clusters[which(local_clusters == "b")])
+      i_help <- i_help + 1
+    }
+  }
+  return(list(consensus_gene_clusters_both, consensus_gene_clusters_a, consensus_gene_clusters_b))
+}
+consensus_clusters_Mass_ggC_gCOG_return <- CreateConsensusClusters_multipleMatches(local_clust_a_list = Clust_Mass_ggC_list, local_clust_b_list = Clust_Mass_gCOG_list, seq_clust_dict_a = SeqsClust_Mass_ggC_dict, seq_clust_dict_b = SeqsClust_Mass_gCOG_dict, match_df = BestHits_Mass_ggC_gCOG_filterfident_len)
+
+consensus_clusters_Mass_ggC_gCOG_both <- consensus_clusters_Mass_ggC_gCOG_return[[1]]
+consensus_clusters_Mass_ggC <- consensus_clusters_Mass_ggC_gCOG_return[[2]]
+consensus_clusters_Mass_gCOG <- consensus_clusters_Mass_ggC_gCOG_return[[3]]
+
+consensus_clusters_Mass_ggC_gCOG_both_match <- consensus_clusters_Mass_ggC_gCOG_both[which(lengths(consensus_clusters_Mass_ggC_gCOG_both)>1)]
+consensus_clusters_Mass_ggC_match <- consensus_clusters_Mass_ggC[which(lengths(consensus_clusters_Mass_ggC_gCOG_both)>1)]
+consensus_clusters_Mass_gCOG_match <- consensus_clusters_Mass_gCOG[which(lengths(consensus_clusters_Mass_ggC_gCOG_both)>1)]
+
+#compute gene freqs
+consensus_gene_clusters_ggC_freqs <- rep(0, length(consensus_clusters_Mass_ggC_gCOG_both_match))
+consensus_gene_clusters_COG_freqs <- rep(0, length(consensus_clusters_Mass_ggC_gCOG_both_match))
+for (i in 1:length(consensus_clusters_Mass_ggC_gCOG_both_match)) {
+  consensus_gene_clusters_ggC_freqs[i] <- sum(Mass_ggC_all_gene_freqs_dict[sapply(consensus_clusters_Mass_ggC_match[[i]], replace_minus)])
+  consensus_gene_clusters_COG_freqs[i] <- sum(Mass_cog_all_gene_freqs_dict[consensus_clusters_Mass_gCOG_match[[i]]])
+}
+
+
+#plot them!
+plot(consensus_gene_clusters_ggC_freqs, consensus_gene_clusters_COG_freqs, xlab = "Mass ggCaller gene frequencies", ylab = "Mass COG gene frequencies",main="All Gene Frequencies, 95% sequence identity")
+abline(0,1)
+
+plot(consensus_gene_clusters_ggC_freqs, consensus_gene_clusters_COG_freqs, pch = 19, col = "#00000030")
+length(which(abs(consensus_gene_clusters_ggC_freqs - consensus_gene_clusters_COG_freqs)>0.05))
+# 332
+length(which(abs(consensus_gene_clusters_ggC_freqs - consensus_gene_clusters_COG_freqs)<=0.05))
+# 1409

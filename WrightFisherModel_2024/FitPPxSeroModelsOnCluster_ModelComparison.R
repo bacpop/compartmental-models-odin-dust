@@ -168,6 +168,7 @@ if(args[1] == "ggCaller" & args[2] == "PopPUNK"){
   peripost_mass_cluster_freq <- data.frame("year" = 1:10, rbind(mass_cluster_freq_8,mass_cluster_freq_9, mass_cluster_freq_10, mass_cluster_freq_11,mass_cluster_freq_12, mass_cluster_freq_13, mass_cluster_freq_14,mass_cluster_freq_15,mass_cluster_freq_16,mass_cluster_freq_17))
   names(peripost_mass_cluster_freq) <- c("year", as.character(1:mass_clusters))
   vacc_time <- 6
+  #cov_matrix <- readRDS("Nepal_cov_matrix.rds")
   output_filename <- "Nepal_PPxSero_ggCaller_PopPUNK"
 } else if(args[1] == "Navajo" & args[2] == "PopPUNK"){
   # this is the test what happens when I only focus on the first vacc introduction in Navajo

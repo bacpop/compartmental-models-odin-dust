@@ -291,6 +291,40 @@ Nepal_PP$VT <- PCV10_VTsPP[Nepal_PP$Serotype]
 #saveRDS(Nepal_PP,"Nepal_PP.rds")
 ```
 
+```{r}
+#plot strain frequencies over time
+# Nepal_SeqYear_dict already exists
+# Nepal_seq_clusters_dict also exists already
+
+Nepal_GPSC_numbers_per_year <- list()
+for (i in Nepal_time_points) {
+  print(length(which(Nepal_SeqYear_dict == i)))
+  count_vec <- rep(0, length(unique(Nepal_seq_clusters_dict)))
+  names(count_vec) <- unique(Nepal_seq_clusters_dict)
+  counts_year <- table(Nepal_seq_clusters_dict[names(which(Nepal_SeqYear_dict == i))])
+  count_vec[names(counts_year)] <- counts_year
+  Nepal_GPSC_numbers_per_year[[as.character(i)]] <- count_vec
+}
+
+# much better to have one list entry per cluster
+Nepal_GPSC_numbers_per_year <- list()
+for (i in unique(Nepal_seq_clusters_dict)) {
+ count_vec <- rep(0, length(sort(unique(Nepal_SeqYear_dict))))
+ names(count_vec) <- as.character(sort(unique(Nepal_SeqYear_dict)))
+ counts_year <- table(Nepal_SeqYear_dict[names(which(Nepal_seq_clusters_dict == i))])
+ count_vec[names(counts_year)] <- counts_year
+ Nepal_GPSC_numbers_per_year[[as.character(i)]] <- count_vec 
+}
+
+plot((names(Nepal_GPSC_numbers_per_year[["1"]])), Nepal_GPSC_numbers_per_year[["1"]], type = "l", ylim = c(0, 80))
+for (i in unique(Nepal_seq_clusters_dict)) {
+  lines((names(Nepal_GPSC_numbers_per_year[["1"]])), Nepal_GPSC_numbers_per_year[[i]])
+}
+
+# well, I would definitively need to plot relative counts
+```
+
+
 
 # read in ggCaller results
 ```{r}

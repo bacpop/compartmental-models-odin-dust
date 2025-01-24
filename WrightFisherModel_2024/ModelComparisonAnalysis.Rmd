@@ -374,6 +374,7 @@ rm(Navajo_5param_mcmc2)
 ### Nepal
 ```{r}
 # 4-parameter model GPSC
+Nepal_4param_mcmc2 <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2025_01_13/Nepal_GPSCs/Nepal_PPxSero_ggCaller_PopPUNK_4param_det_pmcmc_run2.rds")
 # and winter
 Nepal_4param_mcmc2 <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2025_01_21/Nepal_winter/Nepal_PPxSero_ggCaller_PopPUNK_4param_det_pmcmc_run2.rds")
 Nepal_4param_mcmc2_probs <- coda::as.mcmc(cbind(Nepal_4param_mcmc2$probabilities, Nepal_4param_mcmc2$pars))
@@ -383,12 +384,20 @@ Nepal_likelihood_4param <- median(Nepal_4param_mcmc2_probs[,"log_likelihood"])
 #mean(Nepal_4param_mcmc2_probs[,"log_likelihood"])
 param_estimates <- map_estimate(Nepal_4param_mcmc2$pars)
 param_mean <- apply(Nepal_4param_mcmc2_probs, 2, mean)
+print(param_mean)
 percentile95_low <- apply(Nepal_4param_mcmc2_probs,2,quantile,.025)
 percentile95_up <- apply(Nepal_4param_mcmc2_probs,2,quantile,.975)
 #     log_prior log_likelihood  log_posterior        sigma_f         prop_f              m              v 
 #  0.000000e+00  -2.794504e+03  -2.794504e+03  -2.381981e+00   3.565618e-01  -2.525765e+00   2.693263e-02 
 #  0.000000e+00  -2.801638e+03  -2.801638e+03  -2.922157e+00   3.495622e-01  -3.000324e+00   2.244008e-03
 #  0.000000e+00  -2.791667e+03  -2.791667e+03  -1.639195e+00   4.343989e-01  -1.903038e+00   7.172079e-02
+
+# check the covariance matrix
+cov_matrix <- cov(Nepal_4param_mcmc2$pars)
+saveRDS(cov_matrix, "Nepal_cov_matrix.rds")
+# this is not the proposal matrix, this could be a future proposal matrix based on the covariances found in this run
+# I think that might be a smart move
+
 rm(Nepal_4param_mcmc2)
 ```
 
