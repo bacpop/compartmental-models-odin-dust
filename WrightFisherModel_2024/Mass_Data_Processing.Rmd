@@ -112,6 +112,8 @@ gene_presence_absence_2007 <- data.frame(matrix(0, nrow = length(cls_files)+1, n
 gene_presence_absence_2007[1,-1] <- (Mass_Samples_accCodes[Mass_Samples_accCodes$`Year of Isolation`==2007,]$`Isolate Name`)
 gene_presence_absence_2007[-1,1] <- gene_presence_absence[-1,1]
 gene_presence_absence_2007[-1,-1] <- gene_presence_absence[-1,c(FALSE,Mass_year_dict[unlist(gene_presence_absence[1,-1])]==2007)]
+
+saveRDS(gene_presence_absence_2001, "COG_Mass_gene_presence_absence_2001.rds")
 ```
 
 ```{r}
