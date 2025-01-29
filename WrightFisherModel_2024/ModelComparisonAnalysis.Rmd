@@ -377,6 +377,7 @@ rm(Navajo_5param_mcmc2)
 Nepal_4param_mcmc2 <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2025_01_13/Nepal_GPSCs/Nepal_PPxSero_ggCaller_PopPUNK_4param_det_pmcmc_run2.rds")
 # and winter
 Nepal_4param_mcmc2 <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2025_01_21/Nepal_winter/Nepal_PPxSero_ggCaller_PopPUNK_4param_det_pmcmc_run2.rds")
+Nepal_4param_mcmc2 <- readRDS("/Users/llorenz/Documents/PhD_Project/Code/1st_project/WF_plots_postTAC/2025_01_29/Nepal_year/Nepal_PPxSero_ggCaller_PopPUNK_4param_det_pmcmc_run2.rds")
 Nepal_4param_mcmc2_probs <- coda::as.mcmc(cbind(Nepal_4param_mcmc2$probabilities, Nepal_4param_mcmc2$pars))
 #coda::effectiveSize(Nepal_4param_mcmc2_probs)
 #summary(coda::as.mcmc(Nepal_4param_mcmc2_probs))
