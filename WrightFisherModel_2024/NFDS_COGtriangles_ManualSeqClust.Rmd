@@ -6025,6 +6025,7 @@ for (i in 1:length(rand_ind)) {
   cluster_samples_ParamVar[i,] <- (WFmodel_ppxSero$run(72)[2:(PP_mass_clusters+1),])
 }
 
+library(DescTools)
 binom_conf_data <- t(sapply(PP_mass_cluster_freq_3, BinomCI, sum(PP_mass_cluster_freq_3,conf.level = 0.66)))
 #BinomCI(PP_mass_cluster_freq_3[2], (sum(PP_mass_cluster_freq_3)))
 plot(1:length(unique(PopPUNK_clusters$Cluster)),binom_conf_data[,1], ylim = c(0,0.25),main="Binomial 66% conf. intervals on data vs model", xaxt = "n", xlab = "Clusters", ylab = "Frequency")
