@@ -1447,3 +1447,207 @@ AllHits_Mass_ggC_gCOG_filterfident$qlen[which(AllHits_Mass_ggC_gCOG_filterfident
 # filtered out?
 AllHits_Mass_ggC_gCOG_filterfident$qlen[which(AllHits_Mass_ggC_gCOG_filterfident$query=="7622_4#19_-191370")]
 # 56
+
+
+### try this for ggCaller Mass vs UK
+Mass_UK_mmseq_clusters <- read.delim("/Users/llorenz/Documents/PhD_Project/Data/Mapping_ggCaller/Map_SubClusterReps/Mass_UK_cluster_SubclusterReps/ggC_Mass_UK_Cluster_out.tsv", header=FALSE)
+Mass_ggC_clusters <- read.delim("/Users/llorenz/Documents/PhD_Project/Data/Mapping_ggCaller/Map_SubClusterReps/Mass_UK_cluster_SubclusterReps/Mass_ggCaller_SeqsAndClusters.tsv", header=FALSE)
+UK_ggC_clusters <- read.delim("/Users/llorenz/Documents/PhD_Project/Data/Mapping_ggCaller/Map_SubClusterReps/Mass_UK_cluster_SubclusterReps/UK_ggCaller_SeqsAndClusters.tsv", header=FALSE)
+#dictionary that says whether a cluster element is from UK or Mass
+Mass_or_UK_gene_dict <- c()
+Mass_or_UK_gene_dict[Mass_ggC_clusters$V1] <- "Mass"
+Mass_or_UK_gene_dict[UK_ggC_clusters$V1] <- "UK"
+# matches gene with its corresponding Mass cluster
+Mass_gene_clust_dict <- Mass_ggC_clusters$V2
+names(Mass_gene_clust_dict) <- Mass_ggC_clusters$V1
+# matches gene with its corresponding UK cluster
+UK_gene_clust_dict <- UK_ggC_clusters$V2
+names(UK_gene_clust_dict) <- UK_ggC_clusters$V1
+
+# create consensus clusters for Mass_UK and local Mass and local UK version
+cons_Mass_UK_no <- length(unique(Mass_UK_mmseq_clusters$V1))
+consensus_clusters_Mass_UK <- vector("list", length = cons_Mass_UK_no)
+names(consensus_clusters_Mass_UK) <- unique(Mass_UK_mmseq_clusters$V1)
+consensus_clusters_Mass_UK_justMass <- vector("list", length = cons_Mass_UK_no)
+names(consensus_clusters_Mass_UK_justMass) <- unique(Mass_UK_mmseq_clusters$V1)
+consensus_clusters_Mass_UK_justUK <- vector("list", length = cons_Mass_UK_no)
+names(consensus_clusters_Mass_UK_justUK) <- unique(Mass_UK_mmseq_clusters$V1)
+#cluster_element_before <- Mass_UK_mmseq_clusters$V1[1]
+#i_cluster <- 0
+for (i in 1:nrow(Mass_UK_mmseq_clusters)) {
+  cluster_name <- Mass_UK_mmseq_clusters$V1[i]
+  cluster_element <- Mass_UK_mmseq_clusters$V2[i]
+  #if(Mass_UK_mmseq_clusters$V1[i] == cluster_element){ # first element of cluster, i.e. new cluster
+  #  i_cluster <- i_cluster +1 # go to new cluster
+  #}
+  if(Mass_or_UK_gene_dict[cluster_element] == "Mass"){ # if gene is from Mass
+    cluster <- Mass_gene_clust_dict[cluster_element]
+    consensus_clusters_Mass_UK[[cluster_name]] <- c(consensus_clusters_Mass_UK[[cluster_name]], cluster)
+    consensus_clusters_Mass_UK_justMass[[cluster_name]] <- c(consensus_clusters_Mass_UK_justMass[[cluster_name]], cluster)
+  }
+  else{ #if gene is from UK
+    cluster <- UK_gene_clust_dict[cluster_element]
+    consensus_clusters_Mass_UK[[cluster_name]] <- c(consensus_clusters_Mass_UK[[cluster_name]], cluster)
+    consensus_clusters_Mass_UK_justUK[[cluster_name]] <- c(consensus_clusters_Mass_UK_justUK[[cluster_name]], cluster)
+  }
+}
+# filter for those cluster that have at least one rep from Mass and UK
+consensus_clusters_Mass_UK_matches <- consensus_clusters_Mass_UK[intersect(which(lengths(consensus_clusters_Mass_UK_justMass)>0), which(lengths(consensus_clusters_Mass_UK_justUK)>0))]
+consensus_clusters_Mass_UK_justMass_matches <- consensus_clusters_Mass_UK_justMass[intersect(which(lengths(consensus_clusters_Mass_UK_justMass)>0), which(lengths(consensus_clusters_Mass_UK_justUK)>0))]
+consensus_clusters_Mass_UK_justUK_matches <- consensus_clusters_Mass_UK_justUK[intersect(which(lengths(consensus_clusters_Mass_UK_justMass)>0), which(lengths(consensus_clusters_Mass_UK_justUK)>0))]
+
+# new way of calculating gene_freqs
+Mass_ggCaller_gene_presence_absence <- readRDS("ggCaller_presence_absence_matrix.rds")
+UK_ggCaller_gene_presence_absence <- readRDS("UK_ggCaller_bool.rds")
+# create a list dictionary with cluster names and presence-absence vectors as content
+Mass_ggCaller_gene_presence_absence_listdict <- list()
+for (i in 2:nrow(Mass_ggCaller_gene_presence_absence)) {
+  Mass_ggCaller_gene_presence_absence_listdict[[Mass_ggCaller_gene_presence_absence[i,1]]] <- as.integer(Mass_ggCaller_gene_presence_absence[i,-1])
+  
+}
+UK_ggCaller_gene_presence_absence_listdict <- list()
+for (i in 2:nrow(UK_ggCaller_gene_presence_absence)) {
+  UK_ggCaller_gene_presence_absence_listdict[[UK_ggCaller_gene_presence_absence[i,1]]] <- as.integer(UK_ggCaller_gene_presence_absence[i,-1])
+  
+}
+
+consensus_gene_clusters_Mass_freqs_v2 <- rep(0, length(consensus_clusters_Mass_UK_matches))
+consensus_gene_clusters_UK_freqs_v2 <- rep(0, length(consensus_clusters_Mass_UK_matches))
+for (i in 1:length(consensus_clusters_Mass_UK_matches)) {
+  cluster_names_Mass <- sapply(consensus_clusters_Mass_UK_justMass_matches[[i]], replace_minus)
+  cluster_presence_vec <- rep(0, length(Mass_ggCaller_gene_presence_absence_listdict[[1]]))
+  for (j in cluster_names_Mass) {
+    cluster_presence_vec <- (cluster_presence_vec | Mass_ggCaller_gene_presence_absence_listdict[[j]])
+  }
+  cluster_presence_vec <- as.integer(cluster_presence_vec)
+  consensus_gene_clusters_Mass_freqs_v2[i] <- sum(cluster_presence_vec)/length(cluster_presence_vec)
+  
+  cluster_names_UK <- sapply(consensus_clusters_Mass_UK_justUK_matches[[i]], replace_minus)
+  cluster_presence_vec_UK <- rep(0, length(UK_ggCaller_gene_presence_absence_listdict[[1]]))
+  for (k in cluster_names_UK) {
+    cluster_presence_vec_UK <- cluster_presence_vec_UK | UK_ggCaller_gene_presence_absence_listdict[[k]]
+  }
+  cluster_presence_vec_UK <- as.integer(cluster_presence_vec_UK)
+  consensus_gene_clusters_UK_freqs_v2[i] <- sum(cluster_presence_vec_UK)/length(cluster_presence_vec_UK)
+}
+
+#plot them!
+par(pty="s")
+plot(consensus_gene_clusters_Mass_freqs_v2, consensus_gene_clusters_UK_freqs_v2, xlab = "Mass ggCaller gene frequencies", ylab = "Mass COG gene frequencies",main="All Gene Frequencies, 95% sequence identity", ylim = c(0,1), xlim = c(0,1))
+abline(0,1)
+plot(consensus_gene_clusters_Mass_freqs_v2, consensus_gene_clusters_UK_freqs_v2, pch = 19, col = "#00000030")
+plot(consensus_gene_clusters_Mass_freqs_v2, consensus_gene_clusters_UK_freqs_v2, pch = 19, col = "#00000030",ylim = c(0,1), xlim = c(0,1))
+abline(0,1)
+length(which(abs(consensus_gene_clusters_Mass_freqs_v2 - consensus_gene_clusters_UK_freqs_v2)>0.05))
+# 857
+length(which(abs(consensus_gene_clusters_Mass_freqs_v2 - consensus_gene_clusters_UK_freqs_v2)<=0.05))
+# 2776
+
+# do the same for 50-sample Mass UK
+# benchmark run with 50 samples from Mass and UK
+# compared to joint ggCaller run
+Mass_UK_mmseq_clusters_50 <- read.delim("/Users/llorenz/Documents/PhD_Project/Data/Mapping_ggCaller/JoinedMassUK_ggCallerRun/benchmark_mmseqs/ggC_Mass_UK_Cluster_out.tsv", header=FALSE)
+Mass_ggC_clusters_50 <- read.delim("/Users/llorenz/Documents/PhD_Project/Data/Mapping_ggCaller/JoinedMassUK_ggCallerRun/benchmark_mmseqs/Mass_50samples.tsv", header=FALSE)
+UK_ggC_clusters_50 <- read.delim("/Users/llorenz/Documents/PhD_Project/Data/Mapping_ggCaller/JoinedMassUK_ggCallerRun/benchmark_mmseqs/UK_50samples.tsv", header=FALSE)
+Mass_UK_50_ground_truth <- read.delim("/Users/llorenz/Documents/PhD_Project/Data/Mapping_ggCaller/JoinedMassUK_ggCallerRun/Mass_UK_joined/headers.tsv", header=FALSE)
+# find local presence-absence matrices
+# 50-sample gene freqs
+Mass_ggCaller_gene_presence_absence_50_ori <- read.csv("/Users/llorenz/Documents/PhD_Project/Data/Mapping_ggCaller/JoinedMassUK_ggCallerRun/Mass_only/gene_presence_absence.csv", header=FALSE)
+UK_ggCaller_gene_presence_absence_50_ori <- read.csv("/Users/llorenz/Documents/PhD_Project/Data/Mapping_ggCaller/JoinedMassUK_ggCallerRun/UK_only_v2/gene_presence_absence.csv", header=FALSE)
+convert_to_bool <- function(x){
+  if (x=="") 0 else 1
+}
+
+Mass_ggCaller_gene_presence_absence_50 <- Mass_ggCaller_gene_presence_absence_50_ori[,c(-2,-3)]
+Mass_ggCaller_gene_presence_absence_50[-1,-1] <- apply(Mass_ggCaller_gene_presence_absence_50[-1,-1],c(1,2), convert_to_bool)
+UK_ggCaller_gene_presence_absence_50 <- UK_ggCaller_gene_presence_absence_50_ori[,c(-2,-3)]
+UK_ggCaller_gene_presence_absence_50[-1,-1] <- apply(UK_ggCaller_gene_presence_absence_50[-1,-1],c(1,2), convert_to_bool)
+# create a list dictionary with cluster names and presence-absence vectors as content
+Mass_ggCaller_gene_presence_absence_listdict_50 <- list()
+for (i in 2:nrow(Mass_ggCaller_gene_presence_absence_50)) {
+  Mass_ggCaller_gene_presence_absence_listdict_50[[Mass_ggCaller_gene_presence_absence_50[i,1]]] <- as.integer(Mass_ggCaller_gene_presence_absence_50[i,-1])
+}
+UK_ggCaller_gene_presence_absence_listdict_50 <- list()
+for (i in 2:nrow(UK_ggCaller_gene_presence_absence_50)) {
+  UK_ggCaller_gene_presence_absence_listdict_50[[UK_ggCaller_gene_presence_absence_50[i,1]]] <- as.integer(UK_ggCaller_gene_presence_absence_50[i,-1])
+}
+
+#dictionary that says whether a cluster element is from UK or Mass
+Mass_or_UK_gene_dict_50 <- c()
+Mass_or_UK_gene_dict_50[Mass_ggC_clusters_50$V1] <- "Mass"
+Mass_or_UK_gene_dict_50[UK_ggC_clusters_50$V1] <- "UK"
+# matches gene with its corresponding Mass cluster
+Mass_gene_clust_dict_50 <- Mass_ggC_clusters_50$V2
+names(Mass_gene_clust_dict_50) <- Mass_ggC_clusters_50$V1
+# matches gene with its corresponding UK cluster
+UK_gene_clust_dict_50 <- UK_ggC_clusters_50$V2
+names(UK_gene_clust_dict_50) <- UK_ggC_clusters_50$V1
+# match gene with corresponding cluster of Mass-UK
+Mass_UK_50_ground_truth_dict <- Mass_UK_50_ground_truth$V2
+names(Mass_UK_50_ground_truth_dict) <- Mass_UK_50_ground_truth$V1
+
+# create consensus clusters for Mass_UK and local Mass and local UK version
+cons_Mass_UK_no_50 <- length(unique(Mass_UK_mmseq_clusters_50$V1))
+consensus_clusters_Mass_UK_50 <- vector("list", length = cons_Mass_UK_no_50)
+names(consensus_clusters_Mass_UK_50) <- unique(Mass_UK_mmseq_clusters_50$V1)
+consensus_clusters_Mass_UK_justMass_50 <- vector("list", length = cons_Mass_UK_no_50)
+names(consensus_clusters_Mass_UK_justMass_50) <- unique(Mass_UK_mmseq_clusters_50$V1)
+consensus_clusters_Mass_UK_justUK_50 <- vector("list", length = cons_Mass_UK_no_50)
+names(consensus_clusters_Mass_UK_justUK_50) <- unique(Mass_UK_mmseq_clusters_50$V1)
+#cluster_element_before <- Mass_UK_mmseq_clusters$V1[1]
+#i_cluster <- 0
+for (i in 1:nrow(Mass_UK_mmseq_clusters_50)) {
+  cluster_name <- Mass_UK_mmseq_clusters_50$V1[i]
+  cluster_element <- Mass_UK_mmseq_clusters_50$V2[i]
+  #if(Mass_UK_mmseq_clusters$V1[i] == cluster_element){ # first element of cluster, i.e. new cluster
+  #  i_cluster <- i_cluster +1 # go to new cluster
+  #}
+  if(Mass_or_UK_gene_dict_50[cluster_element] == "Mass"){ # if gene is from Mass
+    cluster <- Mass_gene_clust_dict_50[cluster_element]
+    consensus_clusters_Mass_UK_50[[cluster_name]] <- c(consensus_clusters_Mass_UK_50[[cluster_name]], cluster)
+    consensus_clusters_Mass_UK_justMass_50[[cluster_name]] <- c(consensus_clusters_Mass_UK_justMass_50[[cluster_name]], cluster)
+  }
+  else{ #if gene is from UK
+    cluster <- UK_gene_clust_dict_50[cluster_element]
+    consensus_clusters_Mass_UK_50[[cluster_name]] <- c(consensus_clusters_Mass_UK_50[[cluster_name]], cluster)
+    consensus_clusters_Mass_UK_justUK_50[[cluster_name]] <- c(consensus_clusters_Mass_UK_justUK_50[[cluster_name]], cluster)
+  }
+}
+# filter for those cluster that have at least one rep from Mass and UK
+consensus_clusters_Mass_UK_matches_50 <- consensus_clusters_Mass_UK_50[intersect(which(lengths(consensus_clusters_Mass_UK_justMass_50)>0), which(lengths(consensus_clusters_Mass_UK_justUK_50)>0))]
+consensus_clusters_Mass_UK_justMass_matches_50 <- consensus_clusters_Mass_UK_justMass_50[intersect(which(lengths(consensus_clusters_Mass_UK_justMass_50)>0), which(lengths(consensus_clusters_Mass_UK_justUK_50)>0))]
+consensus_clusters_Mass_UK_justUK_matches_50 <- consensus_clusters_Mass_UK_justUK_50[intersect(which(lengths(consensus_clusters_Mass_UK_justMass_50)>0), which(lengths(consensus_clusters_Mass_UK_justUK_50)>0))]
+
+
+
+# compute consensus clusters
+consensus_gene_clusters_Mass_freqs_v2_50 <- rep(0, length(consensus_clusters_Mass_UK_matches_50))
+consensus_gene_clusters_UK_freqs_v2_50 <- rep(0, length(consensus_clusters_Mass_UK_matches_50))
+for (i in 1:length(consensus_clusters_Mass_UK_matches_50)) {
+  cluster_names_Mass <- sapply(consensus_clusters_Mass_UK_justMass_matches_50[[i]], replace_minus)
+  cluster_presence_vec <- rep(0, length(Mass_ggCaller_gene_presence_absence_listdict_50[[1]]))
+  for (j in cluster_names_Mass) {
+    cluster_presence_vec <- (cluster_presence_vec | Mass_ggCaller_gene_presence_absence_listdict_50[[j]])
+  }
+  cluster_presence_vec <- as.integer(cluster_presence_vec)
+  consensus_gene_clusters_Mass_freqs_v2_50[i] <- sum(cluster_presence_vec)/length(cluster_presence_vec)
+  
+  cluster_names_UK <- sapply(consensus_clusters_Mass_UK_justUK_matches_50[[i]], replace_minus)
+  cluster_presence_vec_UK <- rep(0, length(UK_ggCaller_gene_presence_absence_listdict_50[[1]]))
+  for (k in cluster_names_UK) {
+    cluster_presence_vec_UK <- cluster_presence_vec_UK | UK_ggCaller_gene_presence_absence_listdict_50[[k]]
+  }
+  cluster_presence_vec_UK <- as.integer(cluster_presence_vec_UK)
+  consensus_gene_clusters_UK_freqs_v2_50[i] <- sum(cluster_presence_vec_UK)/length(cluster_presence_vec_UK)
+}
+#plot them!
+par(pty="s")
+plot(consensus_gene_clusters_Mass_freqs_v2_50, consensus_gene_clusters_UK_freqs_v2_50, xlab = "Mass ggCaller gene frequencies", ylab = "Mass COG gene frequencies",main="All Gene Frequencies, 95% sequence identity", ylim = c(0,1), xlim = c(0,1))
+abline(0,1)
+plot(consensus_gene_clusters_Mass_freqs_v2_50, consensus_gene_clusters_UK_freqs_v2_50, pch = 19, col = "#00000030")
+plot(consensus_gene_clusters_Mass_freqs_v2_50, consensus_gene_clusters_UK_freqs_v2_50, pch = 19, col = "#00000030",ylim = c(0,1), xlim = c(0,1))
+abline(0,1)
+length(which(abs(consensus_gene_clusters_Mass_freqs_v2_50 - consensus_gene_clusters_UK_freqs_v2_50)>0.05))
+# 647
+length(which(abs(consensus_gene_clusters_Mass_freqs_v2_50 - consensus_gene_clusters_UK_freqs_v2_50)<=0.05))
+# 1891

@@ -809,3 +809,130 @@ for (i in 1:length(Nepal_seq_clusters_dict_common <- Nepal_seq_clusters_dict_com
   points((names(Nepal_GPSC_numbers_per_good_year[["1"]])), Nepal_GPSC_numbers_per_good_year[[unique(Nepal_seq_clusters_dict)[i]]]/seq_no_per_year_filtered_goodYears, col = Nepal_VT_cols_v2[i], lwd = 2)
 }
 ```
+
+```{r}
+# try ggplot instead
+library(ggplot2)
+library(dplyr)
+
+# create df
+time <- as.integer(rep(names(seq_no_per_year_filtered_goodYears),times=length(names(Nepal_GPSC_numbers_per_good_year))))  # x Axis
+value <- unlist(Nepal_GPSC_numbers_per_good_year, use.names=FALSE) # y Axis
+group <- rep(names(Nepal_GPSC_numbers_per_good_year),each=length(seq_no_per_year_filtered_goodYears))        # group, one shape per group
+Nepal_VT_mixed_012 <- Nepal_VT_mixed
+Nepal_VT_mixed_012[which(Nepal_VT_mixed == 1)] <- "VT"
+Nepal_VT_mixed_012[which(Nepal_VT_mixed == 0)] <- "NVT"
+Nepal_VT_mixed_012[intersect(which(Nepal_VT_mixed > 0), which(Nepal_VT_mixed <1))] <- "mixed"
+vt <- as.character(rep(Nepal_VT_mixed_012, each=length(seq_no_per_year_filtered_goodYears)))
+Nepal_VT_for_df <- Nepal_VT
+Nepal_VT_for_df[which(Nepal_VT == 1)] <- "VT"
+Nepal_VT_for_df[which(Nepal_VT == 0)] <- "NVT"
+vt_binary <- as.character(rep(Nepal_VT_for_df, each=length(seq_no_per_year_filtered_goodYears)))
+Nepal_gpscs_over_time_df <- data.frame(time, value, group,vt,vt_binary)
+Nepal_gpscs_over_time_df_ord <- Nepal_gpscs_over_time_df[rev(order(vt_binary)),]
+Nepal_gpscs_over_time_df_ord$group <- factor(Nepal_gpscs_over_time_df_ord$group , levels=unique(Nepal_PP$GPSC)[order(Nepal_VT, decreasing = FALSE)] )
+
+grouped_df <-
+  Nepal_gpscs_over_time_df_ord %>%
+  group_by(vt_binary, time) %>%
+  summarise(sum_val = sum(value))
+grouped_df$vt_binary <- factor(grouped_df$vt_binary, levels= c("NVT","VT"))
+
+# stacked area chart
+ggplot(Nepal_gpscs_over_time_df_ord, aes(x=time, y=value, fill=group)) + 
+    geom_area() + guides(fill="none") + 
+  geom_vline(xintercept = 2015, size = 0.3) +
+  annotate("text", x = 2015, y = 500, label = "Vaccine Introduction", angle=90,vjust = -1) + ggtitle("Counts of Vaccine Types and Non-Vaccine Types over time") +
+  ylab("Count") + scale_x_continuous("Time", breaks=seq(2010,2020,1)) 
+
+ggplot(Nepal_gpscs_over_time_df_ord, aes(x=time, y=value, fill=group)) + 
+    geom_area() + guides(fill="none") + 
+  geom_vline(xintercept = 2015, size = 0.3) +
+  annotate("text", x = 2015, y = 500, label = "Vaccine Introduction", angle=90,vjust = -1) + ggtitle("Counts of Vaccine Types and Non-Vaccine Types over time") +
+  ylab("Count") + scale_x_continuous("Time", breaks=seq(2010,2020,1)) +
+  geom_line(data=grouped_df, position = "stack", aes(x=time, y = sum_val, fill = vt_binary), linewidth = 1) 
+ 
+
+# create df for plotting by vt 
+Nepal_gpscs_over_time_df_vt <- Nepal_gpscs_over_time_df_ord %>% 
+  group_by(vt, time) %>% 
+  summarise(across(value, sum))
+
+ggplot(Nepal_gpscs_over_time_df_vt, aes(x=time, y=value, fill=vt)) + 
+    geom_area()
+
+# proportional stacked area plot
+Nepal_gpscs_over_time_df_rel <- Nepal_gpscs_over_time_df_ord  %>%
+  group_by(time, group) %>%
+  summarise(n = sum(value)) %>%
+  mutate(percentage = n / sum(n))
+Nepal_gpscs_over_time_df_rel$group <- factor(Nepal_gpscs_over_time_df_rel$group , levels=unique(Nepal_PP$GPSC)[order(Nepal_VT, decreasing = FALSE)] )
+
+grouped_rel_df <-
+  Nepal_gpscs_over_time_df_ord %>%
+  group_by(time, vt_binary) %>%
+  summarise(n = sum(value)) %>%
+  mutate(percentage = n / sum(n))
+  
+grouped_rel_df$vt_binary <- factor(grouped_rel_df$vt_binary, levels= c("NVT","VT"))
+
+# Plot
+ggplot(Nepal_gpscs_over_time_df_rel, aes(x=time, y=percentage, fill=group)) + 
+    geom_area(alpha=0.6 , size=0.1, colour="black", linetype = 3) + guides(fill="none") +
+  geom_vline(xintercept = 2015, size = 0.3) +
+  annotate("text", x = 2015, y = 0.2, label = "Vaccine Introduction", angle=90,vjust = -1) + ggtitle("Counts of Vaccine Types and Non-Vaccine Types over time") +
+  ylab("Count") + scale_x_continuous("Time", breaks=seq(2010,2020,1)) +
+  geom_line(data=grouped_rel_df, position = "stack", aes(x=time, y = percentage, fill = vt_binary), linewidth = 1) 
+
+
+
+Nepal_gpscs_over_time_df_vt_rel <- Nepal_gpscs_over_time_df_vt  %>%
+  group_by(time, vt) %>%
+  summarise(n = sum(value)) %>%
+  mutate(percentage = n / sum(n))
+
+ggplot(Nepal_gpscs_over_time_df_vt_rel, aes(x=time, y=percentage, fill=vt)) + 
+    geom_area(alpha=0.6 , size=1, colour="black") + 
+  geom_vline(xintercept = 2015, size = 0.3) +
+  annotate("text", x = 2015, y = 0.35, label = "Vaccine Introduction", angle=90,vjust = -1)
+
+# try this with binary VT
+Nepal_gpscs_over_time_df_binvt <- Nepal_gpscs_over_time_df %>% 
+  group_by(vt_binary, time) %>% 
+  summarise(across(value, sum))
+
+ggplot(Nepal_gpscs_over_time_df_binvt, aes(x=time, y=value, fill=vt_binary)) + 
+    geom_area() + 
+  geom_vline(xintercept = 2015, size = 0.3) +
+  annotate("text", x = 2015, y = 500, label = "Vaccine Introduction", angle=90,vjust = -1) + ggtitle("Counts of Vaccine Types and Non-Vaccine Types over time") +
+  ylab("Count") + scale_x_continuous("Time", breaks=seq(2010,2020,1))
+
+ggplot(Nepal_gpscs_over_time_df_binvt, aes(x=time, y=value, fill=vt_binary)) + 
+    geom_area() + guides(colour="none") + 
+  geom_vline(xintercept = 2015, size = 0.3) +
+  annotate("text", x = 2015, y = 500, label = "Vaccine Introduction", angle=90,vjust = -1) + ggtitle("Counts of Vaccine Types and Non-Vaccine Types over time") +
+  ylab("Count") + scale_x_continuous("Time", breaks=seq(2010,2020,1)) + 
+  geom_line(data=Nepal_gpscs_over_time_df_ord, position = "stack", aes(x=time, y = value, colour = group), linetype = 3)  +
+    scale_color_manual(values=rep('black',173))
+
+
+Nepal_gpscs_over_time_df_binvt_rel <- Nepal_gpscs_over_time_df_binvt  %>%
+  group_by(time, vt_binary) %>%
+  summarise(n = sum(value)) %>%
+  mutate(percentage = n / sum(n))
+
+ggplot(Nepal_gpscs_over_time_df_binvt_rel, aes(x=time, y=percentage, fill=vt_binary)) + 
+    geom_area(alpha=0.6 , size=1, colour="black") + 
+  geom_vline(xintercept = 2015, size = 0.3) +
+  annotate("text", x = 2015, y = 0.55, label = "Vaccine Introduction", angle=90,vjust = -1) + ggtitle("Proportion of Vaccine Types and Non-Vaccine Types over time") +
+  ylab("Proportion") + scale_x_continuous("Time", breaks=seq(2010,2020,1))
+
+ggplot(Nepal_gpscs_over_time_df_binvt_rel, aes(x=time, y=percentage, fill=vt_binary)) + guides(colour="none") +
+geom_area(alpha=0.6 , size=1, colour="black") + ggtitle("Proportion of Vaccine Types and Non-Vaccine Types over time") +
+  ylab("Proportion") + scale_x_continuous("Time", breaks=seq(2010,2020,1)) +
+  geom_line(data=Nepal_gpscs_over_time_df_rel, position = "stack", aes(x=time, y = percentage, colour = group, fill = NULL), linetype = 3) +
+    scale_color_manual(values=rep('#00000050',173)) + 
+  geom_vline(xintercept = 2015, size = 0.5, colour = "red") +
+  annotate("text", x = 2016, y = 0.95, colour = "red", label = "Vaccine Introduction", hjust = 0.75) 
+```
+
