@@ -1651,3 +1651,97 @@ length(which(abs(consensus_gene_clusters_Mass_freqs_v2_50 - consensus_gene_clust
 # 647
 length(which(abs(consensus_gene_clusters_Mass_freqs_v2_50 - consensus_gene_clusters_UK_freqs_v2_50)<=0.05))
 # 1891
+
+# 18.02.2025
+# after realising that it is difficult to re-find the ggCaller genes across runs, I ran panaroo on top of ggCaller's GFFs
+# both on all of them, and then separately on Mass and UK
+# benchmark run with 50 samples from Mass and UK
+
+Mass_UK_mmseq_clusters_50_panaroo <- read.delim("/Users/llorenz/Documents/PhD_Project/Data/Mapping_ggCaller/JoinedMassUK_ggCallerRun/using_panaroo/mmseqs_cluster_Mass_UK/ggC_Mass_UK_Cluster_out_seqidmode2_split.tsv", header=FALSE)
+Mass_clusters_50_panaroo <- read.csv("/Users/llorenz/Documents/PhD_Project/Data/Mapping_ggCaller/JoinedMassUK_ggCallerRun/using_panaroo/panaroo_Mass/gene_presence_absence.csv")
+UK_clusters_50_panaroo <- read.csv("/Users/llorenz/Documents/PhD_Project/Data/Mapping_ggCaller/JoinedMassUK_ggCallerRun/using_panaroo/panaroo_UK/gene_presence_absence.csv")
+Mass_UK_50_ground_truth_panaroo <- read.csv("~/Documents/PhD_Project/Data/Mapping_ggCaller/JoinedMassUK_ggCallerRun/using_panaroo/panaroo_Mass_UK/gene_presence_absence.csv")
+
+Mass_UK_mmseq_search_50_panaroo <- read.delim("/Users/llorenz/Documents/PhD_Project/Data/Mapping_ggCaller/JoinedMassUK_ggCallerRun/using_panaroo/mmseqs_search_Mass_UK/ggC_Mass_UK_Search_out.m8", header=FALSE)
+Mass_UK_mmseq_search_50_panaroo_relaxed <- read.delim("/Users/llorenz/Documents/PhD_Project/Data/Mapping_ggCaller/JoinedMassUK_ggCallerRun/using_panaroo/mmseqs_search_Mass_UK/ggC_Mass_UK_Search_out_relaxed.m8", header=FALSE)
+
+
+Mass_subclusters_reps_50_panaroo <- read.delim("/Users/llorenz/Documents/PhD_Project/Data/Mapping_ggCaller/JoinedMassUK_ggCallerRun/using_panaroo/panaroo_Mass/SubclusterRepsWithCluster.tsv", header=FALSE)
+UK_subclusters_reps_50_panaroo <- read.delim("/Users/llorenz/Documents/PhD_Project/Data/Mapping_ggCaller/JoinedMassUK_ggCallerRun/using_panaroo/panaroo_UK/SubclusterRepsWithCluster.tsv", header=FALSE)
+
+# calculate binary presence absence matrix
+Mass_clusters_50_panaroo_bin <- Mass_clusters_50_panaroo[,c(-2,-3)]
+Mass_clusters_50_panaroo_bin[-1,-1] <- apply(Mass_clusters_50_panaroo_bin[-1,-1],c(1,2), convert_to_bool)
+Mass_clusters_50_panaroo_bin_int <- sapply(Mass_clusters_50_panaroo_bin[-1,-1],as.integer)
+
+UK_clusters_50_panaroo_bin <- UK_clusters_50_panaroo[,c(-2,-3)]
+UK_clusters_50_panaroo_bin[-1,-1] <- apply(UK_clusters_50_panaroo_bin[-1,-1],c(1,2), convert_to_bool)
+UK_clusters_50_panaroo_bin_int <- sapply(UK_clusters_50_panaroo_bin[-1,-1],as.integer)
+# compute cluster freqs
+Mass_clusters_50_panaroo_freqs <- rowSums(Mass_clusters_50_panaroo_bin_int)/50
+names(Mass_clusters_50_panaroo_freqs) <- Mass_clusters_50_panaroo_bin[-1,1]
+
+UK_clusters_50_panaroo_freqs <- rowSums(UK_clusters_50_panaroo_bin_int)/50
+names(UK_clusters_50_panaroo_freqs) <- UK_clusters_50_panaroo_bin[-1,1]
+
+# create a list dictionary with cluster names and presence-absence vectors as content
+Mass_ggCaller_gene_presence_absence_listdict_50_panaroo <- list()
+for (i in 2:nrow(Mass_clusters_50_panaroo_bin)) {
+  Mass_ggCaller_gene_presence_absence_listdict_50_panaroo[[Mass_clusters_50_panaroo_bin[i,1]]] <- as.integer(Mass_clusters_50_panaroo_bin[i,-1])
+}
+UK_ggCaller_gene_presence_absence_listdict_50_panaroo <- list()
+for (i in 2:nrow(UK_clusters_50_panaroo_bin)) {
+  UK_ggCaller_gene_presence_absence_listdict_50_panaroo[[UK_clusters_50_panaroo_bin[i,1]]] <- as.integer(UK_clusters_50_panaroo_bin[i,-1])
+}
+
+#dictionary that says whether a cluster element is from UK or Mass
+# this does not work anymore because group names are
+Mass_or_UK_gene_dict_50 <- c()
+Mass_or_UK_gene_dict_50[Mass_subclusters_reps_50_panaroo$V1] <- "Mass"
+Mass_or_UK_gene_dict_50[UK_subclusters_reps_50_panaroo$V1] <- "UK"
+# matches gene with its corresponding Mass cluster
+Mass_gene_clust_dict_50 <- Mass_subclusters_reps_50_panaroo$V2
+names(Mass_gene_clust_dict_50) <- Mass_subclusters_reps_50_panaroo$V1
+# matches gene with its corresponding UK cluster
+UK_gene_clust_dict_50 <- UK_subclusters_reps_50_panaroo$V2
+names(UK_gene_clust_dict_50) <- UK_subclusters_reps_50_panaroo$V1
+# match gene with corresponding cluster of Mass-UK
+#Mass_UK_50_ground_truth_dict <- Mass_UK_50_ground_truth$V2
+#names(Mass_UK_50_ground_truth_dict) <- Mass_UK_50_ground_truth$V1
+
+#iterate over mmseqs output
+mmseqs_dict <- vector("list", length = length(unique(Mass_UK_mmseq_clusters_50_panaroo$V1)))
+names(mmseqs_dict) <- unique(Mass_UK_mmseq_clusters_50_panaroo$V1)
+for (i in 1:nrow(Mass_UK_mmseq_clusters_50_panaroo)) {
+  clust_name <- Mass_UK_mmseq_clusters_50_panaroo$V1[i]
+  cluster <- c(Mass_UK_mmseq_clusters_50_panaroo$V2[i],  Mass_UK_mmseq_clusters_50_panaroo$V4[i])
+  names(cluster) <- c(Mass_UK_mmseq_clusters_50_panaroo$V1[i],  Mass_UK_mmseq_clusters_50_panaroo$V3[i])
+  mmseqs_dict[[clust_name]] <- c(mmseqs_dict[[clust_name]], cluster)
+}
+
+mmseqs_dict_freqs_Mass <-  vector("list", length = length(unique(Mass_UK_mmseq_clusters_50_panaroo$V1)))
+names(mmseqs_dict_freqs_Mass) <- unique(Mass_UK_mmseq_clusters_50_panaroo$V1)
+mmseqs_dict_freqs_UK <-  vector("list", length = length(unique(Mass_UK_mmseq_clusters_50_panaroo$V1)))
+names(mmseqs_dict_freqs_UK) <- unique(Mass_UK_mmseq_clusters_50_panaroo$V1)
+for (i in 1:nrow(Mass_UK_mmseq_clusters_50_panaroo)) {
+  clust_name <- Mass_UK_mmseq_clusters_50_panaroo$V1[i]
+  clusters <- mmseqs_dict[[clust_name]]
+  Mass_sum <- rep(0,50)
+  UK_sum <- rep(0,50)
+  for (gene in names(clusters)) {
+    #print(gene)
+    if(Mass_or_UK_gene_dict_50[gene]=="Mass"){
+      #print("Mass")
+      Mass_sum <- Mass_sum | Mass_ggCaller_gene_presence_absence_listdict_50_panaroo[[clusters[gene]]]
+      #print(clusters[gene])
+    }
+    else if(Mass_or_UK_gene_dict_50[gene]=="UK"){
+    UK_sum <- UK_sum | UK_ggCaller_gene_presence_absence_listdict_50_panaroo[[clusters[gene]]]
+    }
+  }
+  mmseqs_dict_freqs_Mass[[clust_name]] <- sum(Mass_sum)/50
+  mmseqs_dict_freqs_UK[[clust_name]] <- sum(UK_sum)/50
+}
+
+
+plot(mmseqs_dict_freqs_Mass,mmseqs_dict_freqs_UK)
